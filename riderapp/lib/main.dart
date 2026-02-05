@@ -10,6 +10,11 @@ import 'screens/route_screen.dart';
 import 'screens/ride_screen.dart';
 import 'screens/book_ride_screen.dart';
 import 'screens/wallet_screen.dart';
+import 'screens/add_card_screen.dart';
+import 'screens/top_up_screen.dart';
+import 'screens/transfer_screen.dart';
+import 'screens/wallet_details_screen.dart';
+import 'screens/verify_transfer_screen.dart';
 import 'screens/auth/otp_verification.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
@@ -48,6 +53,11 @@ class MyApp extends StatelessWidget {
         '/ride': (context) => RideScreen(),
         '/bookride': (context) => BookRideScreen(),
         '/wallet': (context) => WalletScreen(),
+        '/add-card': (context) => const AddCardScreen(),
+        '/top-up': (context) => TopUpScreen(),
+        '/transfer': (context) => const TransferScreen(),
+        '/wallet-detail': (context) => const WalletDetailsScreen(amount: 0),
+        '/verify-transfer': (context) => const VerifyingTransactionScreen(),
       },
       home: const SplashScreen(),
     );

@@ -3,7 +3,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart' as geocoding;
 import '../utils/location_manager.dart';
-import '../components/recent_location_item.dart';
 
 class RouteScreen extends StatefulWidget {
   const RouteScreen({super.key});
@@ -19,22 +18,19 @@ class _RouteScreenState extends State<RouteScreen> {
   bool _showBookRideButton = false;
   bool _isLoadingLocation = true;
   bool _isLoadingRecents = true;
+  bool _isBooking = false;
 
   @override
   void initState() {
     super.initState();
     _getCurrentLocation();
     _loadRecentLocations();
-    // Listen for location updates from LocationManager
     LocationManager().addListener(_onLocationsUpdated);
   }
 
   void _onLocationsUpdated() {
-    // Refresh locations when notified by LocationManager
     if (mounted) {
-      setState(() {
-        _isLoadingRecents = true;
-      });
+      setState(() => _isLoadingRecents = true);
       _loadRecentLocations();
     }
   }
@@ -44,12 +40,12 @@ class _RouteScreenState extends State<RouteScreen> {
       Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.medium,
       );
-      
+
       List<geocoding.Placemark> placemarks = await geocoding.placemarkFromCoordinates(
         position.latitude,
         position.longitude,
       );
-      
+
       if (placemarks.isNotEmpty) {
         geocoding.Placemark place = placemarks.first;
         String address = [
@@ -57,7 +53,7 @@ class _RouteScreenState extends State<RouteScreen> {
           if (place.subLocality != null && place.subLocality!.isNotEmpty) place.subLocality,
           if (place.locality != null && place.locality!.isNotEmpty) place.locality,
         ].where((part) => part != null).join(', ');
-        
+
         setState(() {
           _currentLocationText = address.isNotEmpty ? address : 'Current Location';
           _isLoadingLocation = false;
@@ -80,7 +76,6 @@ class _RouteScreenState extends State<RouteScreen> {
   Future<void> _loadRecentLocations() async {
     try {
       final loadedLocations = await LocationManager().getRecentLocations();
-      
       setState(() {
         recentLocations = loadedLocations;
         _isLoadingRecents = false;
@@ -94,70 +89,39 @@ class _RouteScreenState extends State<RouteScreen> {
     }
   }
 
-  void _addRecentLocation(String name, String address) async {
-    // Use LocationManager to save location
+  Future<void> _addRecentLocation(String name, String address) async {
     await LocationManager().addRecentLocation(name, address);
-    
   }
 
- 
+  void _bookRide() async {
+    if (_destinationController.text.isEmpty) return;
 
-  void _bookRide() {
-    if (_destinationController.text.isNotEmpty) {
-      // Add destination to recent locations using LocationManager
-      _addRecentLocation(
-        'Destination',
-        _destinationController.text,
-      );
-      
-      // Show loading snackbar
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-              ),
-              const SizedBox(width: 12),
-              const Text('Booking your ride...'),
-            ],
-          ),
-          backgroundColor: Colors.blue,
-          behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 2),
-        ),
-      );
-      
-      // Navigate to RideScreen after a short delay
-      Future.delayed(const Duration(milliseconds: 800), () {
-        Navigator.pushNamed(
-          context, 
-          '/bookride',
-          arguments: {
-            'destination': _destinationController.text,
-            'currentLocation': _currentLocationText,
-            'pickupTime': DateTime.now().add(const Duration(minutes: 5)),
-          },
-        ).then((_) {
-          // Clear the field after returning from RideScreen
-          setState(() {
-            _destinationController.clear();
-            _showBookRideButton = false;
-          });
-        });
+    setState(() => _isBooking = true);
+
+    await _addRecentLocation('Destination', _destinationController.text);
+
+    await Future.delayed(const Duration(seconds: 1)); // simulate booking delay
+
+    if (!mounted) return;
+    Navigator.pushNamed(
+      context,
+      '/bookride',
+      arguments: {
+        'destination': _destinationController.text,
+        'currentLocation': _currentLocationText,
+        'pickupTime': DateTime.now().add(const Duration(minutes: 5)),
+      },
+    ).then((_) {
+      setState(() {
+        _destinationController.clear();
+        _showBookRideButton = false;
+        _isBooking = false;
       });
-    }
+    });
   }
-
 
   @override
   void dispose() {
-    // Remove listener from LocationManager
     LocationManager().removeListener(_onLocationsUpdated);
     _destinationController.dispose();
     super.dispose();
@@ -165,11 +129,9 @@ class _RouteScreenState extends State<RouteScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Check for prefilled destination from arguments
     final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     final prefilledDestination = args?['prefilledDestination'];
-    
-    // Prefill destination if provided
+
     if (prefilledDestination != null && _destinationController.text.isEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
@@ -205,7 +167,7 @@ class _RouteScreenState extends State<RouteScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Current Location Container with Column layout
+            // Current Location
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -214,7 +176,7 @@ class _RouteScreenState extends State<RouteScreen> {
                 border: Border.all(color: Colors.grey[200]!),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 10),
+                    color: Colors.black.withOpacity(0.1),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -294,10 +256,8 @@ class _RouteScreenState extends State<RouteScreen> {
                 ],
               ),
             ),
-            
             const SizedBox(height: 20),
-            
-            // Destination Input Container
+            // Destination Input
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
@@ -314,19 +274,14 @@ class _RouteScreenState extends State<RouteScreen> {
               ),
               child: Row(
                 children: [
-                  Icon(
-                    Icons.location_on,
-                    color: Colors.red,
-                  ),
+                  Icon(Icons.location_on, color: Colors.red),
                   const SizedBox(width: 12),
                   Expanded(
                     child: TextField(
                       controller: _destinationController,
                       decoration: InputDecoration(
                         hintText: 'Where do you want to go?',
-                        hintStyle: GoogleFonts.poppins(
-                          color: Colors.grey[600],
-                        ),
+                        hintStyle: GoogleFonts.poppins(color: Colors.grey[600]),
                         border: InputBorder.none,
                       ),
                       onChanged: (value) {
@@ -338,9 +293,7 @@ class _RouteScreenState extends State<RouteScreen> {
                   ),
                   const SizedBox(width: 12),
                   GestureDetector(
-                    onTap: () {
-                      // Open map to pick location
-                    },
+                    onTap: () {},
                     child: Container(
                       width: 40,
                       height: 40,
@@ -348,60 +301,35 @@ class _RouteScreenState extends State<RouteScreen> {
                         color: Colors.grey[50],
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
-                        Icons.map_outlined,
-                        color: Colors.black,
-                      ),
+                      child: const Icon(Icons.map_outlined, color: Colors.black),
                     ),
                   ),
                 ],
               ),
             ),
-            
-            const SizedBox(height: 30),
-            
-            // Recent Locations Header (only show if there are recent locations)
-            if (recentLocations.isNotEmpty && !_isLoadingRecents) ...[
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Recent Locations',
-                    style: GoogleFonts.poppins(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
+            const SizedBox(height: 20),
+            // Recent Locations Header
+            if (recentLocations.isNotEmpty && !_isLoadingRecents)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Text(
+                  'Recent Locations',
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
                   ),
-                  Text(
-                    '${recentLocations.length} saved',
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ],
+                ),
               ),
-              const SizedBox(height: 12),
-            ],
-            
-            // Recent Locations List or Empty State
+            // Recent Locations List
             Expanded(
               child: _isLoadingRecents
-                  ? const Center(
-                      child: CircularProgressIndicator(
-                        color: Colors.blue,
-                      ),
-                    )
+                  ? const Center(child: CircularProgressIndicator(color: Colors.blue))
                   : recentLocations.isEmpty
                       ? Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(
-                                Icons.location_history,
-                                size: 80,
-                                color: Colors.grey[300],
-                              ),
+                              Icon(Icons.location_history, size: 80, color: Colors.grey[300]),
                               const SizedBox(height: 16),
                               Text(
                                 'No recent destinations',
@@ -415,10 +343,7 @@ class _RouteScreenState extends State<RouteScreen> {
                               Text(
                                 'Your recent ride destinations will appear here',
                                 textAlign: TextAlign.center,
-                                style: GoogleFonts.poppins(
-                                  fontSize: 14,
-                                  color: Colors.grey[500],
-                                ),
+                                style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey[500]),
                               ),
                             ],
                           ),
@@ -429,47 +354,101 @@ class _RouteScreenState extends State<RouteScreen> {
                           itemBuilder: (context, index) {
                             final location = recentLocations[index];
                             return Padding(
-                              padding: const EdgeInsets.only(bottom: 12),
+                              padding: const EdgeInsets.only(bottom: 8), // closer spacing
                               child: RecentLocationItem(
                                 name: location['name'] ?? 'Destination',
                                 address: location['address'] ?? '',
+                                noShadow: index == 0,
                                 onTap: () {
                                   _destinationController.text = location['address'] ?? '';
-                                  setState(() {
-                                    _showBookRideButton = true;
-                                  });
+                                  setState(() => _showBookRideButton = true);
                                 },
                               ),
                             );
                           },
                         ),
             ),
-            
             // Book Ride Button
             if (_showBookRideButton)
-              Container(
-                width: double.infinity,
-                margin: const EdgeInsets.only(top: 20, bottom: 10),
-                child: ElevatedButton(
-                  onPressed: _bookRide,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 18),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
+              Center(
+                child: SizedBox(
+                  width: 353,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: _isBooking ? null : _bookRide,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(26),
+                      ),
+                      elevation: 0,
                     ),
-                    elevation: 0,
-                  ),
-                  child: Text(
-                    'Book Ride',
-                    style: GoogleFonts.poppins(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    child: _isBooking
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : Text(
+                            'Book Ride',
+                            style: GoogleFonts.poppins(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
                   ),
                 ),
               ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// RecentLocationItem Widget
+class RecentLocationItem extends StatelessWidget {
+  final String name;
+  final String address;
+  final bool noShadow;
+  final VoidCallback onTap;
+
+  const RecentLocationItem({
+    super.key,
+    required this.name,
+    required this.address,
+    this.noShadow = false,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), // slimmer
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: noShadow
+              ? []
+              : [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 6,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(name, style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+            Text(address, style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[600])),
           ],
         ),
       ),

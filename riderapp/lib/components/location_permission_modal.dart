@@ -22,7 +22,7 @@ class LocationPermissionModal extends StatelessWidget {
         borderRadius: BorderRadius.circular(25),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(51),
+            color: Colors.black.withAlpha(150),
             blurRadius: 30,
             offset: const Offset(0, 10),
           ),

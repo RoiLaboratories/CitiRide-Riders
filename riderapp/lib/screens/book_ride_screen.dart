@@ -24,10 +24,18 @@ class _BookRideScreenState extends State<BookRideScreen> {
   final LatLng _fromLatLng = const LatLng(6.5244, 3.3792); // Lagos Island
   final LatLng _toLatLng   = const LatLng(6.4654, 3.4064); // Ikeja
 
+  late final LatLng _midPoint;
+
   @override
   void initState() {
     super.initState();
     _mapController = MapController();
+
+    // midpoint for gradient effect
+    _midPoint = LatLng(
+      (_fromLatLng.latitude + _toLatLng.latitude) / 2,
+      (_fromLatLng.longitude + _toLatLng.longitude) / 2,
+    );
   }
 
   @override
@@ -46,14 +54,31 @@ class _BookRideScreenState extends State<BookRideScreen> {
               children: [
                 TileLayer(
                   urlTemplate:
-                    'https://api.maptiler.com/maps/dataviz-light/{z}/{x}/{y}.png?key=UY3s7vp83IS8KCNXj05u',
+                      'https://api.maptiler.com/maps/dataviz-light/{z}/{x}/{y}.png?key=UY3s7vp83IS8KCNXj05u',
                   tileDimension: 512,
                   zoomOffset: -1,
                 ),
 
+                /// ROUTE (blue → purple)
+                PolylineLayer(
+                  polylines: [
+                    Polyline(
+                      points: [_fromLatLng, _midPoint],
+                      color: Colors.blue,
+                      strokeWidth: 4,
+                    ),
+                    Polyline(
+                      points: [_midPoint, _toLatLng],
+                      color: Colors.purple,
+                      strokeWidth: 4,
+                    ),
+                  ],
+                ),
+
+                /// MARKERS + TIME PILLS
                 MarkerLayer(
                   markers: [
-                    // FROM marker
+                    // FROM
                     Marker(
                       point: _fromLatLng,
                       width: 40,
@@ -62,7 +87,19 @@ class _BookRideScreenState extends State<BookRideScreen> {
                       child: _buildLocationMarker(),
                     ),
 
-                    // TO marker
+                    // FROM TIME
+                    Marker(
+                      point: _fromLatLng,
+                      width: 70,
+                      height: 26,
+                      alignment: Alignment.bottomCenter,
+                      child: _timePill(
+                        text: '15 mins',
+                        color: Colors.blue,
+                      ),
+                    ),
+
+                    // TO
                     Marker(
                       point: _toLatLng,
                       width: 40,
@@ -70,11 +107,24 @@ class _BookRideScreenState extends State<BookRideScreen> {
                       alignment: Alignment.topCenter,
                       child: _buildDestinationMarker(),
                     ),
+
+                    // ARRIVAL TIME
+                    Marker(
+                      point: _toLatLng,
+                      width: 135,
+                      height: 26,
+                      alignment: Alignment.bottomCenter,
+                      child: _timePill(
+                        text: 'Arrive by 10:30 AM',
+                        color: Colors.purple,
+                      ),
+                    ),
                   ],
                 ),
               ],
             ),
 
+            /// TOP BAR
             Positioned(
               left: 16,
               right: 16,
@@ -85,9 +135,10 @@ class _BookRideScreenState extends State<BookRideScreen> {
               ),
             ),
 
+            /// BOTTOM SHEET
             DraggableScrollableSheet(
-              initialChildSize: 0.65,
-              minChildSize: 0.65,
+              initialChildSize: 0.6,
+              minChildSize: 0.6,
               maxChildSize: 0.8,
               builder: (context, scrollController) {
                 return RideModal(scrollController: scrollController);
@@ -112,6 +163,28 @@ class _BookRideScreenState extends State<BookRideScreen> {
       'images/destination_pointer.png',
       width: 54,
       height: 54,
+    );
+  }
+
+  /// Slim pill (tight fit)
+  Widget _timePill({
+    required String text,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
   }
 }

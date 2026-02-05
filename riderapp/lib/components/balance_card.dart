@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../models/wallet_balance.dart';
 
 class BalanceCard extends StatelessWidget {
   const BalanceCard({super.key});
@@ -14,17 +15,17 @@ class BalanceCard extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: const [
+        children: [
           Text(
-            '₦1,200.00',
-            style: TextStyle(
+            "₦${WalletBalance.balance.toStringAsFixed(0)}",
+            style: const TextStyle(
               fontSize: 36,
               fontWeight: FontWeight.w800,
               color: Color(0xFF0A84FF),
             ),
           ),
-          SizedBox(height: 8),
-          Row(
+          const SizedBox(height: 8),
+          const Row(
             children: [
               Text(
                 'Wallet Balance',
