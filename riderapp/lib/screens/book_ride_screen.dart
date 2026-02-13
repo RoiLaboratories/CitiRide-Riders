@@ -4,6 +4,16 @@ import 'package:latlong2/latlong.dart';
 
 import '../components/ride_modal.dart';
 import '../components/ride_top_bar.dart';
+import '../components/pickup_collapsed_sheet.dart';
+import '../components/driver_found_sheet.dart';
+import '../components/chat_sheet.dart';
+
+enum RideFlowState {
+  enterRide,
+  pickupCollapsed,
+  driverFound,
+  chat,
+}
 
 class BookRideScreen extends StatefulWidget {
   final String? selectedDestination;
@@ -19,23 +29,32 @@ class BookRideScreen extends StatefulWidget {
 
 class _BookRideScreenState extends State<BookRideScreen> {
   late final MapController _mapController;
+  late final ScrollController _scrollController;
 
-  // Hard-coded locations
-  final LatLng _fromLatLng = const LatLng(6.5244, 3.3792); // Lagos Island
-  final LatLng _toLatLng   = const LatLng(6.4654, 3.4064); // Ikeja
+  RideFlowState _flowState = RideFlowState.enterRide;
+
+  final LatLng _fromLatLng = const LatLng(6.5244, 3.3792);
+  final LatLng _toLatLng = const LatLng(6.4654, 3.4064);
 
   late final LatLng _midPoint;
+  
 
   @override
   void initState() {
     super.initState();
     _mapController = MapController();
+    _scrollController = ScrollController();
 
-    // midpoint for gradient effect
     _midPoint = LatLng(
       (_fromLatLng.latitude + _toLatLng.latitude) / 2,
       (_fromLatLng.longitude + _toLatLng.longitude) / 2,
     );
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -45,6 +64,7 @@ class _BookRideScreenState extends State<BookRideScreen> {
       body: SafeArea(
         child: Stack(
           children: [
+            /// MAP
             FlutterMap(
               mapController: _mapController,
               options: MapOptions(
@@ -58,8 +78,6 @@ class _BookRideScreenState extends State<BookRideScreen> {
                   tileDimension: 512,
                   zoomOffset: -1,
                 ),
-
-                /// ROUTE (blue → purple)
                 PolylineLayer(
                   polylines: [
                     Polyline(
@@ -74,11 +92,8 @@ class _BookRideScreenState extends State<BookRideScreen> {
                     ),
                   ],
                 ),
-
-                /// MARKERS + TIME PILLS
                 MarkerLayer(
                   markers: [
-                    // FROM
                     Marker(
                       point: _fromLatLng,
                       width: 40,
@@ -86,8 +101,6 @@ class _BookRideScreenState extends State<BookRideScreen> {
                       alignment: Alignment.topCenter,
                       child: _buildLocationMarker(),
                     ),
-
-                    // FROM TIME
                     Marker(
                       point: _fromLatLng,
                       width: 70,
@@ -98,8 +111,6 @@ class _BookRideScreenState extends State<BookRideScreen> {
                         color: Colors.blue,
                       ),
                     ),
-
-                    // TO
                     Marker(
                       point: _toLatLng,
                       width: 40,
@@ -107,8 +118,6 @@ class _BookRideScreenState extends State<BookRideScreen> {
                       alignment: Alignment.topCenter,
                       child: _buildDestinationMarker(),
                     ),
-
-                    // ARRIVAL TIME
                     Marker(
                       point: _toLatLng,
                       width: 135,
@@ -135,13 +144,18 @@ class _BookRideScreenState extends State<BookRideScreen> {
               ),
             ),
 
-            /// BOTTOM SHEET
+            /// BOTTOM SHEET (STATE DRIVEN)
             DraggableScrollableSheet(
               initialChildSize: 0.6,
-              minChildSize: 0.6,
-              maxChildSize: 0.8,
+              minChildSize: 0.35,
+              maxChildSize: 0.9,
               builder: (context, scrollController) {
-                return RideModal(scrollController: scrollController);
+                return AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 280),
+                  switchInCurve: Curves.easeOut,
+                  switchOutCurve: Curves.easeIn,
+                  child: _buildSheetContent(scrollController), // pass it here
+                );
               },
             ),
           ],
@@ -150,23 +164,68 @@ class _BookRideScreenState extends State<BookRideScreen> {
     );
   }
 
-  Widget _buildLocationMarker() {
-    return Image.asset(
-      'images/location_pointer.png',
-      width: 54,
-      height: 54,
-    );
-  }
+  /// ───────────────── SHEET CONTENT SWITCHER ─────────────────
 
-  Widget _buildDestinationMarker() {
-    return Image.asset(
-      'images/destination_pointer.png',
-      width: 54,
-      height: 54,
-    );
-  }
+ Widget _buildSheetContent(ScrollController scrollController) {
+  switch (_flowState) {
+    case RideFlowState.enterRide:
+      return RideModal(
+        key: const ValueKey('enterRide'),
+        scrollController: scrollController,
+        onContinue: () {
+          setState(() {
+            _flowState = RideFlowState.pickupCollapsed;
+          });
+        },
+      );
 
-  /// Slim pill (tight fit)
+    case RideFlowState.pickupCollapsed:
+      return PickupCollapsedSheet(
+        key: const ValueKey('pickup'),
+        scrollController: scrollController,
+        onSearchTap: () {},
+        onConfirm: () {
+          setState(() {
+            _flowState = RideFlowState.driverFound;
+          });
+        },
+      );
+
+    case RideFlowState.driverFound:
+      return DriverFoundSheet(
+        key: const ValueKey('driverFound'),
+        scrollController: scrollController,
+        onConfirm: () {
+          setState(() {
+            _flowState = RideFlowState.chat;
+          });
+        },
+      );
+
+    case RideFlowState.chat:
+      return ChatSheet(
+        key: const ValueKey('chat'),
+        scrollController: scrollController,
+      );
+  }
+}
+
+
+
+  /// ───────────────── HELPERS ─────────────────
+
+  Widget _buildLocationMarker() => Image.asset(
+        'images/location_pointer.png',
+        width: 54,
+        height: 54,
+      );
+
+  Widget _buildDestinationMarker() => Image.asset(
+        'images/destination_pointer.png',
+        width: 54,
+        height: 54,
+      );
+
   Widget _timePill({
     required String text,
     required Color color,

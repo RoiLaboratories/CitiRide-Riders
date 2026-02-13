@@ -5,10 +5,12 @@ import '../models/wallet_balance.dart';
 
 class RideModal extends ConsumerStatefulWidget {
   final ScrollController scrollController;
+  final VoidCallback onContinue;
 
   const RideModal({
     super.key,
     required this.scrollController,
+    required this.onContinue,
   });
 
   @override
@@ -20,19 +22,19 @@ class _RideModalState extends ConsumerState<RideModal> {
   int selectedPayment = 0;
   bool showAllPayments = false;
 
-   /// Function to handle payment logic
+  /// ─────────────── PAYMENT HANDLER ───────────────
   void handlePayment() {
     double ridePrice = selectedRide == 0 ? 3500 : 7500;
 
     switch (selectedPayment) {
       case 0: // Cash
-        Navigator.pop(context, 'cash');
+        widget.onContinue();
         break;
 
       case 1: // Wallet
         if (WalletBalance.balance >= ridePrice) {
           WalletBalance.balance -= ridePrice;
-          Navigator.pop(context);
+          widget.onContinue();
         } else {
           showDialog(
             context: context,
@@ -52,7 +54,7 @@ class _RideModalState extends ConsumerState<RideModal> {
         break;
 
       case 2: // Bank Card
-        Navigator.pop(context);
+        widget.onContinue();
         break;
 
       default:
@@ -63,7 +65,6 @@ class _RideModalState extends ConsumerState<RideModal> {
         );
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -248,7 +249,6 @@ class _RideModalState extends ConsumerState<RideModal> {
                 Text(
                   price,
                   style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.normal,
                     fontSize: 16,
                     color: Colors.blue,
                   ),
@@ -319,7 +319,8 @@ class _RideModalState extends ConsumerState<RideModal> {
                     children: [
                       const TextSpan(text: "Bal: "),
                       TextSpan(
-                        text: "₦${WalletBalance.balance.toStringAsFixed(0)}",
+                        text:
+                            "₦${WalletBalance.balance.toStringAsFixed(0)}",
                         style: const TextStyle(
                           color: Colors.blue,
                           fontWeight: FontWeight.w500,
@@ -332,10 +333,7 @@ class _RideModalState extends ConsumerState<RideModal> {
                 _actionPill(
                   text: "+ Top up wallet",
                   onTap: () {
-                    Navigator.pushNamed(
-                      context,
-                      '/top-up',
-                    );
+                    Navigator.pushNamed(context, '/top-up');
                   },
                 ),
               ],
@@ -426,7 +424,8 @@ class _RideModalState extends ConsumerState<RideModal> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        padding:
+            const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
           color: const Color.fromARGB(255, 144, 211, 242),
           borderRadius: BorderRadius.circular(20),
@@ -442,7 +441,6 @@ class _RideModalState extends ConsumerState<RideModal> {
       ),
     );
   }
-
 
   Widget _continueButton() => Padding(
         padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
