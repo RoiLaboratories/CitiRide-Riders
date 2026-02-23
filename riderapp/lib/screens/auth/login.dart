@@ -116,7 +116,7 @@ class LoginScreenState extends State<LoginScreen> {
       
       return querySnapshot.docs.isNotEmpty;
     } catch (e) {
-      print('Error checking user: $e');
+      debugPrint('Error checking user: $e');
       return false;
     }
   }
@@ -138,7 +138,7 @@ class LoginScreenState extends State<LoginScreen> {
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
+                  color: Colors.black.withAlpha(26),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),

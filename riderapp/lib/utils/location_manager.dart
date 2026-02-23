@@ -59,7 +59,7 @@ class LocationManager {
       }
       return [];
     } catch (e) {
-      print('Error getting recent locations: $e');
+      debugPrint('Error getting recent locations: $e');
       return [];
     }
   }
@@ -91,7 +91,7 @@ class LocationManager {
         _notifyListeners();
       }
     } catch (e) {
-      print('Error adding recent location: $e');
+      debugPrint('Error adding recent location: $e');
     }
   }
 
@@ -104,7 +104,7 @@ class LocationManager {
       // Notify listeners
       _notifyListeners();
     } catch (e) {
-      print('Error clearing locations: $e');
+      debugPrint('Error clearing locations: $e');
     }
   }
 
@@ -124,7 +124,7 @@ class LocationManager {
       // Notify listeners
       _notifyListeners();
     } catch (e) {
-      print('Error removing location: $e');
+      debugPrint('Error removing location: $e');
     }
   }
 }

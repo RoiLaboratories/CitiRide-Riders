@@ -201,7 +201,7 @@ class _OTPScreenState extends ConsumerState<OTPScreen> {
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
+                  color: Colors.black.withAlpha(26),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -270,7 +270,7 @@ class _OTPScreenState extends ConsumerState<OTPScreen> {
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withAlpha(26),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -339,7 +339,7 @@ void _showOtpError() {
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
+                color: Colors.black.withAlpha(26),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -440,7 +440,7 @@ void _showOtpError() {
                             boxShadow: _otpFieldFocused[index] 
                                 ? [
                                     BoxShadow(
-                                      color: Colors.blue.withValues(alpha: 0.3),
+                                      color: Colors.blue.withAlpha(77),
                                       blurRadius: 6,
                                       spreadRadius: 1,
                                     ),

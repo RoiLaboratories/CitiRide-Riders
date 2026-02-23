@@ -70,7 +70,8 @@ class LocationPermissionModal extends StatelessWidget {
                 const SizedBox(height: 8),
 
                 Text(
-                  "Set your location so we can find riders near you and pick you up at the right spot",
+                  'Set your location so we can find nearby drivers and pick '
+                  'you up at the right spot.',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.poppins(
                     fontSize: 14,
