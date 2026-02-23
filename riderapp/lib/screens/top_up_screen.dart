@@ -46,7 +46,14 @@ class _TopUpScreenState extends State<TopUpScreen> {
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.white,
-        leading: const BackButton(color: Colors.black),
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            size: 22,
+            color: Colors.black,
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
         title: const Text(
           'Top Up',
           style: TextStyle(fontWeight: FontWeight.w600),
