@@ -154,6 +154,33 @@ class _BookRideScreenState extends State<BookRideScreen> {
                   duration: const Duration(milliseconds: 280),
                   switchInCurve: Curves.easeOut,
                   switchOutCurve: Curves.easeIn,
+                  transitionBuilder: (child, animation) {
+                    final curved = CurvedAnimation(
+                      parent: animation,
+                      curve: Curves.easeOutCubic,
+                      reverseCurve: Curves.easeInCubic,
+                    );
+
+                    return FadeTransition(
+                      opacity: curved,
+                      child: SlideTransition(
+                        position: Tween<Offset>(
+                          begin: const Offset(0, 0.08),
+                          end: Offset.zero,
+                        ).animate(curved),
+                        child: child,
+                      ),
+                    );
+                  },
+                  layoutBuilder: (currentChild, previousChildren) {
+                    return Stack(
+                      alignment: Alignment.bottomCenter,
+                      children: [
+                        ...previousChildren,
+                        if (currentChild != null) currentChild,
+                      ],
+                    );
+                  },
                   child: _buildSheetContent(scrollController), // pass it here
                 );
               },
