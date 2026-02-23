@@ -80,6 +80,7 @@ class _AddCardScreenState extends State<AddCardScreen> {
     setState(() => _loading = true);
 
     await Future.delayed(const Duration(milliseconds: 800));
+    if (!mounted) return;
 
     setState(() => _loading = false);
 

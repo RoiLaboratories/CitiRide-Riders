@@ -297,6 +297,7 @@ class _OTPScreenState extends ConsumerState<OTPScreen> {
 
     // Navigate to home screen
     Future.delayed(const Duration(milliseconds: 500), () {
+      if (!mounted) return;
       Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
     });
   } on FirebaseAuthException {

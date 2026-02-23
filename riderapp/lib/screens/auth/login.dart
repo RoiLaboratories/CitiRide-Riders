@@ -177,6 +177,7 @@ class LoginScreenState extends State<LoginScreen> {
     try {
       // Check if user exists
       final userExists = await _checkUserExists(fullPhoneNumber);
+      if (!mounted) return;
       
       if (userExists) {
         // User exists - navigate directly to home screen
@@ -189,6 +190,7 @@ class LoginScreenState extends State<LoginScreen> {
         
         // Navigate to home screen
         Future.delayed(const Duration(milliseconds: 500), () {
+          if (!mounted) return;
           Navigator.pushNamedAndRemoveUntil(
             context,
             '/home',
@@ -205,6 +207,7 @@ class LoginScreenState extends State<LoginScreen> {
         _showCustomSnackbar('No user found with this phone number');
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _isCheckingUser = false;
       });

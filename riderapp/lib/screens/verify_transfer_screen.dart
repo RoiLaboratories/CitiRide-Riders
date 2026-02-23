@@ -27,11 +27,13 @@ class _VerifyingTransactionScreenState extends State<VerifyingTransactionScreen>
     _controller3 = _createController(600);
 
     Future.delayed(const Duration(seconds: 4), () {
+      if (!mounted) return;
       setState(() {
       success = true;
       WalletBalance.balance += amount;
     });
       Future.delayed(const Duration(seconds: 2), () {
+        if (!mounted) return;
         Navigator.popUntil(context, (route) => route.isFirst);
       });
     });
