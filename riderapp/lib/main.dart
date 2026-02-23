@@ -16,22 +16,22 @@ import 'screens/transfer_screen.dart';
 import 'screens/wallet_details_screen.dart';
 import 'screens/verify_transfer_screen.dart';
 import 'screens/auth/otp_verification.dart';
+import 'screens/notifications_screen.dart';
+import 'screens/profile_screen.dart';
+import 'screens/settings_screen.dart';
+import 'screens/change_password_screen.dart';
+import 'screens/change_wallet_pin_screen.dart';
+import 'screens/create_wallet_pin_screen.dart';
+import 'screens/security_screen.dart';
+import 'screens/transaction_details_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 
-
-void main() async{
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-  runApp(
-    const ProviderScope(
-      child: MyApp(),
-    ),
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  runApp(const ProviderScope(child: MyApp()));
 }
-
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -47,7 +47,8 @@ class MyApp extends StatelessWidget {
         '/welcome': (context) => const WelcomeScreen(),
         '/signup': (context) => SignUpScreen(),
         '/login': (context) => LoginScreen(),
-        '/otp': (context) => const OTPScreen(phoneNumber: '', verificationId: '' ),
+        '/otp': (context) =>
+            const OTPScreen(phoneNumber: '', verificationId: ''),
         '/home': (context) => const HomeScreen(),
         '/route': (context) => const RouteScreen(),
         '/ride': (context) => RideScreen(),
@@ -58,6 +59,16 @@ class MyApp extends StatelessWidget {
         '/transfer': (context) => const TransferScreen(),
         '/wallet-detail': (context) => const WalletDetailsScreen(amount: 0),
         '/verify-transfer': (context) => const VerifyingTransactionScreen(),
+        '/transaction-details': (context) => const TransactionDetailsScreen(),
+        '/notifications': (context) => const NotificationsScreen(),
+        '/profile': (context) => const ProfileScreen(),
+        '/settings': (context) => const SettingsScreen(),
+        '/security': (context) => const SecurityScreen(),
+        '/change-password': (context) => const ChangePasswordScreen(),
+        '/change-wallet-pin': (context) => const ChangeWalletPinScreen(),
+        '/create-wallet-pin': (context) => const CreateWalletPinScreen(),
+        '/reset-wallet-pin': (context) =>
+            const CreateWalletPinScreen(isResetFlow: true),
       },
       home: const SplashScreen(),
     );
