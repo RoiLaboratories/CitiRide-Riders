@@ -289,7 +289,7 @@ class _RideModalState extends ConsumerState<RideModal> {
           title: "Cash",
           subtitle: "Pay with cash",
           trailing: showAllPayments
-              ? _radio(0)
+              ? _paymentChoice(0)
               : GestureDetector(
                   onTap: () {
                     setState(() => showAllPayments = true);
@@ -338,7 +338,7 @@ class _RideModalState extends ConsumerState<RideModal> {
                 ),
               ],
             ),
-            trailing: _radio(1),
+            trailing: _paymentChoice(1),
           ),
 
           _paymentRow(
@@ -359,7 +359,7 @@ class _RideModalState extends ConsumerState<RideModal> {
                 ),
               ],
             ),
-            trailing: _radio(2),
+            trailing: _paymentChoice(2),
           ),
         ],
       ],
@@ -408,14 +408,40 @@ class _RideModalState extends ConsumerState<RideModal> {
     );
   }
 
-  Widget _radio(int index) => Radio<int>(
-        value: index,
-        groupValue: selectedPayment,
-        onChanged: (value) {
-          setState(() => selectedPayment = value!);
-        },
-        activeColor: Colors.blue,
-      );
+  Widget _paymentChoice(int index) {
+    final isSelected = selectedPayment == index;
+
+    return GestureDetector(
+      onTap: () {
+        setState(() => selectedPayment = index);
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        width: 22,
+        height: 22,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: isSelected ? Colors.blue : Colors.grey.shade400,
+            width: 2,
+          ),
+          color: Colors.white,
+        ),
+        child: isSelected
+            ? Center(
+                child: Container(
+                  width: 10,
+                  height: 10,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.blue,
+                  ),
+                ),
+              )
+            : null,
+      ),
+    );
+  }
 
   Widget _actionPill({
     required String text,
