@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class BottomNavBar extends StatefulWidget {
+class BottomNavBar extends StatelessWidget {
   final Function(int) onTabChanged;
   final int currentIndex;
 
@@ -11,31 +11,9 @@ class BottomNavBar extends StatefulWidget {
     required this.currentIndex,
   });
 
-  @override
-  State<BottomNavBar> createState() => _BottomNavBarState();
-}
-
-class _BottomNavBarState extends State<BottomNavBar> {
-  late int _selectedIndex;
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedIndex = widget.currentIndex;
-  }
-
-  @override
-  void didUpdateWidget(covariant BottomNavBar oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.currentIndex != oldWidget.currentIndex) {
-      _selectedIndex = widget.currentIndex;
-    }
-  }
-
   void _onItemTapped(int index) {
-    if (_selectedIndex == index) return;
-    setState(() => _selectedIndex = index);
-    widget.onTabChanged(index);
+    if (currentIndex == index) return;
+    onTabChanged(index);
   }
 
   @override
@@ -87,7 +65,7 @@ class _BottomNavBarState extends State<BottomNavBar> {
     required String label,
     required String iconAsset,
   }) {
-    final bool isSelected = _selectedIndex == index;
+    final bool isSelected = currentIndex == index;
 
     return GestureDetector(
       onTap: () => _onItemTapped(index),

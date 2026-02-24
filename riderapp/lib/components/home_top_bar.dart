@@ -1,11 +1,19 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart' as geocoding;
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeTopBar extends StatefulWidget {
-  const HomeTopBar({super.key});
+  const HomeTopBar({
+    super.key,
+    this.onAvatarTap,
+  });
+
+  final VoidCallback? onAvatarTap;
 
   @override
   State<HomeTopBar> createState() => _HomeTopBarState();
@@ -15,11 +23,66 @@ class _HomeTopBarState extends State<HomeTopBar> {
   String _locationText = 'Lagos';
   String _currentAddress = 'Getting location...';
   bool _isLoading = true;
+  String? _profileAvatarAsset;
+  Uint8List? _profileAvatarBytes;
+
+  Uint8List? _decodeAvatarBase64(String value) {
+    if (value.trim().isEmpty) return null;
+    try {
+      return base64Decode(value);
+    } catch (_) {
+      return null;
+    }
+  }
 
   @override
   void initState() {
     super.initState();
+    _loadProfileImage();
     _getCurrentLocation();
+  }
+
+  Future<void> _loadProfileImage() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+
+    setState(() {
+      _profileAvatarAsset = prefs.getString('profile_avatar_asset');
+      final avatarBase64 = (prefs.getString('profile_avatar_base64') ?? '').trim();
+      _profileAvatarBytes = _decodeAvatarBase64(avatarBase64);
+    });
+  }
+
+  Widget _buildAvatarImage() {
+    if (_profileAvatarBytes != null && _profileAvatarBytes!.isNotEmpty) {
+      return Image.memory(
+        _profileAvatarBytes!,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => const Icon(
+          Icons.person,
+          color: Colors.white,
+          size: 24,
+        ),
+      );
+    }
+
+    if (_profileAvatarAsset != null && _profileAvatarAsset!.trim().isNotEmpty) {
+      return Image.asset(
+        _profileAvatarAsset!,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => const Icon(
+          Icons.person,
+          color: Colors.white,
+          size: 24,
+        ),
+      );
+    }
+
+    return const Icon(
+      Icons.person,
+      color: Colors.white,
+      size: 24,
+    );
   }
 
 
@@ -27,21 +90,20 @@ class _HomeTopBarState extends State<HomeTopBar> {
     try {
       // Check for location permission first
       LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission != LocationPermission.whileInUse && 
-            permission != LocationPermission.always) {
-          setState(() {
-            _locationText = 'Permission Required';
-            _currentAddress = 'Allow location access';
-            _isLoading = false;
-          });
-          return;
-        }
+      if (permission != LocationPermission.whileInUse &&
+          permission != LocationPermission.always) {
+        setState(() {
+          _locationText = 'Permission Required';
+          _currentAddress = 'Set location to enable';
+          _isLoading = false;
+        });
+        return;
       }
 
       Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.medium,
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.medium,
+        ),
       );
 
       // Use geocoding package with the alias - CORRECT METHOD
@@ -72,7 +134,7 @@ class _HomeTopBarState extends State<HomeTopBar> {
         });
       }
     } catch (e) {
-      print('Error getting location: $e');
+      debugPrint('Error getting location: $e');
       setState(() {
         _locationText = 'Location Error';
         _currentAddress = 'Unable to get location';
@@ -91,7 +153,7 @@ class _HomeTopBarState extends State<HomeTopBar> {
         borderRadius: BorderRadius.circular(25),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withAlpha(13),
             blurRadius: 20,
             spreadRadius: 2,
             offset: const Offset(0, 4),
@@ -106,7 +168,7 @@ class _HomeTopBarState extends State<HomeTopBar> {
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.5),
+                  color: Colors.black.withAlpha(128),
                   blurRadius: 15,
                   spreadRadius: 1,
                   offset: const Offset(0, 4),
@@ -116,6 +178,13 @@ class _HomeTopBarState extends State<HomeTopBar> {
             child: GestureDetector(
               onTap: () {
                 HapticFeedback.lightImpact();
+                if (widget.onAvatarTap != null) {
+                  widget.onAvatarTap!.call();
+                  return;
+                }
+                Navigator.pushNamed(context, '/profile').then((_) {
+                  _loadProfileImage();
+                });
               },
               child: Container(
                 width: 50,
@@ -130,10 +199,8 @@ class _HomeTopBarState extends State<HomeTopBar> {
                     shape: BoxShape.circle,
                     color: Colors.blue,
                   ),
-                  child: const Icon(
-                    Icons.person,
-                    color: Colors.white,
-                    size: 24,
+                  child: ClipOval(
+                    child: _buildAvatarImage(),
                   ),
                 ),
               ),
@@ -226,7 +293,7 @@ class _HomeTopBarState extends State<HomeTopBar> {
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.5),
+                  color: Colors.black.withAlpha(128),
                   blurRadius: 15,
                   spreadRadius: 1,
                   offset: const Offset(0, 4),
@@ -236,6 +303,7 @@ class _HomeTopBarState extends State<HomeTopBar> {
             child: GestureDetector(
               onTap: () {
                 HapticFeedback.lightImpact();
+                Navigator.pushNamed(context, '/notifications');
               },
               child: Container(
                 width: 50,

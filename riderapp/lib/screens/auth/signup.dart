@@ -120,6 +120,7 @@ class SignUpScreenState extends ConsumerState<SignUpScreen> {
     await auth.sendVerificationCode(
       phoneNumber: fullPhoneNumber,
       onCodeSent: () {
+        if (!mounted) return;
         Navigator.pop(context);
 
         // Navigate to OTP screen AFTER codeSent
@@ -133,6 +134,7 @@ class SignUpScreenState extends ConsumerState<SignUpScreen> {
         );
       },
       onFailed: (e) {
+        if (!mounted) return;
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to send OTP: ${e.message}')),
@@ -140,6 +142,7 @@ class SignUpScreenState extends ConsumerState<SignUpScreen> {
       },
     );
   } catch (e) {
+    if (!mounted) return;
     Navigator.pop(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Error: $e')),

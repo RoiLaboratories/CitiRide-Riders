@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class WalletActionButton extends StatelessWidget {
   final String title;
   final Color color;
-  final String arrowAsset; // custom arrow image
+  final String arrowAsset;
   final VoidCallback onTap;
 
   const WalletActionButton({

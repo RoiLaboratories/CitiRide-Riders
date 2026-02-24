@@ -116,7 +116,7 @@ class LoginScreenState extends State<LoginScreen> {
       
       return querySnapshot.docs.isNotEmpty;
     } catch (e) {
-      print('Error checking user: $e');
+      debugPrint('Error checking user: $e');
       return false;
     }
   }
@@ -138,7 +138,7 @@ class LoginScreenState extends State<LoginScreen> {
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
+                  color: Colors.black.withAlpha(26),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -177,6 +177,7 @@ class LoginScreenState extends State<LoginScreen> {
     try {
       // Check if user exists
       final userExists = await _checkUserExists(fullPhoneNumber);
+      if (!mounted) return;
       
       if (userExists) {
         // User exists - navigate directly to home screen
@@ -189,6 +190,7 @@ class LoginScreenState extends State<LoginScreen> {
         
         // Navigate to home screen
         Future.delayed(const Duration(milliseconds: 500), () {
+          if (!mounted) return;
           Navigator.pushNamedAndRemoveUntil(
             context,
             '/home',
@@ -205,6 +207,7 @@ class LoginScreenState extends State<LoginScreen> {
         _showCustomSnackbar('No user found with this phone number');
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _isCheckingUser = false;
       });
