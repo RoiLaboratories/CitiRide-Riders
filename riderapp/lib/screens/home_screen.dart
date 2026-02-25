@@ -1,12 +1,13 @@
 import 'dart:ui';
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map/flutter_map.dart' as fm;
 import 'package:geolocator/geolocator.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
+import 'package:latlong2/latlong.dart' as osm;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../components/home_top_bar.dart';
@@ -15,6 +16,7 @@ import '../components/bottom_nav_bar.dart';
 import '../components/location_permission_modal.dart';
 import '../screens/ride_screen.dart';
 import '../screens/wallet_screen.dart';
+import '../utils/google_map_style.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -28,7 +30,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final PageController _pageController = PageController();
-  final MapController _mapController = MapController();
 
   int _currentIndex = 0;
   bool _locationLoading = false;
@@ -42,7 +43,11 @@ class _HomeScreenState extends State<HomeScreen> {
   int _profileRefreshSeed = 0;
   bool _isDrawerOpen = false;
 
-  final LatLng _currentLocation = const LatLng(6.5244, 3.3792);
+  gmaps.LatLng _currentLocation = const gmaps.LatLng(6.5244, 3.3792);
+  gmaps.BitmapDescriptor _userLocationMarkerIcon =
+      gmaps.BitmapDescriptor.defaultMarkerWithHue(
+        gmaps.BitmapDescriptor.hueAzure,
+      );
 
   Uint8List? _decodeAvatarBase64(String value) {
     if (value.trim().isEmpty) return null;
@@ -59,11 +64,61 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _loadDrawerProfile();
+    _loadUserLocationMarkerIcon();
 
     /// Show location modal AFTER first frame
     WidgetsBinding.instance.addPostFrameCallback((ctx) {
       _showLocationPermissionModal();
     });
+  }
+
+  Future<void> _refreshCurrentLocationForMap({
+    required bool requestIfDenied,
+  }) async {
+    try {
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied && requestIfDenied) {
+        permission = await Geolocator.requestPermission();
+      }
+
+      if (permission != LocationPermission.whileInUse &&
+          permission != LocationPermission.always) {
+        return;
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
+      );
+
+      if (!mounted) return;
+      setState(() {
+        _currentLocation = gmaps.LatLng(position.latitude, position.longitude);
+      });
+    } catch (e) {
+      debugPrint('Could not refresh map location: $e');
+    }
+  }
+
+  Future<void> _loadUserLocationMarkerIcon() async {
+    if (kIsWeb) return;
+
+    try {
+      final marker = await gmaps.BitmapDescriptor.asset(
+        const ImageConfiguration(size: Size(52, 52)),
+        'images/location_pointer.png',
+        width: 52,
+        height: 52,
+      );
+
+      if (!mounted) return;
+      setState(() {
+        _userLocationMarkerIcon = marker;
+      });
+    } catch (e) {
+      debugPrint('Could not load location pointer marker: $e');
+    }
   }
 
   Future<void> _loadDrawerProfile() async {
@@ -423,6 +478,9 @@ class _HomeScreenState extends State<HomeScreen> {
         _locationRefreshSeed++;
       });
 
+      await _refreshCurrentLocationForMap(requestIfDenied: false);
+      if (!mounted) return;
+
       Navigator.of(context, rootNavigator: true).pop();
     } catch (e) {
       if (!mounted) return;
@@ -531,19 +589,16 @@ class _HomeScreenState extends State<HomeScreen> {
             Positioned(
               left: 16,
               right: 16,
-              bottom: 44,
+              bottom: 112,
               top: 150,
               child: DraggableScrollableSheet(
-                initialChildSize: 0.30,
-                minChildSize: 0.30,
+                initialChildSize: 0.19,
+                minChildSize: 0.19,
                 maxChildSize: 0.82,
                 snap: true,
-                snapSizes: const [0.30, 0.60],
+                snapSizes: const [0.19, 0.60],
                 builder: (context, scrollController) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 56),
-                    child: HomeModalSheet(scrollController: scrollController),
-                  );
+                  return HomeModalSheet(scrollController: scrollController);
                 },
               ),
             ),
@@ -566,41 +621,69 @@ class _HomeScreenState extends State<HomeScreen> {
   // ---------------- MAP ----------------
 
   Widget _buildHomeMap() {
-    return FlutterMap(
-      mapController: _mapController,
-      options: MapOptions(
-        initialCenter: _currentLocation,
-        initialZoom: 15,
-        interactionOptions: const InteractionOptions(
-          flags: InteractiveFlag.all,
+    if (kIsWeb) {
+      return fm.FlutterMap(
+        key: ValueKey(
+          'home_map_web_${_currentLocation.latitude}_${_currentLocation.longitude}',
         ),
-      ),
-      children: [
-        TileLayer(
-          urlTemplate:
-              'https://api.maptiler.com/maps/dataviz-light/{z}/{x}/{y}.png?key=UY3s7vp83IS8KCNXj05u',
-          tileDimension: 512,
-          zoomOffset: -1,
+        options: fm.MapOptions(
+          initialCenter: osm.LatLng(
+            _currentLocation.latitude,
+            _currentLocation.longitude,
+          ),
+          initialZoom: 15,
         ),
-        MarkerLayer(
-          markers: [
-            Marker(
-              point: _currentLocation,
-              width: 40,
-              height: 60,
-              alignment: Alignment.topCenter,
-              child: _buildLocationMarker(),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
+        children: [
+          fm.TileLayer(
+            urlTemplate:
+                'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+            subdomains: const ['a', 'b', 'c', 'd'],
+            userAgentPackageName: 'com.example.sureride',
+          ),
+          fm.MarkerLayer(
+            markers: [
+              fm.Marker(
+                point: osm.LatLng(
+                  _currentLocation.latitude,
+                  _currentLocation.longitude,
+                ),
+                width: 46,
+                height: 46,
+                child: Image.asset(
+                  'images/location_pointer.png',
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ],
+          ),
+        ],
+      );
+    }
 
-  Widget _buildLocationMarker() {
-    return Container(
-      padding: const EdgeInsets.all(8),
-      child: Image.asset('images/location_pointer.png', width: 54, height: 54),
+    return gmaps.GoogleMap(
+      key: ValueKey(
+        'home_map_mobile_${_currentLocation.latitude}_${_currentLocation.longitude}',
+      ),
+      initialCameraPosition: gmaps.CameraPosition(
+        target: _currentLocation,
+        zoom: 15,
+      ),
+      mapType: gmaps.MapType.normal,
+      compassEnabled: false,
+      zoomControlsEnabled: false,
+      mapToolbarEnabled: false,
+      myLocationButtonEnabled: false,
+      myLocationEnabled: false,
+      style: kGoogleMapGrayscaleStyle,
+      markers: {
+        gmaps.Marker(
+          markerId: const gmaps.MarkerId('current_location'),
+          position: _currentLocation,
+          icon: _userLocationMarkerIcon,
+          anchor: const Offset(0.5, 1),
+          infoWindow: const gmaps.InfoWindow(title: 'Current location'),
+        ),
+      },
     );
   }
 }

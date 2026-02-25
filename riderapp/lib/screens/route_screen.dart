@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart' as geocoding;
 import 'package:geolocator/geolocator.dart';
+import 'dart:async';
 
+import '../services/google_maps_places_service.dart';
 import '../utils/location_manager.dart';
 
 class RouteScreen extends StatefulWidget {
@@ -20,9 +22,13 @@ class _RouteScreenState extends State<RouteScreen> {
   bool _loadingRecents = true;
   bool _showBookRideButton = false;
   bool _isBooking = false;
+  bool _loadingSuggestions = false;
   List<Map<String, dynamic>> _recentLocations = [];
   List<Map<String, String>> _destinationSuggestions = [];
   bool _appliedRouteArgs = false;
+  Timer? _suggestionDebounce;
+  int _latestSuggestionRequestId = 0;
+  final GoogleMapsPlacesService _placesService = GoogleMapsPlacesService();
 
   static const List<Map<String, dynamic>> _savedLocations = [
     {
@@ -45,14 +51,6 @@ class _RouteScreenState extends State<RouteScreen> {
     },
   ];
 
-  static const List<Map<String, String>> _knownPlaces = [
-    {'name': 'Benin Airport', 'subtitle': 'Airport Road, Benin City'},
-    {'name': 'University of Benin', 'subtitle': 'Ugbowo, Benin City'},
-    {'name': 'New Benin Market', 'subtitle': 'Mission Road, Benin City'},
-    {'name': 'Oba Market', 'subtitle': 'Ring Road, Benin City'},
-    {'name': 'Sapele Road', 'subtitle': 'Benin City'},
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -66,6 +64,7 @@ class _RouteScreenState extends State<RouteScreen> {
   @override
   void dispose() {
     LocationManager().removeListener(_onLocationsUpdated);
+    _suggestionDebounce?.cancel();
     _destinationController.removeListener(_onDestinationChanged);
     _destinationFocus.removeListener(_onDestinationFocusChanged);
     _destinationController.dispose();
@@ -102,69 +101,21 @@ class _RouteScreenState extends State<RouteScreen> {
     final query = _destinationController.text.trim();
     if (!mounted) return;
 
-    setState(() {
-      _showBookRideButton = query.isNotEmpty;
-      _destinationSuggestions = _buildDestinationSuggestions(query);
-    });
-  }
+    setState(() => _showBookRideButton = query.isNotEmpty);
 
-  List<Map<String, String>> _buildDestinationSuggestions(String query) {
-    if (query.isEmpty) return const [];
+    _suggestionDebounce?.cancel();
 
-    final normalizedQuery = query.toLowerCase();
-    final suggestions = <Map<String, String>>[];
-    final seenValues = <String>{};
-
-    bool matches(String value) => value.toLowerCase().contains(normalizedQuery);
-
-    void addSuggestion({
-      required String name,
-      required String subtitle,
-      required String value,
-    }) {
-      final cleanedValue = value.trim();
-      if (cleanedValue.isEmpty) return;
-
-      final key = cleanedValue.toLowerCase();
-      if (seenValues.contains(key)) return;
-
-      seenValues.add(key);
-      suggestions.add({
-        'name': name.trim().isEmpty ? cleanedValue : name.trim(),
-        'subtitle': subtitle.trim(),
-        'value': cleanedValue,
+    if (query.isEmpty) {
+      setState(() {
+        _loadingSuggestions = false;
+        _destinationSuggestions = [];
       });
+      return;
     }
 
-    for (final location in _savedLocations) {
-      final name = (location['name'] as String?) ?? '';
-      final subtitle = (location['subtitle'] as String?) ?? '';
-      if (matches(name) || matches(subtitle)) {
-        addSuggestion(name: name, subtitle: subtitle, value: name);
-      }
-    }
-
-    for (final location in _recentLocations) {
-      final name = (location['name'] as String?) ?? 'Destination';
-      final address = (location['address'] as String?) ?? '';
-      if (matches(name) || matches(address)) {
-        addSuggestion(
-          name: name,
-          subtitle: address,
-          value: address.isEmpty ? name : address,
-        );
-      }
-    }
-
-    for (final place in _knownPlaces) {
-      final name = place['name'] ?? '';
-      final subtitle = place['subtitle'] ?? '';
-      if (matches(name) || matches(subtitle)) {
-        addSuggestion(name: name, subtitle: subtitle, value: name);
-      }
-    }
-
-    return suggestions.take(6).toList();
+    _suggestionDebounce = Timer(const Duration(milliseconds: 280), () {
+      _fetchDestinationSuggestions(query);
+    });
   }
 
   void _applySuggestion(Map<String, String> suggestion) {
@@ -178,6 +129,21 @@ class _RouteScreenState extends State<RouteScreen> {
     _destinationFocus.unfocus();
   }
 
+  Future<void> _fetchDestinationSuggestions(String query) async {
+    final requestId = ++_latestSuggestionRequestId;
+
+    if (!mounted) return;
+    setState(() => _loadingSuggestions = true);
+
+    final suggestions = await _placesService.autocompletePlaces(query);
+    if (!mounted || requestId != _latestSuggestionRequestId) return;
+
+    setState(() {
+      _destinationSuggestions = suggestions;
+      _loadingSuggestions = false;
+    });
+  }
+
   void _onLocationsUpdated() {
     if (!mounted) return;
     _loadRecentLocations();
@@ -185,10 +151,15 @@ class _RouteScreenState extends State<RouteScreen> {
 
   Future<void> _getCurrentLocation() async {
     try {
-      final permission = await Geolocator.checkPermission();
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+
       if (permission != LocationPermission.always &&
           permission != LocationPermission.whileInUse) {
         setState(() {
+          _currentLocationText = 'Permission required';
           _loadingLocation = false;
         });
         return;
@@ -199,26 +170,38 @@ class _RouteScreenState extends State<RouteScreen> {
           accuracy: LocationAccuracy.medium,
         ),
       );
-      final placemarks = await geocoding.placemarkFromCoordinates(
-        position.latitude,
-        position.longitude,
-      );
+      String bestText = '';
 
-      if (placemarks.isEmpty) {
-        setState(() => _loadingLocation = false);
-        return;
+      try {
+        final placemarks = await geocoding.placemarkFromCoordinates(
+          position.latitude,
+          position.longitude,
+        );
+
+        if (placemarks.isNotEmpty) {
+          final place = placemarks.first;
+          bestText = [
+            place.street,
+            place.subLocality,
+            place.locality,
+          ].where((part) => part != null && part.trim().isNotEmpty).join(', ');
+        }
+      } catch (_) {}
+
+      if (bestText.isEmpty) {
+        final fallbackAddress = await _placesService.reverseGeocodeAddress(
+          latitude: position.latitude,
+          longitude: position.longitude,
+        );
+        if (fallbackAddress != null && fallbackAddress.trim().isNotEmpty) {
+          bestText = fallbackAddress.trim();
+        }
       }
-
-      final place = placemarks.first;
-      final bestText = [
-        place.street,
-        place.subLocality,
-        place.locality,
-      ].where((part) => part != null && part.trim().isNotEmpty).join(', ');
 
       if (!mounted) return;
       setState(() {
-        _currentLocationText = bestText.isEmpty ? 'Lagos Street' : bestText;
+        _currentLocationText =
+            bestText.isEmpty ? 'Current location' : bestText;
         _loadingLocation = false;
       });
     } catch (_) {
@@ -234,18 +217,12 @@ class _RouteScreenState extends State<RouteScreen> {
       if (!mounted) return;
       setState(() {
         _recentLocations = loaded;
-        _destinationSuggestions = _buildDestinationSuggestions(
-          _destinationController.text.trim(),
-        );
         _loadingRecents = false;
       });
     } catch (_) {
       if (!mounted) return;
       setState(() {
         _recentLocations = [];
-        _destinationSuggestions = _buildDestinationSuggestions(
-          _destinationController.text.trim(),
-        );
         _loadingRecents = false;
       });
     }
@@ -295,6 +272,10 @@ class _RouteScreenState extends State<RouteScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final showingSuggestions =
+        _destinationFocus.hasFocus &&
+        _destinationController.text.trim().isNotEmpty;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF2F2F4),
       appBar: AppBar(
@@ -319,92 +300,18 @@ class _RouteScreenState extends State<RouteScreen> {
         ),
       ),
       body: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 8, 12, 20),
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 22),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _pickupRow(),
             const SizedBox(height: 8),
             _destinationRow(),
-            if (_destinationFocus.hasFocus &&
-                _destinationController.text.trim().isNotEmpty) ...[
-              const SizedBox(height: 10),
-              _destinationSuggestionsCard(),
-              const SizedBox(height: 12),
-            ] else
-              const SizedBox(height: 22),
-            const Text(
-              'Saved Locations',
-              style: TextStyle(
-                fontSize: 30,
-                fontWeight: FontWeight.w500,
-                color: Color(0xFF2E313B),
-                letterSpacing: -0.3,
-              ),
-            ),
-            const SizedBox(height: 10),
-            ..._savedLocations.map(
-              (location) => _locationRow(
-                title: location['name'] as String,
-                subtitle: location['subtitle'] as String,
-                distance: location['distance'] as String,
-                icon: location['icon'] as IconData,
-                onTap: () => _openBookRide(location['name'] as String),
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Recent locations',
-              style: TextStyle(
-                fontSize: 30,
-                fontWeight: FontWeight.w500,
-                color: Color(0xFF2E313B),
-                letterSpacing: -0.3,
-              ),
-            ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             Expanded(
-              child: _loadingRecents
-                  ? const Center(
-                      child: SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.4,
-                          color: Color(0xFF1690F0),
-                        ),
-                      ),
-                    )
-                  : ListView(
-                      padding: EdgeInsets.zero,
-                      children: _recentLocations.isEmpty
-                          ? [
-                              _locationRow(
-                                title: 'Afemai Transport Company',
-                                subtitle: 'Dawson Road, Benin City',
-                                distance: '<1km',
-                                icon: Icons.location_on,
-                                onTap: () =>
-                                    _openBookRide('Afemai Transport Company'),
-                              ),
-                            ]
-                          : _recentLocations.map((location) {
-                              final address =
-                                  (location['address'] as String?) ?? '';
-                              final name =
-                                  (location['name'] as String?) ??
-                                  'Destination';
-                              return _locationRow(
-                                title: name,
-                                subtitle: address,
-                                distance: '<1km',
-                                icon: Icons.location_on,
-                                onTap: () => _openBookRide(
-                                  address.isEmpty ? name : address,
-                                ),
-                              );
-                            }).toList(),
-                    ),
+              child: showingSuggestions
+                  ? _destinationSuggestionsCard()
+                  : _savedAndRecentLocationsContent(),
             ),
             if (_showBookRideButton)
               Padding(
@@ -564,90 +471,120 @@ class _RouteScreenState extends State<RouteScreen> {
   }
 
   Widget _destinationSuggestionsCard() {
-    if (_destinationSuggestions.isEmpty) {
-      return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: const Color(0xFFE8E9EC),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFD7D9DF)),
-        ),
-        child: const Text(
-          'No matching places',
-          style: TextStyle(
-            color: Color(0xFF7A7F88),
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
+    if (_loadingSuggestions) {
+      return const Align(
+        alignment: Alignment.topCenter,
+        child: Padding(
+          padding: EdgeInsets.only(top: 12),
+          child: SizedBox(
+            width: 24,
+            height: 24,
+            child: CircularProgressIndicator(
+              strokeWidth: 2.4,
+              color: Color(0xFF1690F0),
+            ),
           ),
         ),
       );
     }
 
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: const Color(0xFFE8E9EC),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFD7D9DF)),
-      ),
-      child: ListView.separated(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: _destinationSuggestions.length,
-        separatorBuilder: (_, _) =>
-            const Divider(height: 1, color: Color(0xFFD7D9DF)),
-        itemBuilder: (context, index) {
-          final suggestion = _destinationSuggestions[index];
-          return InkWell(
-            onTap: () => _applySuggestion(suggestion),
-            borderRadius: BorderRadius.circular(12),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.location_on,
-                    size: 18,
-                    color: Color(0xFF5C6068),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          suggestion['name'] ?? '',
-                          style: const TextStyle(
-                            color: Color(0xFF2E313B),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        if ((suggestion['subtitle'] ?? '').isNotEmpty)
-                          Text(
-                            suggestion['subtitle'] ?? '',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Color(0xFF7F848D),
-                              fontSize: 12,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  const Icon(
-                    Icons.north_west_rounded,
-                    size: 16,
-                    color: Color(0xFF8B909A),
-                  ),
-                ],
-              ),
+    if (_destinationSuggestions.isEmpty) {
+      return Align(
+        alignment: Alignment.topCenter,
+        child: Container(
+          width: double.infinity,
+          margin: const EdgeInsets.only(top: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFE8E9EC),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFD7D9DF)),
+          ),
+          child: const Text(
+            'No matching places from Google Maps',
+            style: TextStyle(
+              color: Color(0xFF7A7F88),
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
             ),
-          );
-        },
+          ),
+        ),
+      );
+    }
+
+    return Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxHeight: 300),
+        child: Container(
+          width: double.infinity,
+          margin: const EdgeInsets.only(top: 6),
+          decoration: BoxDecoration(
+            color: const Color(0xFFE8E9EC),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFD7D9DF)),
+          ),
+          child: ListView.separated(
+            padding: EdgeInsets.zero,
+            itemCount: _destinationSuggestions.length,
+            separatorBuilder: (_, _) =>
+                const Divider(height: 1, color: Color(0xFFD7D9DF)),
+            itemBuilder: (context, index) {
+              final suggestion = _destinationSuggestions[index];
+              return InkWell(
+                onTap: () => _applySuggestion(suggestion),
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.location_on,
+                        size: 18,
+                        color: Color(0xFF5C6068),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              suggestion['name'] ?? '',
+                              style: const TextStyle(
+                                color: Color(0xFF2E313B),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            if ((suggestion['subtitle'] ?? '').isNotEmpty)
+                              Text(
+                                suggestion['subtitle'] ?? '',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: Color(0xFF7F848D),
+                                  fontSize: 12,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Icon(
+                        Icons.north_west_rounded,
+                        size: 16,
+                        color: Color(0xFF8B909A),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
       ),
     );
   }
@@ -662,17 +599,29 @@ class _RouteScreenState extends State<RouteScreen> {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(18),
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withAlpha(14),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
           child: Row(
             children: [
               Container(
-                width: 34,
-                height: 34,
+                width: 36,
+                height: 36,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE3E3E5),
+                  color: const Color(0xFFE9EAEC),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(icon, color: const Color(0xFF4A4D55), size: 18),
@@ -687,10 +636,10 @@ class _RouteScreenState extends State<RouteScreen> {
                       style: const TextStyle(
                         color: Color(0xFF2E313B),
                         fontSize: 15,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
-                    const SizedBox(height: 1),
+                    const SizedBox(height: 2),
                     Text(
                       subtitle,
                       style: const TextStyle(
@@ -709,13 +658,87 @@ class _RouteScreenState extends State<RouteScreen> {
                 style: const TextStyle(
                   color: Color(0xFF8C9097),
                   fontSize: 13,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _savedAndRecentLocationsContent() {
+    if (_loadingRecents) {
+      return const Center(
+        child: SizedBox(
+          width: 24,
+          height: 24,
+          child: CircularProgressIndicator(
+            strokeWidth: 2.4,
+            color: Color(0xFF1690F0),
+          ),
+        ),
+      );
+    }
+
+    return ListView(
+      padding: EdgeInsets.zero,
+      children: [
+        const Text(
+          'Saved Locations',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF2E313B),
+            letterSpacing: -0.1,
+          ),
+        ),
+        const SizedBox(height: 10),
+        ..._savedLocations.map(
+          (location) => _locationRow(
+            title: location['name'] as String,
+            subtitle: location['subtitle'] as String,
+            distance: location['distance'] as String,
+            icon: location['icon'] as IconData,
+            onTap: () => _openBookRide(location['name'] as String),
+          ),
+        ),
+        const SizedBox(height: 10),
+        const Text(
+          'Recent locations',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF2E313B),
+            letterSpacing: -0.1,
+          ),
+        ),
+        const SizedBox(height: 10),
+        ...(_recentLocations.isEmpty
+            ? [
+                _locationRow(
+                  title: 'No recent locations',
+                  subtitle: 'Your searched destinations will appear here',
+                  distance: '',
+                  icon: Icons.history_rounded,
+                  onTap: () {},
+                ),
+              ]
+            : _recentLocations.map((location) {
+                final address = (location['address'] as String?) ?? '';
+                final name = (location['name'] as String?) ?? 'Destination';
+                return _locationRow(
+                  title: name,
+                  subtitle: address,
+                  distance: '<1km',
+                  icon: Icons.location_on,
+                  onTap: () => _openBookRide(
+                    address.isEmpty ? name : address,
+                  ),
+                );
+              }).toList()),
+      ],
     );
   }
 }
