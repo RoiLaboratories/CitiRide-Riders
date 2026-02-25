@@ -1,11 +1,14 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart' as geocoding;
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../services/google_maps_places_service.dart';
 
 class HomeTopBar extends StatefulWidget {
   const HomeTopBar({
@@ -25,6 +28,7 @@ class _HomeTopBarState extends State<HomeTopBar> {
   bool _isLoading = true;
   String? _profileAvatarAsset;
   Uint8List? _profileAvatarBytes;
+  final GoogleMapsPlacesService _placesService = GoogleMapsPlacesService();
 
   Uint8List? _decodeAvatarBase64(String value) {
     if (value.trim().isEmpty) return null;
@@ -88,13 +92,16 @@ class _HomeTopBarState extends State<HomeTopBar> {
 
   Future<void> _getCurrentLocation() async {
     try {
-      // Check for location permission first
       LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+
       if (permission != LocationPermission.whileInUse &&
           permission != LocationPermission.always) {
         setState(() {
           _locationText = 'Permission Required';
-          _currentAddress = 'Set location to enable';
+          _currentAddress = 'Allow location in browser settings';
           _isLoading = false;
         });
         return;
@@ -106,38 +113,67 @@ class _HomeTopBarState extends State<HomeTopBar> {
         ),
       );
 
-      // Use geocoding package with the alias - CORRECT METHOD
-      List<geocoding.Placemark> placemarks = await geocoding.placemarkFromCoordinates(
-        position.latitude,
-        position.longitude,
-      );
+      if (!mounted) return;
+      _locationText = 'Current Location';
+      _currentAddress = 'Current location';
+      _isLoading = false;
 
-      if (placemarks.isNotEmpty) {
-        geocoding.Placemark place = placemarks.first;
+      try {
+        final placemarks = await geocoding.placemarkFromCoordinates(
+          position.latitude,
+          position.longitude,
+        );
+
+        if (!mounted || placemarks.isEmpty) {
+          setState(() {});
+          return;
+        }
+
+        final place = placemarks.first;
         setState(() {
-          _locationText = place.locality ?? place.subAdministrativeArea ?? 'Unknown';
+          _locationText =
+              place.locality ?? place.subAdministrativeArea ?? 'Current Location';
           _currentAddress = [
             if (place.street != null && place.street!.isNotEmpty) place.street,
-            if (place.subLocality != null && place.subLocality!.isNotEmpty) place.subLocality,
+            if (place.subLocality != null && place.subLocality!.isNotEmpty)
+              place.subLocality,
           ].where((part) => part != null).join(', ');
-          
+
           if (_currentAddress.isEmpty) {
             _currentAddress = _locationText;
           }
           _isLoading = false;
         });
-      } else {
+      } catch (_) {
+        if (!mounted) return;
+
+        final googleAddress = await _placesService.reverseGeocodeAddress(
+          latitude: position.latitude,
+          longitude: position.longitude,
+        );
+
         setState(() {
-          _locationText = 'Current Location';
-          _currentAddress = '${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)}';
+          if (kIsWeb) {
+            _locationText = 'Browser Location';
+          }
+          _currentAddress =
+              (googleAddress != null && googleAddress.trim().isNotEmpty)
+              ? googleAddress.trim()
+              : 'Current location';
           _isLoading = false;
         });
       }
     } catch (e) {
       debugPrint('Error getting location: $e');
+      final lower = e.toString().toLowerCase();
+      final permissionError =
+          lower.contains('permission') || lower.contains('denied');
+
       setState(() {
-        _locationText = 'Location Error';
-        _currentAddress = 'Unable to get location';
+        _locationText = permissionError ? 'Permission Required' : 'Location Error';
+        _currentAddress = permissionError
+            ? 'Allow location in browser settings'
+            : 'Unable to get location';
         _isLoading = false;
       });
     }

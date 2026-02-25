@@ -73,7 +73,7 @@ class _RideScreenState extends State<RideScreen> {
       backgroundColor: const Color(0xFFF2F2F4),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 118),
+          padding: const EdgeInsets.fromLTRB(16, 36, 16, 118),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -104,8 +104,15 @@ class _RideScreenState extends State<RideScreen> {
               ),
               const SizedBox(height: 20),
               Expanded(
-                child: ListView(
-                  children: [_rideCard(rides: rides, upcoming: _showUpcoming)],
+                child: ListView.separated(
+                  itemCount: rides.length,
+                  separatorBuilder: (_, index) => const SizedBox(height: 10),
+                  itemBuilder: (context, index) {
+                    return _rideRow(
+                      ride: rides[index],
+                      upcoming: _showUpcoming,
+                    );
+                  },
                 ),
               ),
             ],
@@ -152,32 +159,6 @@ class _RideScreenState extends State<RideScreen> {
             fontWeight: FontWeight.w500,
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _rideCard({required List<_RideItem> rides, required bool upcoming}) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFBFBFC),
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(14),
-            blurRadius: 14,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          for (int i = 0; i < rides.length; i++)
-            Padding(
-              padding: EdgeInsets.only(bottom: i == rides.length - 1 ? 0 : 8),
-              child: _rideRow(ride: rides[i], upcoming: upcoming),
-            ),
-        ],
       ),
     );
   }
@@ -309,145 +290,167 @@ class _RideCompletedDetailsScreen extends StatelessWidget {
 
   final _RideItem ride;
 
+  void _rebook(BuildContext context) {
+    Navigator.pushNamed(
+      context,
+      '/route',
+      arguments: {'prefilledDestination': ride.route},
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF2F2F4),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(18, 8, 18, 26),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              IconButton(
-                onPressed: () => Navigator.pop(context),
-                icon: const Icon(
-                  Icons.arrow_back_ios_new_rounded,
-                  color: Color(0xFF2D2F3A),
-                  size: 30,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  CircleAvatar(
-                    radius: 24,
-                    backgroundColor: const Color(0xFFF6DCE8),
-                    child: ClipOval(
-                      child: Image.asset(
-                        'images/profile.png',
-                        width: 42,
-                        height: 42,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Ride Completed',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF2F323D),
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        ride.date.replaceFirst('Sun, ', ''),
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: Color(0xFF9A9CA1),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(26),
-                child: SizedBox(
-                  height: 220,
-                  width: double.infinity,
-                  child: Image.asset('images/map.png', fit: BoxFit.cover),
-                ),
-              ),
-              const SizedBox(height: 22),
-              _routePoint(
-                label: 'Lagos Street, Benin City',
-                color: const Color(0xFF1690F0),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(left: 8),
-                child: Container(
-                  height: 28,
-                  width: 2,
-                  color: const Color(0xFFB8BBC1),
-                ),
-              ),
-              _routePoint(
-                label: 'Ring Road Bus Terminal, Benin City',
-                color: const Color(0xFFD21DDB),
-              ),
-              const SizedBox(height: 22),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF4F4F5),
-                  borderRadius: BorderRadius.circular(24),
-                ),
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(18, 8, 18, 14),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Payment',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF2F323D),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        color: Color(0xFF2D2F3A),
+                        size: 30,
                       ),
                     ),
-                    const SizedBox(height: 14),
-                    _paymentRow(
-                      left: 'Cash Payment',
-                      right: '\u20A61,500.00',
-                      highlight: false,
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 24,
+                          backgroundColor: const Color(0xFFF6DCE8),
+                          child: ClipOval(
+                            child: Image.asset(
+                              'images/profile.png',
+                              width: 42,
+                              height: 42,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Ride Completed',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF2F323D),
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              ride.date.replaceFirst('Sun, ', ''),
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: Color(0xFF9A9CA1),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 12),
-                    const Divider(height: 1),
-                    const SizedBox(height: 12),
-                    _paymentRow(
-                      left: 'Total',
-                      right: '\u20A61,500.00',
-                      highlight: true,
+                    const SizedBox(height: 16),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(26),
+                      child: SizedBox(
+                        height: 220,
+                        width: double.infinity,
+                        child: Image.asset('images/map.png', fit: BoxFit.cover),
+                      ),
+                    ),
+                    const SizedBox(height: 22),
+                    _routePoint(
+                      label: 'Lagos Street, Benin City',
+                      color: const Color(0xFF1690F0),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 8),
+                      child: Container(
+                        height: 28,
+                        width: 2,
+                        color: const Color(0xFFB8BBC1),
+                      ),
+                    ),
+                    _routePoint(
+                      label: 'Ring Road Bus Terminal, Benin City',
+                      color: const Color(0xFFD21DDB),
+                    ),
+                    const SizedBox(height: 22),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF4F4F5),
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Payment',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF2F323D),
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          _paymentRow(
+                            left: 'Cash Payment',
+                            right: '\u20A61,500.00',
+                            highlight: false,
+                          ),
+                          const SizedBox(height: 12),
+                          const Divider(height: 1),
+                          const SizedBox(height: 12),
+                          _paymentRow(
+                            left: 'Total',
+                            right: '\u20A61,500.00',
+                            highlight: true,
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 22),
-              Container(
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 8, 18, 24),
+              child: SizedBox(
                 width: double.infinity,
-                height: 60,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFD8D9DB),
-                  borderRadius: BorderRadius.circular(30),
-                ),
-                alignment: Alignment.center,
-                child: const Text(
-                  'Rebook',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Color(0xFFA7A9AD),
-                    fontWeight: FontWeight.w500,
+                height: 56,
+                child: ElevatedButton(
+                  onPressed: () => _rebook(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1690F0),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                  ),
+                  child: const Text(
+                    'Rebook',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

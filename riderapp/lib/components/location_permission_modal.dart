@@ -16,7 +16,8 @@ class LocationPermissionModal extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(20, 120, 20, 20),
+      width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(12, 120, 12, 20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(25),
@@ -54,9 +55,9 @@ class LocationPermissionModal extends StatelessWidget {
 
           /// Main content
           Padding(
-            padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+            padding: const EdgeInsets.fromLTRB(18, 32, 18, 24),
             child: Column(
-              mainAxisSize: MainAxisSize.min, 
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   "Set your location",
