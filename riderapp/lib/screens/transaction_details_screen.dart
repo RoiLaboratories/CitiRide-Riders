@@ -14,7 +14,8 @@ class TransactionDetailsScreen extends StatelessWidget {
         (args['title'] as String?) ??
         (isCredit ? 'Wallet Top Up' : 'Payment to Ahmed');
     final String amount =
-        (args['amount'] as String?) ?? (isCredit ? '+₦435.54' : '-₦435.54');
+        (args['amount'] as String?) ??
+        (isCredit ? '+\u20A6435.54' : '-\u20A6435.54');
     final String date = (args['date'] as String?) ?? 'Fri, 21 Jun 2025';
     final String time = (args['time'] as String?) ?? '2:30 PM';
     final String name =
@@ -24,9 +25,8 @@ class TransactionDetailsScreen extends StatelessWidget {
         (args['accountNumber'] as String?) ?? '3748594032';
     final String bank = (args['bank'] as String?) ?? 'UBA';
 
-    final Color amountColor = isCredit
-        ? const Color(0xFF16B316)
-        : const Color(0xFFFF3B3B);
+    final Color amountColor =
+        isCredit ? const Color(0xFF16B316) : const Color(0xFFFF3B3B);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF2F2F4),
@@ -107,18 +107,37 @@ class TransactionDetailsScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 32),
-              _detailRow('Name', name),
-              if (isCredit) ...[
-                const SizedBox(height: 22),
-                _detailRow('Account number', accountNumber),
-                const SizedBox(height: 22),
-                _detailRow('Bank', bank),
-              ],
-              const SizedBox(height: 22),
-              _detailRow('Date', date),
-              const SizedBox(height: 22),
-              _detailRow('Time', time),
+              const SizedBox(height: 30),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(22),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withAlpha(12),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    _detailRow('Name', name),
+                    if (isCredit) ...[
+                      const SizedBox(height: 18),
+                      _detailRow('Account number', accountNumber),
+                      const SizedBox(height: 18),
+                      _detailRow('Bank', bank),
+                    ],
+                    const SizedBox(height: 18),
+                    _detailRow('Date', date),
+                    const SizedBox(height: 18),
+                    _detailRow('Time', time),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
