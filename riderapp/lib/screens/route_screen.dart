@@ -31,6 +31,7 @@ class _RouteScreenState extends State<RouteScreen> {
   bool _isBooking = false;
   bool _appliedRouteArgs = false;
   _RouteInputField _activeField = _RouteInputField.none;
+  _RouteInputField _suggestionsForField = _RouteInputField.none;
 
   List<Map<String, dynamic>> _savedLocations = [];
   List<Map<String, dynamic>> _recentLocations = [];
@@ -154,6 +155,7 @@ class _RouteScreenState extends State<RouteScreen> {
       setState(() {
         _loadingSuggestions = false;
         _suggestions = [];
+        _suggestionsForField = _RouteInputField.none;
       });
       return;
     }
@@ -172,6 +174,7 @@ class _RouteScreenState extends State<RouteScreen> {
     setState(() {
       _activeField = field;
       _loadingSuggestions = true;
+      _suggestionsForField = field;
     });
 
     final suggestions = await _placesService.autocompletePlaces(
@@ -182,16 +185,22 @@ class _RouteScreenState extends State<RouteScreen> {
     setState(() {
       _suggestions = suggestions;
       _loadingSuggestions = false;
+      _suggestionsForField = field;
     });
   }
 
-  Future<void> _applySuggestion(Map<String, String> suggestion) async {
-    final value = (suggestion['value'] ?? '').trim();
+  Future<void> _applySuggestion(
+    Map<String, String> suggestion, {
+    required _RouteInputField targetField,
+  }) async {
+    final value =
+        (suggestion['value'] ?? suggestion['name'] ?? suggestion['subtitle'] ?? '')
+            .trim();
     if (value.isEmpty) return;
 
-    final applyToPickup = _activeField == _RouteInputField.pickup;
+    final applyToPickup = targetField == _RouteInputField.pickup;
 
-    if (_activeField == _RouteInputField.pickup) {
+    if (applyToPickup) {
       _pickupController.text = value;
       _pickupController.selection = TextSelection.fromPosition(
         TextPosition(offset: _pickupController.text.length),
@@ -207,25 +216,40 @@ class _RouteScreenState extends State<RouteScreen> {
 
     setState(() {
       _activeField = _RouteInputField.none;
+      _suggestionsForField = _RouteInputField.none;
       _showBookRideButton = _destinationController.text.trim().isNotEmpty;
       _suggestions = [];
     });
 
     final coordinates = await _resolveSuggestionLatLng(suggestion, fallbackValue: value);
-    if (!mounted || coordinates == null) return;
+    if (!mounted) return;
 
     final latestValue = applyToPickup
         ? _pickupController.text.trim()
         : _destinationController.text.trim();
     if (latestValue != value) return;
 
-    setState(() {
-      if (applyToPickup) {
-        _pickupCoordinates = coordinates;
-      } else {
-        _destinationCoordinates = coordinates;
-      }
-    });
+    if (coordinates != null) {
+      setState(() {
+        if (applyToPickup) {
+          _pickupCoordinates = coordinates;
+        } else {
+          _destinationCoordinates = coordinates;
+        }
+      });
+    }
+
+    if (!applyToPickup) {
+      final pickupLabel = _pickupController.text.trim();
+      final resolvedPickupCoordinates =
+          _pickupCoordinates ?? await _resolveAddressToLatLng(pickupLabel);
+
+      await _openBookRide(
+        value,
+        pickupCoordinates: resolvedPickupCoordinates,
+        destinationCoordinates: coordinates ?? _destinationCoordinates,
+      );
+    }
   }
 
   Future<gmaps.LatLng?> _resolveSuggestionLatLng(
@@ -790,8 +814,16 @@ class _RouteScreenState extends State<RouteScreen> {
                 const Divider(height: 1, color: Color(0xFFD7D9DF)),
             itemBuilder: (context, index) {
               final suggestion = _suggestions[index];
+              final targetField = _suggestionsForField == _RouteInputField.none
+                  ? (_activeField == _RouteInputField.none
+                        ? _RouteInputField.destination
+                        : _activeField)
+                  : _suggestionsForField;
               return InkWell(
-                onTap: () => _applySuggestion(suggestion),
+                onTap: () => _applySuggestion(
+                  suggestion,
+                  targetField: targetField,
+                ),
                 borderRadius: BorderRadius.circular(12),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(

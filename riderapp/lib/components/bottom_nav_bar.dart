@@ -20,41 +20,43 @@ class BottomNavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return SafeArea(
       top: false,
-      child: Container(
-        width: 208,
-        margin: const EdgeInsets.symmetric(horizontal: 60, vertical: 4),
-        height: 72,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        decoration: BoxDecoration(
-          color: const Color(0xFF2C2F36),
-          borderRadius: BorderRadius.circular(36),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 90),
-              blurRadius: 24,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            _buildNavItem(
-              index: 0,
-              label: 'Home',
-              iconAsset: 'images/home.png',
-            ),
-            _buildNavItem(
-              index: 1,
-              label: 'Ride',
-              iconAsset: 'images/ride.png',
-            ),
-            _buildNavItem(
-              index: 2,
-              label: 'Wallet',
-              iconAsset: 'images/wallet.png',
-            ),
-          ],
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        child: Container(
+          width: 246,
+          height: 64,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: BoxDecoration(
+            color: const Color(0xFF252A3A),
+            borderRadius: BorderRadius.circular(999),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withAlpha(70),
+                blurRadius: 16,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildNavItem(
+                index: 0,
+                label: 'Home',
+                iconAsset: 'images/home.png',
+              ),
+              _buildNavItem(
+                index: 1,
+                label: 'Ride',
+                iconAsset: 'images/ride.png',
+              ),
+              _buildNavItem(
+                index: 2,
+                label: 'Wallet',
+                iconAsset: 'images/wallet.png',
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -67,44 +69,37 @@ class BottomNavBar extends StatelessWidget {
   }) {
     final bool isSelected = currentIndex == index;
 
-    return GestureDetector(
+    return InkWell(
       onTap: () => _onItemTapped(index),
-      behavior: HitTestBehavior.opaque,
+      borderRadius: BorderRadius.circular(22),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 220),
-        curve: Curves.easeOut,
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOutCubic,
+        height: 48,
         padding: EdgeInsets.symmetric(
-          horizontal: isSelected ? 10 : 8,
-          vertical: 4,
+          horizontal: isSelected ? 12 : 10,
+          vertical: 6,
         ),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF0A84FF) : Colors.transparent,
-          borderRadius: BorderRadius.circular(35),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: const Color(0xFF0A84FF).withValues(alpha: 120),
-                    blurRadius: 4,
-                  ),
-                ]
-              : null,
+          color: isSelected ? const Color(0xFF1890F4) : Colors.transparent,
+          borderRadius: BorderRadius.circular(999),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Image.asset(
               iconAsset,
-              height: 50,
-              width: 50,
-              color: isSelected
-                  ? Colors.white
-                  : Colors.white.withValues(alpha: 180),
+              height: 34,
+              width: 34,
+              color: Colors.white.withAlpha(isSelected ? 255 : 205),
+              colorBlendMode: BlendMode.srcIn,
             ),
             if (isSelected) ...[
+              const SizedBox(width: 8),
               Text(
                 label,
                 style: GoogleFonts.poppins(
-                  fontSize: 14,
+                  fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: Colors.white,
                 ),

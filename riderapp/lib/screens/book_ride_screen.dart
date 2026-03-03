@@ -51,10 +51,6 @@ class _BookRideScreenState extends State<BookRideScreen> {
       gmaps.BitmapDescriptor.defaultMarkerWithHue(
         gmaps.BitmapDescriptor.hueViolet,
       );
-  gmaps.BitmapDescriptor _carMarkerIcon =
-      gmaps.BitmapDescriptor.defaultMarkerWithHue(
-        gmaps.BitmapDescriptor.hueOrange,
-      );
 
   String _fromLabel = 'Current location';
   String _toLabel = 'Destination';
@@ -145,18 +141,11 @@ class _BookRideScreenState extends State<BookRideScreen> {
         width: 46,
         height: 46,
       );
-      final carMarker = await gmaps.BitmapDescriptor.asset(
-        const ImageConfiguration(size: Size(46, 22)),
-        'images/car.png',
-        width: 46,
-        height: 22,
-      );
 
       if (!mounted) return;
       setState(() {
         _pickupMarkerIcon = pickupMarker;
         _destinationMarkerIcon = destinationMarker;
-        _carMarkerIcon = carMarker;
       });
     } catch (_) {}
   }
@@ -403,49 +392,8 @@ class _BookRideScreenState extends State<BookRideScreen> {
     );
   }
 
-  int _estimatedEtaMinutes() {
-    final meters = Geolocator.distanceBetween(
-      _fromLatLng.latitude,
-      _fromLatLng.longitude,
-      _toLatLng.latitude,
-      _toLatLng.longitude,
-    );
-    final minutes = ((meters / 1000) / 30 * 60).round();
-    return minutes.clamp(3, 45);
-  }
-
-  Widget _mapMiniPill({
-    required String text,
-    required Color color,
-    required bool rightAligned,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(28),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Text(
-        text,
-        textAlign: rightAligned ? TextAlign.right : TextAlign.left,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-
   bool _handleSheetNotification(DraggableScrollableNotification notification) {
-    if (_flowState == RideFlowState.chat && notification.extent <= 0.28) {
+    if (_flowState == RideFlowState.chat && notification.extent <= 0.34) {
       _closeRideFlowToRides();
       return true;
     }
@@ -454,7 +402,7 @@ class _BookRideScreenState extends State<BookRideScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final minSize = _flowState == RideFlowState.chat ? 0.22 : 0.35;
+    final minSize = _flowState == RideFlowState.chat ? 0.30 : 0.35;
     final initialSize = _flowState == RideFlowState.chat ? 0.82 : 0.6;
 
     return Scaffold(
@@ -463,24 +411,6 @@ class _BookRideScreenState extends State<BookRideScreen> {
         child: Stack(
           children: [
             _buildRideMap(),
-            Positioned(
-              left: 24,
-              top: 132,
-              child: _mapMiniPill(
-                text: '${_estimatedEtaMinutes()} mins',
-                color: const Color(0xFF1690F0),
-                rightAligned: false,
-              ),
-            ),
-            Positioned(
-              right: 34,
-              top: 94,
-              child: _mapMiniPill(
-                text: '\u20A63,500',
-                color: const Color(0xFFD21DDB),
-                rightAligned: true,
-              ),
-            ),
             Positioned(
               right: 18,
               bottom: 228,
@@ -524,45 +454,51 @@ class _BookRideScreenState extends State<BookRideScreen> {
             ),
             NotificationListener<DraggableScrollableNotification>(
               onNotification: _handleSheetNotification,
-              child: DraggableScrollableSheet(
-                initialChildSize: initialSize,
-                minChildSize: minSize,
-                maxChildSize: 0.9,
-                builder: (context, scrollController) {
-                  return AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 280),
-                    switchInCurve: Curves.easeOut,
-                    switchOutCurve: Curves.easeIn,
-                    transitionBuilder: (child, animation) {
-                      final curved = CurvedAnimation(
-                        parent: animation,
-                        curve: Curves.easeOutCubic,
-                        reverseCurve: Curves.easeInCubic,
-                      );
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 14),
+                child: DraggableScrollableSheet(
+                  key: ValueKey(
+                    _flowState == RideFlowState.chat ? 'sheet_chat' : 'sheet_main',
+                  ),
+                  initialChildSize: initialSize,
+                  minChildSize: minSize,
+                  maxChildSize: 0.9,
+                  builder: (context, scrollController) {
+                    return AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 280),
+                      switchInCurve: Curves.easeOut,
+                      switchOutCurve: Curves.easeIn,
+                      transitionBuilder: (child, animation) {
+                        final curved = CurvedAnimation(
+                          parent: animation,
+                          curve: Curves.easeOutCubic,
+                          reverseCurve: Curves.easeInCubic,
+                        );
 
-                      return FadeTransition(
-                        opacity: curved,
-                        child: SlideTransition(
-                          position: Tween<Offset>(
-                            begin: const Offset(0, 0.08),
-                            end: Offset.zero,
-                          ).animate(curved),
-                          child: child,
-                        ),
-                      );
-                    },
-                    layoutBuilder: (currentChild, previousChildren) {
-                      return Stack(
-                        alignment: Alignment.bottomCenter,
-                        children: [
-                          ...previousChildren,
-                          if (currentChild != null) currentChild,
-                        ],
-                      );
-                    },
-                    child: _buildSheetContent(scrollController),
-                  );
-                },
+                        return FadeTransition(
+                          opacity: curved,
+                          child: SlideTransition(
+                            position: Tween<Offset>(
+                              begin: const Offset(0, 0.08),
+                              end: Offset.zero,
+                            ).animate(curved),
+                            child: child,
+                          ),
+                        );
+                      },
+                      layoutBuilder: (currentChild, previousChildren) {
+                        return Stack(
+                          alignment: Alignment.bottomCenter,
+                          children: [
+                            ...previousChildren,
+                            if (currentChild != null) currentChild,
+                          ],
+                        );
+                      },
+                      child: _buildSheetContent(scrollController),
+                    );
+                  },
+                ),
               ),
             ),
             if (_isRefreshingRoute)
@@ -643,9 +579,6 @@ class _BookRideScreenState extends State<BookRideScreen> {
     int split = (points.length / 2).round();
     if (split < 2) split = 2;
     if (split >= points.length) split = points.length - 1;
-    final carIndex =
-        (points.length * 0.26).round().clamp(0, points.length - 1);
-    final carLatLng = points[carIndex];
 
     final firstSegment = points.sublist(0, split);
     final secondSegment = points.sublist(split - 1);
@@ -693,8 +626,8 @@ class _BookRideScreenState extends State<BookRideScreen> {
             markers: [
               fm.Marker(
                 point: from,
-                width: 46,
-                height: 46,
+                width: 52,
+                height: 52,
                 child: Image.asset(
                   'images/location_pointer.png',
                   fit: BoxFit.contain,
@@ -706,15 +639,6 @@ class _BookRideScreenState extends State<BookRideScreen> {
                 height: 44,
                 child: Image.asset(
                   'images/destination_pointer.png',
-                  fit: BoxFit.contain,
-                ),
-              ),
-              fm.Marker(
-                point: osm.LatLng(carLatLng.latitude, carLatLng.longitude),
-                width: 44,
-                height: 22,
-                child: Image.asset(
-                  'images/car.png',
                   fit: BoxFit.contain,
                 ),
               ),
@@ -759,15 +683,6 @@ class _BookRideScreenState extends State<BookRideScreen> {
           infoWindow: gmaps.InfoWindow(
             title: 'Destination',
             snippet: _toLabel,
-          ),
-        ),
-        gmaps.Marker(
-          markerId: const gmaps.MarkerId('car'),
-          position: carLatLng,
-          icon: _carMarkerIcon,
-          anchor: const Offset(0.5, 0.5),
-          infoWindow: const gmaps.InfoWindow(
-            title: 'Driver',
           ),
         ),
       },

@@ -1,5 +1,4 @@
 import 'dart:ui';
-import 'dart:convert';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
@@ -42,8 +41,6 @@ class _HomeScreenState extends State<HomeScreen> {
   String _drawerName = 'Rider';
   String _drawerUsername = '@user';
   String _drawerPhone = _defaultNigerianPhone;
-  String? _drawerAvatarAsset;
-  Uint8List? _drawerAvatarBytes;
   int _locationRefreshSeed = 0;
   int _profileRefreshSeed = 0;
   bool _isDrawerOpen = false;
@@ -53,15 +50,6 @@ class _HomeScreenState extends State<HomeScreen> {
       gmaps.BitmapDescriptor.defaultMarkerWithHue(
         gmaps.BitmapDescriptor.hueAzure,
       );
-
-  Uint8List? _decodeAvatarBase64(String value) {
-    if (value.trim().isEmpty) return null;
-    try {
-      return base64Decode(value);
-    } catch (_) {
-      return null;
-    }
-  }
 
   // ---------------- INIT ----------------
 
@@ -141,9 +129,6 @@ class _HomeScreenState extends State<HomeScreen> {
     final name = (prefs.getString('profile_name') ?? '').trim();
     final username = (prefs.getString('profile_username') ?? '').trim();
     final phone = (prefs.getString('profile_phone') ?? '').trim();
-    final avatarAsset = (prefs.getString('profile_avatar_asset') ?? '').trim();
-    final avatarBase64 = (prefs.getString('profile_avatar_base64') ?? '')
-        .trim();
     final firebasePhone = FirebaseAuth.instance.currentUser?.phoneNumber ?? '';
 
     if (!mounted) return;
@@ -154,8 +139,6 @@ class _HomeScreenState extends State<HomeScreen> {
       _drawerPhone = phone.isNotEmpty
           ? phone
           : (firebasePhone.isNotEmpty ? firebasePhone : _defaultNigerianPhone);
-      _drawerAvatarAsset = avatarAsset.isNotEmpty ? avatarAsset : null;
-      _drawerAvatarBytes = _decodeAvatarBase64(avatarBase64);
     });
   }
 
@@ -187,16 +170,6 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!mounted) return;
 
     Navigator.pushNamedAndRemoveUntil(context, '/welcome', (route) => false);
-  }
-
-  ImageProvider? _getDrawerAvatarProvider() {
-    if (_drawerAvatarBytes != null && _drawerAvatarBytes!.isNotEmpty) {
-      return MemoryImage(_drawerAvatarBytes!);
-    }
-    if (_drawerAvatarAsset != null && _drawerAvatarAsset!.trim().isNotEmpty) {
-      return AssetImage(_drawerAvatarAsset!);
-    }
-    return null;
   }
 
   Widget _drawerMenuTile({
@@ -271,14 +244,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     CircleAvatar(
                       radius: 32,
                       backgroundColor: const Color(0xFFF6DCE8),
-                      backgroundImage: _getDrawerAvatarProvider(),
-                      child: _getDrawerAvatarProvider() == null
-                          ? const Icon(
-                              Icons.person,
-                              size: 36,
-                              color: Color(0xFF50525C),
-                            )
-                          : null,
+                      backgroundImage: const AssetImage('images/profile.png'),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -548,6 +514,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final topInset = MediaQuery.of(context).padding.top;
+    final bottomInset = MediaQuery.of(context).padding.bottom;
+
     return Scaffold(
       key: _scaffoldKey,
       drawerEnableOpenDragGesture: false,
@@ -570,13 +539,25 @@ class _HomeScreenState extends State<HomeScreen> {
           /// TOP BAR
           if (_currentIndex != 2 && _currentIndex != 1) // hide in Wallet
             Positioned(
-              top: 50,
-              left: 20,
-              right: 20,
-              child: HomeTopBar(
-                onAvatarTap: _openProfileDrawer,
-                profileRefreshSeed: _profileRefreshSeed,
-                locationRefreshSeed: _locationRefreshSeed,
+              top: topInset + 18,
+              left: 16,
+              right: 16,
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(28),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withAlpha(36),
+                      blurRadius: 18,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: HomeTopBar(
+                  onAvatarTap: _openProfileDrawer,
+                  profileRefreshSeed: _profileRefreshSeed,
+                  locationRefreshSeed: _locationRefreshSeed,
+                ),
               ),
             ),
 
@@ -585,14 +566,14 @@ class _HomeScreenState extends State<HomeScreen> {
             Positioned(
               left: 16,
               right: 16,
-              bottom: 112,
-              top: 150,
+              bottom: 86 + bottomInset,
+              top: topInset + 82,
               child: DraggableScrollableSheet(
-                initialChildSize: 0.19,
-                minChildSize: 0.19,
+                initialChildSize: 0.16,
+                minChildSize: 0.16,
                 maxChildSize: 0.82,
                 snap: true,
-                snapSizes: const [0.19, 0.60],
+                snapSizes: const [0.16, 0.60],
                 builder: (context, scrollController) {
                   return HomeModalSheet(scrollController: scrollController);
                 },
@@ -601,9 +582,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
           /// BOTTOM NAV BAR
           Positioned(
-            left: 20,
-            right: 20,
-            bottom: 22,
+            left: 0,
+            right: 0,
+            bottom: bottomInset > 0 ? 10 : 16,
             child: BottomNavBar(
               currentIndex: _currentIndex,
               onTabChanged: _onTabChanged,

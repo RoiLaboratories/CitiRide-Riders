@@ -30,7 +30,34 @@ class GoogleMapsPlacesService {
       }
     }
 
-    return _autocompletePlacesWebService(query, countryCode: countryCode);
+    final placesSuggestions = await _autocompletePlacesWebService(
+      query,
+      countryCode: countryCode,
+    );
+    if (placesSuggestions.isNotEmpty) {
+      return placesSuggestions;
+    }
+
+    final geocodeSuggestions = await _autocompletePlacesGeocodeFallback(
+      query,
+      countryCode: countryCode,
+    );
+    if (geocodeSuggestions.isNotEmpty) {
+      return geocodeSuggestions;
+    }
+
+    if (query.length >= 3) {
+      return <Map<String, String>>[
+        <String, String>{
+          'name': query,
+          'subtitle': 'Use typed address',
+          'value': query,
+          'placeId': '',
+        },
+      ];
+    }
+
+    return const [];
   }
 
   Future<List<Map<String, String>>> _autocompletePlacesWebService(
@@ -79,6 +106,62 @@ class GoogleMapsPlacesService {
           'placeId': placeId,
         };
       }).toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  Future<List<Map<String, String>>> _autocompletePlacesGeocodeFallback(
+    String query,
+    {
+    String? countryCode,
+  }
+  ) async {
+    try {
+      final cleanedCountry = (countryCode ?? '').trim().toLowerCase();
+      final uri = Uri.https('maps.googleapis.com', '/maps/api/geocode/json', {
+        'address': query,
+        'key': _mapsApiKey,
+        'language': 'en',
+        if (cleanedCountry.isNotEmpty) 'components': 'country:$cleanedCountry',
+      });
+
+      final response = await _client.get(uri);
+      if (response.statusCode != 200) return const [];
+
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+      final status = (decoded['status'] as String?) ?? '';
+      if (status != 'OK' && status != 'ZERO_RESULTS') return const [];
+
+      final results = (decoded['results'] as List?) ?? const [];
+      if (results.isEmpty) return const [];
+
+      final suggestions = <Map<String, String>>[];
+      for (final entry in results.take(8)) {
+        if (entry is! Map<String, dynamic>) continue;
+
+        final formattedAddress =
+            (entry['formatted_address'] as String?)?.trim() ?? '';
+        if (formattedAddress.isEmpty) continue;
+
+        final parts = formattedAddress
+            .split(',')
+            .map((part) => part.trim())
+            .where((part) => part.isNotEmpty)
+            .toList();
+        final mainText = parts.isNotEmpty ? parts.first : formattedAddress;
+        final secondaryText = parts.length > 1 ? parts.sublist(1).join(', ') : '';
+        final placeId = (entry['place_id'] as String?)?.trim() ?? '';
+
+        suggestions.add(<String, String>{
+          'name': mainText,
+          'subtitle': secondaryText,
+          'value': formattedAddress,
+          'placeId': placeId,
+        });
+      }
+
+      return suggestions;
     } catch (_) {
       return const [];
     }

@@ -16,27 +16,35 @@ class HomeModalSheet extends ConsumerWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(60), 
+        color: const Color(0xFFF0F0F2),
+        borderRadius: BorderRadius.circular(40),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(24),
+            blurRadius: 18,
+            offset: const Offset(0, -4),
+          ),
+        ],
       ),
       child: ListView(
         controller: scrollController,
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(14, 10, 14, 20),
         children: [
           _dragHandle(),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
 
-          /// Search input (tappable)
+          // Search input (tappable)
           _searchInput(context),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 18),
 
           if (locations.isNotEmpty) ...[
             const Text(
               'Recent Locations',
               style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF2E313B),
               ),
             ),
             const SizedBox(height: 12),
@@ -60,22 +68,32 @@ class HomeModalSheet extends ConsumerWidget {
         Navigator.pushNamed(context, '/route');
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        height: 56,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
-          color: Colors.grey.shade200, 
-          borderRadius: BorderRadius.circular(25),
+          color: const Color(0xFFD3D3D6),
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(color: const Color(0xFFE9EAED), width: 1.2),
         ),
         child: Row(
           children: [
-            Image.asset('images/search_icon.png', width: 24, height: 24),
-            SizedBox(width: 12),
+            Image.asset(
+              'images/search_icon.png',
+              width: 24,
+              height: 24,
+              color: const Color(0xFF666A73),
+            ),
+            const SizedBox(width: 12),
             Expanded(
               child: Text(
                 'Where are we going today?',
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontSize: 15,
+                style: const TextStyle(
+                  color: Color(0xFF5D6168),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],
@@ -94,8 +112,15 @@ class HomeModalSheet extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.grey.withValues(alpha: 15),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(10),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -104,6 +129,7 @@ class HomeModalSheet extends ConsumerWidget {
             name,
             style: const TextStyle(
               fontWeight: FontWeight.w600,
+              color: Color(0xFF2D2F3A),
             ),
           ),
           const SizedBox(height: 4),
@@ -111,7 +137,7 @@ class HomeModalSheet extends ConsumerWidget {
             address,
             style: const TextStyle(
               fontSize: 13,
-              color: Colors.grey,
+              color: Color(0xFF80838A),
             ),
           ),
         ],
@@ -124,10 +150,10 @@ class HomeModalSheet extends ConsumerWidget {
   Widget _dragHandle() {
     return Center(
       child: Container(
-        width: 40,
-        height: 4,
+        width: 48,
+        height: 5,
         decoration: BoxDecoration(
-          color: Colors.grey.withValues(alpha: 80),
+          color: const Color(0xFFBCBDC2),
           borderRadius: BorderRadius.circular(10),
         ),
       ),

@@ -46,10 +46,14 @@ class PickupCollapsedSheet extends StatelessWidget {
                 ),
                 IconButton(
                   icon: Image.asset(
-                    'images/pickup.png',
+                    'images/search_icon.png',
                     width: 22,
                     height: 22,
                     fit: BoxFit.contain,
+                    errorBuilder: (_, _, _) => const Icon(
+                      Icons.search_rounded,
+                      size: 22,
+                    ),
                   ),
                   onPressed: onSearchTap,
                 ),

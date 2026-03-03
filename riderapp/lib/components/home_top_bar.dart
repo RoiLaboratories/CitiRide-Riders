@@ -78,7 +78,7 @@ class _HomeTopBarState extends State<HomeTopBar> {
     Widget defaultAvatar() {
       return Image.asset(
         'images/profile.png',
-        fit: BoxFit.cover,
+        fit: BoxFit.fill,
         errorBuilder: (_, _, _) => const Icon(
           Icons.person,
           color: Colors.white,
@@ -195,212 +195,169 @@ class _HomeTopBarState extends State<HomeTopBar> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(25),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(13),
-            blurRadius: 20,
-            spreadRadius: 2,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // User Avatar with shadow - FIXED
-          Container(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withAlpha(128),
-                  blurRadius: 15,
-                  spreadRadius: 1,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: GestureDetector(
-              onTap: () {
-                HapticFeedback.lightImpact();
-                if (widget.onAvatarTap != null) {
-                  widget.onAvatarTap!.call();
-                  return;
-                }
-                Navigator.pushNamed(context, '/profile').then((_) {
-                  _loadProfileImage();
-                });
-              },
-              child: Container(
-                width: 50,
-                height: 50,
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white,
-                ),
-                child: Container(
-                  margin: const EdgeInsets.all(2),
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.blue,
-                  ),
-                  child: ClipOval(
-                    child: _buildAvatarImage(),
-                  ),
-                ),
+    final visibleAddress = _currentAddress.trim().isEmpty
+        ? _locationText
+        : _currentAddress;
+
+    return Row(
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withAlpha(46),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
               ),
-            ),
+            ],
           ),
-          
-          const SizedBox(width: 8),
-          
-          // Location Container
-          Flexible(
-            flex: 2,
+          child: GestureDetector(
+            onTap: () {
+              HapticFeedback.lightImpact();
+              if (widget.onAvatarTap != null) {
+                widget.onAvatarTap!.call();
+                return;
+              }
+              Navigator.pushNamed(context, '/profile').then((_) {
+                _loadProfileImage();
+              });
+            },
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(25),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 127),
-                    blurRadius: 15,
-                    spreadRadius: 1,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+              width: 48,
+              height: 48,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: Color(0xFFF7CFE2),
               ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Color(0xFFE3F2FD),
-                    ),
-                    child: Icon(
-                      Icons.location_on,
-                      color: Colors.blue[700],
-                      size: 18,
-                    ),
-                  ),
-                  
-                  const SizedBox(width: 10),
-                  
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'Your location',
-                          style: GoogleFonts.poppins(
-                            fontSize: 11,
-                            color: Colors.grey[600],
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        _isLoading
-                            ? SizedBox(
-                                height: 16,
-                                width: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.blue[400],
-                                ),
-                              )
-                            : Text(
-                                _currentAddress,
-                                style: GoogleFonts.poppins(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.black87,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                                maxLines: 1,
-                              ),
-                      ],
-                    ),
-                  ),
-                ],
+              child: Padding(
+                padding: const EdgeInsets.all(3),
+                child: ClipOval(child: _buildAvatarImage()),
               ),
             ),
           ),
-          
-          const Spacer(),
-          
-          // Notification Icon
-          Container(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withAlpha(128),
-                  blurRadius: 15,
-                  spreadRadius: 1,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: GestureDetector(
-              onTap: () {
-                HapticFeedback.lightImpact();
-                Navigator.pushNamed(context, '/notifications');
-              },
+        ),
+        const SizedBox(width: 8),
+        Flexible(
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 210),
               child: Container(
-                width: 50,
-                height: 50,
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
+                height: 48,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
                   color: Colors.white,
-                ),
-                child: Stack(
-                  children: [
-                    Center(
-                      child: Image.asset(
-                        'images/notifications.png',
-                        width: 22,
-                        height: 22,
-                        fit: BoxFit.contain,
-                        errorBuilder: (_, _, _) => const Icon(
-                          Icons.notifications,
-                          size: 22,
-                          color: Colors.black,
-                        ),
-                      ),
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withAlpha(30),
+                      blurRadius: 14,
+                      offset: const Offset(0, 5),
                     ),
-                    Positioned(
-                      top: 10,
-                      right: 10,
-                      child: Container(
-                        width: 10,
-                        height: 10,
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.red,
-                          border: Border.fromBorderSide(
-                            BorderSide(
-                              color: Colors.white,
-                              width: 1.5,
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Image.asset(
+                      'images/pin.png',
+                      width: 22,
+                      height: 22,
+                      fit: BoxFit.contain,
+                    ),
+                    const SizedBox(width: 7),
+                    Expanded(
+                      child: _isLoading
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Color(0xFF1890F4),
+                              ),
+                            )
+                          : Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Your Location',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 11,
+                                    color: const Color(0xFFB0B2B8),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const SizedBox(height: 1),
+                                Text(
+                                  visibleAddress,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: const Color(0xFF2E313B),
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
                             ),
-                          ),
-                        ),
-                      ),
                     ),
                   ],
                 ),
               ),
             ),
           ),
-        ],
-      ),
+        ),
+        const SizedBox(width: 10),
+        GestureDetector(
+          onTap: () {
+            HapticFeedback.lightImpact();
+            Navigator.pushNamed(context, '/notifications');
+          },
+          child: Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withAlpha(40),
+                  blurRadius: 14,
+                  offset: const Offset(0, 5),
+                ),
+              ],
+            ),
+            child: CircleAvatar(
+              radius: 22,
+              backgroundColor: Colors.white,
+              child: Stack(
+                clipBehavior: Clip.hardEdge,
+                children: [
+                  Center(
+                    child: Image.asset(
+                      'images/bell.png',
+                      width: 18,
+                      height: 18,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                  Positioned(
+                    right: 13,
+                    top: 9,
+                    child: Image.asset(
+                      'images/dot.png',
+                      width: 9,
+                      height: 9,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
