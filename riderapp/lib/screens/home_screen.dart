@@ -19,7 +19,12 @@ import '../screens/wallet_screen.dart';
 import '../utils/google_map_style.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({
+    super.key,
+    this.initialTabIndex = 0,
+  });
+
+  final int initialTabIndex;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -29,9 +34,9 @@ class _HomeScreenState extends State<HomeScreen> {
   static const String _defaultNigerianPhone = '+2349070107455';
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  final PageController _pageController = PageController();
+  late final PageController _pageController;
 
-  int _currentIndex = 0;
+  late int _currentIndex;
   bool _locationLoading = false;
   bool _isCheckingWalletPin = false;
   String _drawerName = 'Rider';
@@ -63,13 +68,23 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    _currentIndex = widget.initialTabIndex.clamp(0, 2);
+    _pageController = PageController(initialPage: _currentIndex);
     _loadDrawerProfile();
     _loadUserLocationMarkerIcon();
 
-    /// Show location modal AFTER first frame
-    WidgetsBinding.instance.addPostFrameCallback((ctx) {
-      _showLocationPermissionModal();
-    });
+    /// Show location modal only on Home tab after first frame.
+    if (_currentIndex == 0) {
+      WidgetsBinding.instance.addPostFrameCallback((ctx) {
+        _showLocationPermissionModal();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
   Future<void> _refreshCurrentLocationForMap({
@@ -317,15 +332,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   icon: Icons.bookmark,
                   title: 'Saved places',
                   subtitle: 'Enter your home and work location',
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Saved places will be available soon'),
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                  },
+                  onTap: () => _navigateFromDrawer('/saved-places'),
                 ),
                 const SizedBox(height: 4),
                 _drawerMenuTile(
@@ -560,16 +567,6 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [_buildHomeMap(), RideScreen(), WalletScreen()],
           ),
 
-          if (_isDrawerOpen)
-            Positioned.fill(
-              child: IgnorePointer(
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                  child: Container(color: const Color(0x331E88E5)),
-                ),
-              ),
-            ),
-
           /// TOP BAR
           if (_currentIndex != 2 && _currentIndex != 1) // hide in Wallet
             Positioned(
@@ -577,10 +574,9 @@ class _HomeScreenState extends State<HomeScreen> {
               left: 20,
               right: 20,
               child: HomeTopBar(
-                key: ValueKey(
-                  'home_top_bar_${_locationRefreshSeed}_$_profileRefreshSeed',
-                ),
                 onAvatarTap: _openProfileDrawer,
+                profileRefreshSeed: _profileRefreshSeed,
+                locationRefreshSeed: _locationRefreshSeed,
               ),
             ),
 
@@ -613,6 +609,16 @@ class _HomeScreenState extends State<HomeScreen> {
               onTabChanged: _onTabChanged,
             ),
           ),
+
+          if (_isDrawerOpen)
+            Positioned.fill(
+              child: IgnorePointer(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                  child: Container(color: const Color(0x331E88E5)),
+                ),
+              ),
+            ),
         ],
       ),
     );

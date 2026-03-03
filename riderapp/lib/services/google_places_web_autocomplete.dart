@@ -1,3 +1,5 @@
+// ignore_for_file: invalid_runtime_check_with_js_interop_types
+
 import 'dart:async';
 import 'dart:js_interop';
 import 'dart:js_interop_unsafe';
@@ -18,6 +20,9 @@ JSObject _newJsObject() {
 
 Future<List<Map<String, String>>> fetchGoogleWebPlaceSuggestions(
   String query,
+  {
+  String? countryCode,
+}
 ) async {
   final cleaned = query.trim();
   if (cleaned.isEmpty) return const [];
@@ -37,7 +42,12 @@ Future<List<Map<String, String>>> fetchGoogleWebPlaceSuggestions(
 
     final request = _newJsObject();
     request['input'] = cleaned.toJS;
-    request['types'] = <JSString>['geocode'.toJS].toJS;
+    final country = (countryCode ?? '').trim().toLowerCase();
+    if (country.isNotEmpty) {
+      final restriction = _newJsObject();
+      restriction['country'] = country.toJS;
+      request['componentRestrictions'] = restriction;
+    }
 
     void onPredictions(JSAny? predictions, JSAny? status) {
         if (completer.isCompleted) return;

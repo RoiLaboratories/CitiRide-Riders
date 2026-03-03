@@ -14,9 +14,13 @@ class HomeTopBar extends StatefulWidget {
   const HomeTopBar({
     super.key,
     this.onAvatarTap,
+    this.profileRefreshSeed = 0,
+    this.locationRefreshSeed = 0,
   });
 
   final VoidCallback? onAvatarTap;
+  final int profileRefreshSeed;
+  final int locationRefreshSeed;
 
   @override
   State<HomeTopBar> createState() => _HomeTopBarState();
@@ -46,6 +50,19 @@ class _HomeTopBarState extends State<HomeTopBar> {
     _getCurrentLocation();
   }
 
+  @override
+  void didUpdateWidget(covariant HomeTopBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.profileRefreshSeed != widget.profileRefreshSeed) {
+      _loadProfileImage();
+    }
+
+    if (oldWidget.locationRefreshSeed != widget.locationRefreshSeed) {
+      _getCurrentLocation();
+    }
+  }
+
   Future<void> _loadProfileImage() async {
     final prefs = await SharedPreferences.getInstance();
     if (!mounted) return;
@@ -58,15 +75,23 @@ class _HomeTopBarState extends State<HomeTopBar> {
   }
 
   Widget _buildAvatarImage() {
-    if (_profileAvatarBytes != null && _profileAvatarBytes!.isNotEmpty) {
-      return Image.memory(
-        _profileAvatarBytes!,
+    Widget defaultAvatar() {
+      return Image.asset(
+        'images/profile.png',
         fit: BoxFit.cover,
         errorBuilder: (_, _, _) => const Icon(
           Icons.person,
           color: Colors.white,
           size: 24,
         ),
+      );
+    }
+
+    if (_profileAvatarBytes != null && _profileAvatarBytes!.isNotEmpty) {
+      return Image.memory(
+        _profileAvatarBytes!,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => defaultAvatar(),
       );
     }
 
@@ -74,29 +99,17 @@ class _HomeTopBarState extends State<HomeTopBar> {
       return Image.asset(
         _profileAvatarAsset!,
         fit: BoxFit.cover,
-        errorBuilder: (_, _, _) => const Icon(
-          Icons.person,
-          color: Colors.white,
-          size: 24,
-        ),
+        errorBuilder: (_, _, _) => defaultAvatar(),
       );
     }
 
-    return const Icon(
-      Icons.person,
-      color: Colors.white,
-      size: 24,
-    );
+    return defaultAvatar();
   }
 
 
   Future<void> _getCurrentLocation() async {
     try {
       LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
-
       if (permission != LocationPermission.whileInUse &&
           permission != LocationPermission.always) {
         setState(() {
@@ -351,10 +364,16 @@ class _HomeTopBarState extends State<HomeTopBar> {
                 child: Stack(
                   children: [
                     Center(
-                      child: Icon(
-                        Icons.notifications,
-                        size: 22,
-                        color: Colors.black,
+                      child: Image.asset(
+                        'images/notifications.png',
+                        width: 22,
+                        height: 22,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, _, _) => const Icon(
+                          Icons.notifications,
+                          size: 22,
+                          color: Colors.black,
+                        ),
                       ),
                     ),
                     Positioned(

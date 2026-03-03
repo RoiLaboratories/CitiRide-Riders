@@ -1,11 +1,21 @@
 import 'package:flutter/material.dart';
+
 import '../models/wallet_balance.dart';
 
-class BalanceCard extends StatelessWidget {
+class BalanceCard extends StatefulWidget {
   const BalanceCard({super.key});
 
   @override
+  State<BalanceCard> createState() => _BalanceCardState();
+}
+
+class _BalanceCardState extends State<BalanceCard> {
+  bool _balanceVisible = true;
+
+  @override
   Widget build(BuildContext context) {
+    final formattedBalance = '\u20A6${WalletBalance.balance.toStringAsFixed(0)}';
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -17,7 +27,7 @@ class BalanceCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "₦${WalletBalance.balance.toStringAsFixed(0)}",
+            _balanceVisible ? formattedBalance : '\u20A6********',
             style: const TextStyle(
               fontSize: 36,
               fontWeight: FontWeight.w800,
@@ -25,23 +35,31 @@ class BalanceCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          const Row(
+          Row(
             children: [
-              Text(
+              const Text(
                 'Wallet Balance',
                 style: TextStyle(
                   color: Color(0xFF0A84FF),
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              SizedBox(width: 6),
-              Icon(
-                Icons.remove_red_eye_outlined,
-                size: 18,
-                color: Color(0xFF0A84FF),
-              )
+              const SizedBox(width: 6),
+              InkWell(
+                onTap: () {
+                  setState(() => _balanceVisible = !_balanceVisible);
+                },
+                borderRadius: BorderRadius.circular(20),
+                child: Icon(
+                  _balanceVisible
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
+                  size: 18,
+                  color: const Color(0xFF0A84FF),
+                ),
+              ),
             ],
-          )
+          ),
         ],
       ),
     );

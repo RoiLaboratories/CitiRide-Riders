@@ -31,33 +31,22 @@ class HomeModalSheet extends ConsumerWidget {
 
           const SizedBox(height: 24),
 
-          const Text(
-            'Recent Locations',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-
-          const SizedBox(height: 12),
-
-          if (locations.isEmpty)
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.only(top: 40),
-                child: Text(
-                  'No recent locations yet',
-                  style: TextStyle(color: Colors.grey),
-                ),
+          if (locations.isNotEmpty) ...[
+            const Text(
+              'Recent Locations',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
               ),
-            )
-          else
+            ),
+            const SizedBox(height: 12),
             ...locations.map((location) {
               return _locationTile(
                 name: location['name'] ?? '',
                 address: location['address'] ?? '',
               );
             }),
+          ],
         ],
       ),
     );

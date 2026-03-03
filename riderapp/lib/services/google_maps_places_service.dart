@@ -13,24 +13,34 @@ class GoogleMapsPlacesService {
   static const String _mapsApiKey = 'AIzaSyActFrssaaKA5CUikTsI8_98RukSoPXBTY';
   final http.Client _client;
 
-  Future<List<Map<String, String>>> autocompletePlaces(String input) async {
+  Future<List<Map<String, String>>> autocompletePlaces(
+    String input, {
+    String? countryCode,
+  }) async {
     final query = input.trim();
     if (query.isEmpty) return const [];
 
     if (kIsWeb) {
-      final jsSuggestions = await fetchGoogleWebPlaceSuggestions(query);
+      final jsSuggestions = await fetchGoogleWebPlaceSuggestions(
+        query,
+        countryCode: countryCode,
+      );
       if (jsSuggestions.isNotEmpty) {
         return jsSuggestions;
       }
     }
 
-    return _autocompletePlacesWebService(query);
+    return _autocompletePlacesWebService(query, countryCode: countryCode);
   }
 
   Future<List<Map<String, String>>> _autocompletePlacesWebService(
     String query,
+    {
+    String? countryCode,
+  }
   ) async {
     try {
+      final cleanedCountry = (countryCode ?? '').trim().toLowerCase();
       final uri = Uri.https(
         'maps.googleapis.com',
         '/maps/api/place/autocomplete/json',
@@ -38,7 +48,8 @@ class GoogleMapsPlacesService {
           'input': query,
           'key': _mapsApiKey,
           'language': 'en',
-          'types': 'geocode',
+          if (cleanedCountry.isNotEmpty)
+            'components': 'country:$cleanedCountry',
         },
       );
 
@@ -70,6 +81,38 @@ class GoogleMapsPlacesService {
       }).toList();
     } catch (_) {
       return const [];
+    }
+  }
+
+  Future<Map<String, double>?> getPlaceCoordinates(String placeId) async {
+    final cleanedPlaceId = placeId.trim();
+    if (cleanedPlaceId.isEmpty) return null;
+
+    try {
+      final uri = Uri.https('maps.googleapis.com', '/maps/api/place/details/json', {
+        'place_id': cleanedPlaceId,
+        'key': _mapsApiKey,
+        'fields': 'geometry',
+      });
+
+      final response = await _client.get(uri);
+      if (response.statusCode != 200) return null;
+
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+      final status = (decoded['status'] as String?) ?? '';
+      if (status != 'OK') return null;
+
+      final result = decoded['result'] as Map<String, dynamic>?;
+      final geometry = result?['geometry'] as Map<String, dynamic>?;
+      final location = geometry?['location'] as Map<String, dynamic>?;
+
+      final latValue = location?['lat'];
+      final lngValue = location?['lng'];
+      if (latValue is! num || lngValue is! num) return null;
+
+      return {'lat': latValue.toDouble(), 'lng': lngValue.toDouble()};
+    } catch (_) {
+      return null;
     }
   }
 

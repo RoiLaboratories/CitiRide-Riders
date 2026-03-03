@@ -4,17 +4,26 @@ import '../constants/ride_sheet_constants.dart';
 class PickupCollapsedSheet extends StatelessWidget {
   final VoidCallback onConfirm;
   final VoidCallback onSearchTap;
+  final String pickupLabel;
+  final String destinationLabel;
 
   const PickupCollapsedSheet({
     super.key,
     required this.onConfirm,
-    required this.onSearchTap, required scrollController,
+    required this.onSearchTap,
+    required this.pickupLabel,
+    required this.destinationLabel,
   });
 
   @override
   Widget build(BuildContext context) {
+    final resolvedPickup = pickupLabel.trim().isEmpty
+        ? 'Pickup location'
+        : pickupLabel.trim();
+    final resolvedDestination = destinationLabel.trim();
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 10),
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: floatingSheetDecoration(),
@@ -36,7 +45,12 @@ class PickupCollapsedSheet extends StatelessWidget {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.search),
+                  icon: Image.asset(
+                    'images/pickup.png',
+                    width: 22,
+                    height: 22,
+                    fit: BoxFit.contain,
+                  ),
                   onPressed: onSearchTap,
                 ),
               ],
@@ -44,13 +58,31 @@ class PickupCollapsedSheet extends StatelessWidget {
 
             const SizedBox(height: 14),
 
-            const Align(
+            Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                'Lagos Street',
-                style: TextStyle(fontSize: 15),
+                resolvedPickup,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 15),
               ),
             ),
+
+            if (resolvedDestination.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'To: $resolvedDestination',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: kTextGrey,
+                  ),
+                ),
+              ),
+            ],
 
             const SizedBox(height: 6),
 

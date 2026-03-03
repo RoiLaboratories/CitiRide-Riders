@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../ride_flow/ride_history_store.dart';
 
 class RideScreen extends StatefulWidget {
   const RideScreen({super.key});
@@ -6,8 +7,6 @@ class RideScreen extends StatefulWidget {
   @override
   State<RideScreen> createState() => _RideScreenState();
 }
-
-enum _RideStatus { upcoming, completed, cancelled }
 
 class _RideItem {
   const _RideItem({
@@ -20,41 +19,51 @@ class _RideItem {
   final String date;
   final String route;
   final String price;
-  final _RideStatus status;
+  final RideLogStatus status;
 }
 
 class _RideScreenState extends State<RideScreen> {
+  final RideHistoryStore _rideStore = RideHistoryStore.instance;
   bool _showUpcoming = true;
 
-  final List<_RideItem> _upcomingRides = const [
-    _RideItem(
-      date: 'Sun, 31 Aug 2025',
-      route: 'Lagos Street, Benin City',
-      price: '\u20A61,500.00',
-      status: _RideStatus.upcoming,
-    ),
-  ];
+  List<_RideItem> get _upcomingRides => _rideStore.upcomingRides.value
+      .map(
+        (entry) => _RideItem(
+          date: entry.date,
+          route: entry.route,
+          price: entry.price,
+          status: entry.status,
+        ),
+      )
+      .toList();
 
-  final List<_RideItem> _pastRides = const [
-    _RideItem(
-      date: 'Sun, 31 Aug 2025',
-      route: 'Lagos Street, Benin City',
-      price: '\u20A61,500.00',
-      status: _RideStatus.completed,
-    ),
-    _RideItem(
-      date: 'Sun, 31 Aug 2025',
-      route: 'Lagos Street, Benin City',
-      price: '\u20A61,500.00',
-      status: _RideStatus.cancelled,
-    ),
-    _RideItem(
-      date: 'Sun, 31 Aug 2025',
-      route: 'Lagos Street, Benin City',
-      price: '\u20A61,500.00',
-      status: _RideStatus.completed,
-    ),
-  ];
+  List<_RideItem> get _pastRides => _rideStore.pastRides
+      .map(
+        (entry) => _RideItem(
+          date: entry.date,
+          route: entry.route,
+          price: entry.price,
+          status: entry.status,
+        ),
+      )
+      .toList();
+
+  @override
+  void initState() {
+    super.initState();
+    _rideStore.upcomingRides.addListener(_onUpcomingRidesChanged);
+  }
+
+  @override
+  void dispose() {
+    _rideStore.upcomingRides.removeListener(_onUpcomingRidesChanged);
+    super.dispose();
+  }
+
+  void _onUpcomingRidesChanged() {
+    if (!mounted) return;
+    setState(() {});
+  }
 
   void _openRideDetails(_RideItem ride) {
     Navigator.push(
@@ -211,7 +220,7 @@ class _RideScreenState extends State<RideScreen> {
                             fontWeight: FontWeight.w500,
                           ),
                         ),
-                        if (ride.status != _RideStatus.upcoming) ...[
+                        if (ride.status != RideLogStatus.upcoming) ...[
                           const Text(
                             '  \u00B7  ',
                             style: TextStyle(
@@ -265,8 +274,8 @@ class _RideScreenState extends State<RideScreen> {
     );
   }
 
-  Widget _statusChip(_RideStatus status) {
-    final bool completed = status == _RideStatus.completed;
+  Widget _statusChip(RideLogStatus status) {
+    final bool completed = status == RideLogStatus.completed;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 1),
       decoration: BoxDecoration(

@@ -1,10 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart' as geocoding;
 import 'package:geolocator/geolocator.dart';
-import 'dart:async';
+import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/google_maps_places_service.dart';
 import '../utils/location_manager.dart';
+
+enum _RouteInputField { none, pickup, destination }
 
 class RouteScreen extends StatefulWidget {
   const RouteScreen({super.key});
@@ -14,62 +19,41 @@ class RouteScreen extends StatefulWidget {
 }
 
 class _RouteScreenState extends State<RouteScreen> {
+  final TextEditingController _pickupController = TextEditingController();
   final TextEditingController _destinationController = TextEditingController();
+  final FocusNode _pickupFocus = FocusNode();
   final FocusNode _destinationFocus = FocusNode();
 
-  String _currentLocationText = 'Lagos Street';
-  bool _loadingLocation = true;
+  bool _loadingPickup = true;
   bool _loadingRecents = true;
+  bool _loadingSuggestions = false;
   bool _showBookRideButton = false;
   bool _isBooking = false;
-  bool _loadingSuggestions = false;
-  List<Map<String, dynamic>> _recentLocations = [];
-  List<Map<String, String>> _destinationSuggestions = [];
   bool _appliedRouteArgs = false;
+  _RouteInputField _activeField = _RouteInputField.none;
+
+  List<Map<String, dynamic>> _savedLocations = [];
+  List<Map<String, dynamic>> _recentLocations = [];
+  List<Map<String, String>> _suggestions = [];
+  gmaps.LatLng? _pickupCoordinates;
+  gmaps.LatLng? _destinationCoordinates;
+
   Timer? _suggestionDebounce;
   int _latestSuggestionRequestId = 0;
   final GoogleMapsPlacesService _placesService = GoogleMapsPlacesService();
 
-  static const List<Map<String, dynamic>> _savedLocations = [
-    {
-      'name': 'Benin City',
-      'subtitle': 'Nigeria',
-      'distance': '12.6km',
-      'icon': Icons.access_time_filled,
-    },
-    {
-      'name': 'Afemai Transport Company',
-      'subtitle': 'Dawson Road, Benin City',
-      'distance': '<1km',
-      'icon': Icons.location_on,
-    },
-    {
-      'name': 'Ring Road Bus Terminal',
-      'subtitle': 'Oba Market Road, Benin City 300102',
-      'distance': '7.2km',
-      'icon': Icons.directions_bus_filled,
-    },
-  ];
-
   @override
   void initState() {
     super.initState();
+    _pickupController.addListener(_onPickupChanged);
     _destinationController.addListener(_onDestinationChanged);
+    _pickupFocus.addListener(_onPickupFocusChanged);
     _destinationFocus.addListener(_onDestinationFocusChanged);
+
     _getCurrentLocation();
+    _loadSavedLocations();
     _loadRecentLocations();
     LocationManager().addListener(_onLocationsUpdated);
-  }
-
-  @override
-  void dispose() {
-    LocationManager().removeListener(_onLocationsUpdated);
-    _suggestionDebounce?.cancel();
-    _destinationController.removeListener(_onDestinationChanged);
-    _destinationFocus.removeListener(_onDestinationFocusChanged);
-    _destinationController.dispose();
-    _destinationFocus.dispose();
-    super.dispose();
   }
 
   @override
@@ -81,66 +65,252 @@ class _RouteScreenState extends State<RouteScreen> {
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     final prefilledDestination =
         (args?['prefilledDestination'] as String?)?.trim() ?? '';
+    final prefilledPickup = (args?['prefilledPickup'] as String?)?.trim() ?? '';
+
+    if (prefilledPickup.isNotEmpty) {
+      _pickupController.text = prefilledPickup;
+      _pickupController.selection = TextSelection.fromPosition(
+        TextPosition(offset: _pickupController.text.length),
+      );
+    }
 
     if (prefilledDestination.isNotEmpty) {
       _destinationController.text = prefilledDestination;
       _destinationController.selection = TextSelection.fromPosition(
         TextPosition(offset: _destinationController.text.length),
       );
+      _showBookRideButton = true;
     }
 
     _appliedRouteArgs = true;
   }
 
+  @override
+  void dispose() {
+    LocationManager().removeListener(_onLocationsUpdated);
+    _suggestionDebounce?.cancel();
+
+    _pickupController.removeListener(_onPickupChanged);
+    _destinationController.removeListener(_onDestinationChanged);
+    _pickupFocus.removeListener(_onPickupFocusChanged);
+    _destinationFocus.removeListener(_onDestinationFocusChanged);
+
+    _pickupController.dispose();
+    _destinationController.dispose();
+    _pickupFocus.dispose();
+    _destinationFocus.dispose();
+    super.dispose();
+  }
+
+  void _onPickupFocusChanged() {
+    if (!mounted) return;
+    setState(() {
+      if (_pickupFocus.hasFocus) {
+        _activeField = _RouteInputField.pickup;
+      } else if (!_destinationFocus.hasFocus) {
+        _activeField = _RouteInputField.none;
+      }
+    });
+  }
+
   void _onDestinationFocusChanged() {
     if (!mounted) return;
-    setState(() {});
+    setState(() {
+      if (_destinationFocus.hasFocus) {
+        _activeField = _RouteInputField.destination;
+      } else if (!_pickupFocus.hasFocus) {
+        _activeField = _RouteInputField.none;
+      }
+    });
+  }
+
+  void _onPickupChanged() {
+    final query = _pickupController.text.trim();
+    _pickupCoordinates = null;
+    _requestSuggestions(query, field: _RouteInputField.pickup);
   }
 
   void _onDestinationChanged() {
     final query = _destinationController.text.trim();
+    _destinationCoordinates = null;
     if (!mounted) return;
-
     setState(() => _showBookRideButton = query.isNotEmpty);
+    _requestSuggestions(query, field: _RouteInputField.destination);
+  }
 
+  void _requestSuggestions(
+    String query, {
+    required _RouteInputField field,
+  }) {
     _suggestionDebounce?.cancel();
 
+    final shouldFetch = (field == _RouteInputField.pickup && _pickupFocus.hasFocus) ||
+        (field == _RouteInputField.destination && _destinationFocus.hasFocus);
+
+    if (!shouldFetch) return;
+
     if (query.isEmpty) {
+      if (!mounted) return;
       setState(() {
         _loadingSuggestions = false;
-        _destinationSuggestions = [];
+        _suggestions = [];
       });
       return;
     }
 
     _suggestionDebounce = Timer(const Duration(milliseconds: 280), () {
-      _fetchDestinationSuggestions(query);
+      _fetchSuggestions(query, field: field);
     });
   }
 
-  void _applySuggestion(Map<String, String> suggestion) {
-    final destination = (suggestion['value'] ?? '').trim();
-    if (destination.isEmpty) return;
-
-    _destinationController.text = destination;
-    _destinationController.selection = TextSelection.fromPosition(
-      TextPosition(offset: _destinationController.text.length),
-    );
-    _destinationFocus.unfocus();
-  }
-
-  Future<void> _fetchDestinationSuggestions(String query) async {
+  Future<void> _fetchSuggestions(
+    String query, {
+    required _RouteInputField field,
+  }) async {
     final requestId = ++_latestSuggestionRequestId;
-
     if (!mounted) return;
-    setState(() => _loadingSuggestions = true);
+    setState(() {
+      _activeField = field;
+      _loadingSuggestions = true;
+    });
 
-    final suggestions = await _placesService.autocompletePlaces(query);
+    final suggestions = await _placesService.autocompletePlaces(
+      query,
+    );
     if (!mounted || requestId != _latestSuggestionRequestId) return;
 
     setState(() {
-      _destinationSuggestions = suggestions;
+      _suggestions = suggestions;
       _loadingSuggestions = false;
+    });
+  }
+
+  Future<void> _applySuggestion(Map<String, String> suggestion) async {
+    final value = (suggestion['value'] ?? '').trim();
+    if (value.isEmpty) return;
+
+    final applyToPickup = _activeField == _RouteInputField.pickup;
+
+    if (_activeField == _RouteInputField.pickup) {
+      _pickupController.text = value;
+      _pickupController.selection = TextSelection.fromPosition(
+        TextPosition(offset: _pickupController.text.length),
+      );
+      _pickupFocus.unfocus();
+    } else {
+      _destinationController.text = value;
+      _destinationController.selection = TextSelection.fromPosition(
+        TextPosition(offset: _destinationController.text.length),
+      );
+      _destinationFocus.unfocus();
+    }
+
+    setState(() {
+      _activeField = _RouteInputField.none;
+      _showBookRideButton = _destinationController.text.trim().isNotEmpty;
+      _suggestions = [];
+    });
+
+    final coordinates = await _resolveSuggestionLatLng(suggestion, fallbackValue: value);
+    if (!mounted || coordinates == null) return;
+
+    final latestValue = applyToPickup
+        ? _pickupController.text.trim()
+        : _destinationController.text.trim();
+    if (latestValue != value) return;
+
+    setState(() {
+      if (applyToPickup) {
+        _pickupCoordinates = coordinates;
+      } else {
+        _destinationCoordinates = coordinates;
+      }
+    });
+  }
+
+  Future<gmaps.LatLng?> _resolveSuggestionLatLng(
+    Map<String, String> suggestion, {
+    required String fallbackValue,
+  }) async {
+    final placeId = (suggestion['placeId'] ?? '').trim();
+    if (placeId.isNotEmpty) {
+      final coordinates = await _placesService.getPlaceCoordinates(placeId);
+      if (coordinates != null) {
+        final lat = coordinates['lat'];
+        final lng = coordinates['lng'];
+        if (lat != null && lng != null) {
+          return gmaps.LatLng(lat, lng);
+        }
+      }
+    }
+
+    return _resolveAddressToLatLng(fallbackValue);
+  }
+
+  Future<gmaps.LatLng?> _resolveAddressToLatLng(String address) async {
+    final cleanedAddress = address.trim();
+    if (cleanedAddress.isEmpty) return null;
+
+    try {
+      final matches = await geocoding.locationFromAddress(cleanedAddress);
+      if (matches.isEmpty) return null;
+
+      final first = matches.first;
+      return gmaps.LatLng(first.latitude, first.longitude);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  void _swapLocations() {
+    final pickup = _pickupController.text.trim();
+    final destination = _destinationController.text.trim();
+    final pickupCoordinates = _pickupCoordinates;
+    final destinationCoordinates = _destinationCoordinates;
+
+    _pickupController.text = destination;
+    _destinationController.text = pickup;
+    _pickupCoordinates = destinationCoordinates;
+    _destinationCoordinates = pickupCoordinates;
+    _pickupController.selection = TextSelection.fromPosition(
+      TextPosition(offset: _pickupController.text.length),
+    );
+    _destinationController.selection = TextSelection.fromPosition(
+      TextPosition(offset: _destinationController.text.length),
+    );
+
+    setState(() {
+      _showBookRideButton = _destinationController.text.trim().isNotEmpty;
+    });
+  }
+
+  Future<void> _loadSavedLocations() async {
+    final prefs = await SharedPreferences.getInstance();
+    final homeAddress = (prefs.getString('saved_place_home_address') ?? '').trim();
+    final officeAddress =
+        (prefs.getString('saved_place_office_address') ?? '').trim();
+
+    final loaded = <Map<String, dynamic>>[];
+    if (homeAddress.isNotEmpty) {
+      loaded.add({
+        'name': 'Home',
+        'subtitle': homeAddress,
+        'distance': '',
+        'icon': Icons.home_rounded,
+      });
+    }
+    if (officeAddress.isNotEmpty) {
+      loaded.add({
+        'name': 'Office',
+        'subtitle': officeAddress,
+        'distance': '',
+        'icon': Icons.work_rounded,
+      });
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _savedLocations = loaded;
     });
   }
 
@@ -158,10 +328,8 @@ class _RouteScreenState extends State<RouteScreen> {
 
       if (permission != LocationPermission.always &&
           permission != LocationPermission.whileInUse) {
-        setState(() {
-          _currentLocationText = 'Permission required';
-          _loadingLocation = false;
-        });
+        if (!mounted) return;
+        setState(() => _loadingPickup = false);
         return;
       }
 
@@ -199,14 +367,16 @@ class _RouteScreenState extends State<RouteScreen> {
       }
 
       if (!mounted) return;
+      if (_pickupController.text.trim().isEmpty) {
+        _pickupController.text = bestText.isEmpty ? 'Current location' : bestText;
+      }
       setState(() {
-        _currentLocationText =
-            bestText.isEmpty ? 'Current location' : bestText;
-        _loadingLocation = false;
+        _pickupCoordinates = gmaps.LatLng(position.latitude, position.longitude);
+        _loadingPickup = false;
       });
     } catch (_) {
       if (!mounted) return;
-      setState(() => _loadingLocation = false);
+      setState(() => _loadingPickup = false);
     }
   }
 
@@ -231,6 +401,8 @@ class _RouteScreenState extends State<RouteScreen> {
   Future<void> _openBookRide(
     String destination, {
     bool clearDestinationOnReturn = false,
+    gmaps.LatLng? pickupCoordinates,
+    gmaps.LatLng? destinationCoordinates,
   }) async {
     final cleaned = destination.trim();
     if (cleaned.isEmpty) return;
@@ -238,14 +410,23 @@ class _RouteScreenState extends State<RouteScreen> {
     await LocationManager().addRecentLocation('Destination', cleaned);
     if (!mounted) return;
 
+    final pickup = _pickupController.text.trim();
+    final args = <String, dynamic>{
+      'destination': cleaned,
+      'currentLocation': pickup.isEmpty ? 'Current location' : pickup,
+      'pickupTime': DateTime.now().add(const Duration(minutes: 5)),
+      if (pickupCoordinates != null) 'pickupLat': pickupCoordinates.latitude,
+      if (pickupCoordinates != null) 'pickupLng': pickupCoordinates.longitude,
+      if (destinationCoordinates != null)
+        'destinationLat': destinationCoordinates.latitude,
+      if (destinationCoordinates != null)
+        'destinationLng': destinationCoordinates.longitude,
+    };
+
     await Navigator.pushNamed(
       context,
       '/bookride',
-      arguments: {
-        'destination': cleaned,
-        'currentLocation': _currentLocationText,
-        'pickupTime': DateTime.now().add(const Duration(minutes: 5)),
-      },
+      arguments: args,
     );
 
     if (!mounted || !clearDestinationOnReturn) return;
@@ -260,9 +441,21 @@ class _RouteScreenState extends State<RouteScreen> {
 
     setState(() => _isBooking = true);
     try {
-      await Future.delayed(const Duration(milliseconds: 800));
+      await Future.delayed(const Duration(milliseconds: 500));
       if (!mounted) return;
-      await _openBookRide(destination, clearDestinationOnReturn: true);
+
+      final pickupLabel = _pickupController.text.trim();
+      final resolvedPickupCoordinates =
+          _pickupCoordinates ?? await _resolveAddressToLatLng(pickupLabel);
+      final resolvedDestinationCoordinates =
+          _destinationCoordinates ?? await _resolveAddressToLatLng(destination);
+
+      await _openBookRide(
+        destination,
+        clearDestinationOnReturn: true,
+        pickupCoordinates: resolvedPickupCoordinates,
+        destinationCoordinates: resolvedDestinationCoordinates,
+      );
     } finally {
       if (mounted) {
         setState(() => _isBooking = false);
@@ -270,11 +463,33 @@ class _RouteScreenState extends State<RouteScreen> {
     }
   }
 
+  void _selectLocationFromList(String address) {
+    if (_activeField == _RouteInputField.pickup) {
+      _pickupController.text = address;
+      _pickupFocus.unfocus();
+      _resolveAddressToLatLng(address).then((coordinates) {
+        if (!mounted || coordinates == null) return;
+        setState(() => _pickupCoordinates = coordinates);
+      });
+      return;
+    }
+
+    _destinationController.text = address;
+    _destinationFocus.unfocus();
+    _resolveAddressToLatLng(address).then((coordinates) {
+      if (!mounted || coordinates == null) return;
+      setState(() => _destinationCoordinates = coordinates);
+    });
+    _bookRideFromButton();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final showingSuggestions =
-        _destinationFocus.hasFocus &&
-        _destinationController.text.trim().isNotEmpty;
+    final editingPickup = _activeField == _RouteInputField.pickup;
+    final editingDestination = _activeField == _RouteInputField.destination;
+    final showingSuggestions = (editingPickup &&
+            _pickupController.text.trim().isNotEmpty) ||
+        (editingDestination && _destinationController.text.trim().isNotEmpty);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF2F2F4),
@@ -310,7 +525,7 @@ class _RouteScreenState extends State<RouteScreen> {
             const SizedBox(height: 12),
             Expanded(
               child: showingSuggestions
-                  ? _destinationSuggestionsCard()
+                  ? _suggestionsCard()
                   : _savedAndRecentLocationsContent(),
             ),
             if (_showBookRideButton)
@@ -359,44 +574,74 @@ class _RouteScreenState extends State<RouteScreen> {
   }
 
   Widget _pickupRow() {
-    return Container(
-      height: 56,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFD4D4D6),
-        borderRadius: BorderRadius.circular(28),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 26,
-            height: 26,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: const Color(0xFF1690F0), width: 3),
-            ),
-            child: const Center(
-              child: CircleAvatar(
-                radius: 6,
-                backgroundColor: Color(0xFF1690F0),
+    return InkWell(
+      onTap: () {
+        setState(() => _activeField = _RouteInputField.pickup);
+        _pickupFocus.requestFocus();
+      },
+      borderRadius: BorderRadius.circular(28),
+      child: Container(
+        height: 56,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFD4D4D6),
+          borderRadius: BorderRadius.circular(28),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 26,
+              height: 26,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: const Color(0xFF1690F0), width: 3),
+              ),
+              child: const Center(
+                child: CircleAvatar(
+                  radius: 6,
+                  backgroundColor: Color(0xFF1690F0),
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              _loadingLocation ? 'Detecting location...' : _currentLocationText,
-              style: const TextStyle(
-                fontSize: 16,
-                color: Color(0xFF2E313B),
-                fontWeight: FontWeight.w500,
+            const SizedBox(width: 10),
+            Expanded(
+              child: TextField(
+                controller: _pickupController,
+                focusNode: _pickupFocus,
+                textInputAction: TextInputAction.next,
+                decoration: InputDecoration(
+                  isDense: true,
+                  hintText: _loadingPickup ? 'Detecting location...' : 'Pickup',
+                  hintStyle: const TextStyle(
+                    color: Color(0xFF7F838A),
+                    fontSize: 16,
+                  ),
+                  border: InputBorder.none,
+                ),
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: Color(0xFF2E313B),
+                  fontWeight: FontWeight.w500,
+                ),
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
             ),
-          ),
-          const Icon(Icons.add_rounded, size: 34, color: Color(0xFF2E313B)),
-        ],
+            InkWell(
+              onTap: () {
+                setState(() => _activeField = _RouteInputField.pickup);
+                _pickupFocus.requestFocus();
+              },
+              customBorder: const CircleBorder(),
+              child: const Padding(
+                padding: EdgeInsets.all(4),
+                child: Icon(
+                  Icons.add_rounded,
+                  size: 34,
+                  color: Color(0xFF2E313B),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -452,7 +697,10 @@ class _RouteScreenState extends State<RouteScreen> {
                   ),
                   child: InkWell(
                     customBorder: const CircleBorder(),
-                    onTap: _bookRideFromButton,
+                    onTap: () {
+                      setState(() => _activeField = _RouteInputField.destination);
+                      _destinationFocus.requestFocus();
+                    },
                     child: const Icon(
                       Icons.location_on,
                       color: Color(0xFFD21DDB),
@@ -465,12 +713,23 @@ class _RouteScreenState extends State<RouteScreen> {
           ),
         ),
         const SizedBox(width: 8),
-        const Icon(Icons.swap_vert_rounded, size: 30, color: Color(0xFF2E313B)),
+        InkWell(
+          onTap: _swapLocations,
+          borderRadius: BorderRadius.circular(20),
+          child: const Padding(
+            padding: EdgeInsets.all(2),
+            child: Icon(
+              Icons.swap_vert_rounded,
+              size: 30,
+              color: Color(0xFF2E313B),
+            ),
+          ),
+        ),
       ],
     );
   }
 
-  Widget _destinationSuggestionsCard() {
+  Widget _suggestionsCard() {
     if (_loadingSuggestions) {
       return const Align(
         alignment: Alignment.topCenter,
@@ -488,7 +747,7 @@ class _RouteScreenState extends State<RouteScreen> {
       );
     }
 
-    if (_destinationSuggestions.isEmpty) {
+    if (_suggestions.isEmpty) {
       return Align(
         alignment: Alignment.topCenter,
         child: Container(
@@ -501,7 +760,7 @@ class _RouteScreenState extends State<RouteScreen> {
             border: Border.all(color: const Color(0xFFD7D9DF)),
           ),
           child: const Text(
-            'No matching places from Google Maps',
+            'No matching places found. Try another search term.',
             style: TextStyle(
               color: Color(0xFF7A7F88),
               fontSize: 13,
@@ -526,11 +785,11 @@ class _RouteScreenState extends State<RouteScreen> {
           ),
           child: ListView.separated(
             padding: EdgeInsets.zero,
-            itemCount: _destinationSuggestions.length,
+            itemCount: _suggestions.length,
             separatorBuilder: (_, _) =>
                 const Divider(height: 1, color: Color(0xFFD7D9DF)),
             itemBuilder: (context, index) {
-              final suggestion = _destinationSuggestions[index];
+              final suggestion = _suggestions[index];
               return InkWell(
                 onTap: () => _applySuggestion(suggestion),
                 borderRadius: BorderRadius.circular(12),
@@ -685,26 +944,30 @@ class _RouteScreenState extends State<RouteScreen> {
     return ListView(
       padding: EdgeInsets.zero,
       children: [
-        const Text(
-          'Saved Locations',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF2E313B),
-            letterSpacing: -0.1,
+        if (_savedLocations.isNotEmpty) ...[
+          const Text(
+            'Saved Locations',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF2E313B),
+              letterSpacing: -0.1,
+            ),
           ),
-        ),
-        const SizedBox(height: 10),
-        ..._savedLocations.map(
-          (location) => _locationRow(
-            title: location['name'] as String,
-            subtitle: location['subtitle'] as String,
-            distance: location['distance'] as String,
-            icon: location['icon'] as IconData,
-            onTap: () => _openBookRide(location['name'] as String),
+          const SizedBox(height: 10),
+          ..._savedLocations.map(
+            (location) => _locationRow(
+              title: location['name'] as String,
+              subtitle: location['subtitle'] as String,
+              distance: location['distance'] as String,
+              icon: location['icon'] as IconData,
+              onTap: () => _selectLocationFromList(
+                location['subtitle'] as String,
+              ),
+            ),
           ),
-        ),
-        const SizedBox(height: 10),
+          const SizedBox(height: 10),
+        ],
         const Text(
           'Recent locations',
           style: TextStyle(
@@ -733,7 +996,7 @@ class _RouteScreenState extends State<RouteScreen> {
                   subtitle: address,
                   distance: '<1km',
                   icon: Icons.location_on,
-                  onTap: () => _openBookRide(
+                  onTap: () => _selectLocationFromList(
                     address.isEmpty ? name : address,
                   ),
                 );
