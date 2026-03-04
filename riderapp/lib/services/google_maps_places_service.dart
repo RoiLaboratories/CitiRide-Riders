@@ -13,24 +13,61 @@ class GoogleMapsPlacesService {
   static const String _mapsApiKey = 'AIzaSyActFrssaaKA5CUikTsI8_98RukSoPXBTY';
   final http.Client _client;
 
-  Future<List<Map<String, String>>> autocompletePlaces(String input) async {
+  Future<List<Map<String, String>>> autocompletePlaces(
+    String input, {
+    String? countryCode,
+  }) async {
     final query = input.trim();
     if (query.isEmpty) return const [];
 
     if (kIsWeb) {
-      final jsSuggestions = await fetchGoogleWebPlaceSuggestions(query);
+      final jsSuggestions = await fetchGoogleWebPlaceSuggestions(
+        query,
+        countryCode: countryCode,
+      );
       if (jsSuggestions.isNotEmpty) {
         return jsSuggestions;
       }
     }
 
-    return _autocompletePlacesWebService(query);
+    final placesSuggestions = await _autocompletePlacesWebService(
+      query,
+      countryCode: countryCode,
+    );
+    if (placesSuggestions.isNotEmpty) {
+      return placesSuggestions;
+    }
+
+    final geocodeSuggestions = await _autocompletePlacesGeocodeFallback(
+      query,
+      countryCode: countryCode,
+    );
+    if (geocodeSuggestions.isNotEmpty) {
+      return geocodeSuggestions;
+    }
+
+    if (query.length >= 3) {
+      return <Map<String, String>>[
+        <String, String>{
+          'name': query,
+          'subtitle': 'Use typed address',
+          'value': query,
+          'placeId': '',
+        },
+      ];
+    }
+
+    return const [];
   }
 
   Future<List<Map<String, String>>> _autocompletePlacesWebService(
     String query,
+    {
+    String? countryCode,
+  }
   ) async {
     try {
+      final cleanedCountry = (countryCode ?? '').trim().toLowerCase();
       final uri = Uri.https(
         'maps.googleapis.com',
         '/maps/api/place/autocomplete/json',
@@ -38,7 +75,8 @@ class GoogleMapsPlacesService {
           'input': query,
           'key': _mapsApiKey,
           'language': 'en',
-          'types': 'geocode',
+          if (cleanedCountry.isNotEmpty)
+            'components': 'country:$cleanedCountry',
         },
       );
 
@@ -70,6 +108,94 @@ class GoogleMapsPlacesService {
       }).toList();
     } catch (_) {
       return const [];
+    }
+  }
+
+  Future<List<Map<String, String>>> _autocompletePlacesGeocodeFallback(
+    String query,
+    {
+    String? countryCode,
+  }
+  ) async {
+    try {
+      final cleanedCountry = (countryCode ?? '').trim().toLowerCase();
+      final uri = Uri.https('maps.googleapis.com', '/maps/api/geocode/json', {
+        'address': query,
+        'key': _mapsApiKey,
+        'language': 'en',
+        if (cleanedCountry.isNotEmpty) 'components': 'country:$cleanedCountry',
+      });
+
+      final response = await _client.get(uri);
+      if (response.statusCode != 200) return const [];
+
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+      final status = (decoded['status'] as String?) ?? '';
+      if (status != 'OK' && status != 'ZERO_RESULTS') return const [];
+
+      final results = (decoded['results'] as List?) ?? const [];
+      if (results.isEmpty) return const [];
+
+      final suggestions = <Map<String, String>>[];
+      for (final entry in results.take(8)) {
+        if (entry is! Map<String, dynamic>) continue;
+
+        final formattedAddress =
+            (entry['formatted_address'] as String?)?.trim() ?? '';
+        if (formattedAddress.isEmpty) continue;
+
+        final parts = formattedAddress
+            .split(',')
+            .map((part) => part.trim())
+            .where((part) => part.isNotEmpty)
+            .toList();
+        final mainText = parts.isNotEmpty ? parts.first : formattedAddress;
+        final secondaryText = parts.length > 1 ? parts.sublist(1).join(', ') : '';
+        final placeId = (entry['place_id'] as String?)?.trim() ?? '';
+
+        suggestions.add(<String, String>{
+          'name': mainText,
+          'subtitle': secondaryText,
+          'value': formattedAddress,
+          'placeId': placeId,
+        });
+      }
+
+      return suggestions;
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  Future<Map<String, double>?> getPlaceCoordinates(String placeId) async {
+    final cleanedPlaceId = placeId.trim();
+    if (cleanedPlaceId.isEmpty) return null;
+
+    try {
+      final uri = Uri.https('maps.googleapis.com', '/maps/api/place/details/json', {
+        'place_id': cleanedPlaceId,
+        'key': _mapsApiKey,
+        'fields': 'geometry',
+      });
+
+      final response = await _client.get(uri);
+      if (response.statusCode != 200) return null;
+
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+      final status = (decoded['status'] as String?) ?? '';
+      if (status != 'OK') return null;
+
+      final result = decoded['result'] as Map<String, dynamic>?;
+      final geometry = result?['geometry'] as Map<String, dynamic>?;
+      final location = geometry?['location'] as Map<String, dynamic>?;
+
+      final latValue = location?['lat'];
+      final lngValue = location?['lng'];
+      if (latValue is! num || lngValue is! num) return null;
+
+      return {'lat': latValue.toDouble(), 'lng': lngValue.toDouble()};
+    } catch (_) {
+      return null;
     }
   }
 

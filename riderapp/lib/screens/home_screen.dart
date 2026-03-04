@@ -1,5 +1,4 @@
 import 'dart:ui';
-import 'dart:convert';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
@@ -19,7 +18,12 @@ import '../screens/wallet_screen.dart';
 import '../utils/google_map_style.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({
+    super.key,
+    this.initialTabIndex = 0,
+  });
+
+  final int initialTabIndex;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -29,16 +33,14 @@ class _HomeScreenState extends State<HomeScreen> {
   static const String _defaultNigerianPhone = '+2349070107455';
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  final PageController _pageController = PageController();
+  late final PageController _pageController;
 
-  int _currentIndex = 0;
+  late int _currentIndex;
   bool _locationLoading = false;
   bool _isCheckingWalletPin = false;
   String _drawerName = 'Rider';
   String _drawerUsername = '@user';
   String _drawerPhone = _defaultNigerianPhone;
-  String? _drawerAvatarAsset;
-  Uint8List? _drawerAvatarBytes;
   int _locationRefreshSeed = 0;
   int _profileRefreshSeed = 0;
   bool _isDrawerOpen = false;
@@ -49,27 +51,28 @@ class _HomeScreenState extends State<HomeScreen> {
         gmaps.BitmapDescriptor.hueAzure,
       );
 
-  Uint8List? _decodeAvatarBase64(String value) {
-    if (value.trim().isEmpty) return null;
-    try {
-      return base64Decode(value);
-    } catch (_) {
-      return null;
-    }
-  }
-
   // ---------------- INIT ----------------
 
   @override
   void initState() {
     super.initState();
+    _currentIndex = widget.initialTabIndex.clamp(0, 2);
+    _pageController = PageController(initialPage: _currentIndex);
     _loadDrawerProfile();
     _loadUserLocationMarkerIcon();
 
-    /// Show location modal AFTER first frame
-    WidgetsBinding.instance.addPostFrameCallback((ctx) {
-      _showLocationPermissionModal();
-    });
+    /// Show location modal only on Home tab after first frame.
+    if (_currentIndex == 0) {
+      WidgetsBinding.instance.addPostFrameCallback((ctx) {
+        _showLocationPermissionModal();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
   Future<void> _refreshCurrentLocationForMap({
@@ -126,9 +129,6 @@ class _HomeScreenState extends State<HomeScreen> {
     final name = (prefs.getString('profile_name') ?? '').trim();
     final username = (prefs.getString('profile_username') ?? '').trim();
     final phone = (prefs.getString('profile_phone') ?? '').trim();
-    final avatarAsset = (prefs.getString('profile_avatar_asset') ?? '').trim();
-    final avatarBase64 = (prefs.getString('profile_avatar_base64') ?? '')
-        .trim();
     final firebasePhone = FirebaseAuth.instance.currentUser?.phoneNumber ?? '';
 
     if (!mounted) return;
@@ -139,8 +139,6 @@ class _HomeScreenState extends State<HomeScreen> {
       _drawerPhone = phone.isNotEmpty
           ? phone
           : (firebasePhone.isNotEmpty ? firebasePhone : _defaultNigerianPhone);
-      _drawerAvatarAsset = avatarAsset.isNotEmpty ? avatarAsset : null;
-      _drawerAvatarBytes = _decodeAvatarBase64(avatarBase64);
     });
   }
 
@@ -172,16 +170,6 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!mounted) return;
 
     Navigator.pushNamedAndRemoveUntil(context, '/welcome', (route) => false);
-  }
-
-  ImageProvider? _getDrawerAvatarProvider() {
-    if (_drawerAvatarBytes != null && _drawerAvatarBytes!.isNotEmpty) {
-      return MemoryImage(_drawerAvatarBytes!);
-    }
-    if (_drawerAvatarAsset != null && _drawerAvatarAsset!.trim().isNotEmpty) {
-      return AssetImage(_drawerAvatarAsset!);
-    }
-    return null;
   }
 
   Widget _drawerMenuTile({
@@ -256,14 +244,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     CircleAvatar(
                       radius: 32,
                       backgroundColor: const Color(0xFFF6DCE8),
-                      backgroundImage: _getDrawerAvatarProvider(),
-                      child: _getDrawerAvatarProvider() == null
-                          ? const Icon(
-                              Icons.person,
-                              size: 36,
-                              color: Color(0xFF50525C),
-                            )
-                          : null,
+                      backgroundImage: const AssetImage('images/profile.png'),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -317,15 +298,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   icon: Icons.bookmark,
                   title: 'Saved places',
                   subtitle: 'Enter your home and work location',
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Saved places will be available soon'),
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                  },
+                  onTap: () => _navigateFromDrawer('/saved-places'),
                 ),
                 const SizedBox(height: 4),
                 _drawerMenuTile(
@@ -541,6 +514,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final topInset = MediaQuery.of(context).padding.top;
+    final bottomInset = MediaQuery.of(context).padding.bottom;
+
     return Scaffold(
       key: _scaffoldKey,
       drawerEnableOpenDragGesture: false,
@@ -560,6 +536,61 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [_buildHomeMap(), RideScreen(), WalletScreen()],
           ),
 
+          /// TOP BAR
+          if (_currentIndex != 2 && _currentIndex != 1) // hide in Wallet
+            Positioned(
+              top: topInset + 18,
+              left: 16,
+              right: 16,
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(28),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withAlpha(36),
+                      blurRadius: 18,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: HomeTopBar(
+                  onAvatarTap: _openProfileDrawer,
+                  profileRefreshSeed: _profileRefreshSeed,
+                  locationRefreshSeed: _locationRefreshSeed,
+                ),
+              ),
+            ),
+
+          /// HOME DRAGGABLE SHEET (ONLY HOME TAB)
+          if (_currentIndex == 0)
+            Positioned(
+              left: 16,
+              right: 16,
+              bottom: 86 + bottomInset,
+              top: topInset + 82,
+              child: DraggableScrollableSheet(
+                initialChildSize: 0.16,
+                minChildSize: 0.16,
+                maxChildSize: 0.82,
+                snap: true,
+                snapSizes: const [0.16, 0.60],
+                builder: (context, scrollController) {
+                  return HomeModalSheet(scrollController: scrollController);
+                },
+              ),
+            ),
+
+          /// BOTTOM NAV BAR
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: bottomInset > 0 ? 10 : 16,
+            child: BottomNavBar(
+              currentIndex: _currentIndex,
+              onTabChanged: _onTabChanged,
+            ),
+          ),
+
           if (_isDrawerOpen)
             Positioned.fill(
               child: IgnorePointer(
@@ -569,50 +600,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-
-          /// TOP BAR
-          if (_currentIndex != 2 && _currentIndex != 1) // hide in Wallet
-            Positioned(
-              top: 50,
-              left: 20,
-              right: 20,
-              child: HomeTopBar(
-                key: ValueKey(
-                  'home_top_bar_${_locationRefreshSeed}_$_profileRefreshSeed',
-                ),
-                onAvatarTap: _openProfileDrawer,
-              ),
-            ),
-
-          /// HOME DRAGGABLE SHEET (ONLY HOME TAB)
-          if (_currentIndex == 0)
-            Positioned(
-              left: 16,
-              right: 16,
-              bottom: 112,
-              top: 150,
-              child: DraggableScrollableSheet(
-                initialChildSize: 0.19,
-                minChildSize: 0.19,
-                maxChildSize: 0.82,
-                snap: true,
-                snapSizes: const [0.19, 0.60],
-                builder: (context, scrollController) {
-                  return HomeModalSheet(scrollController: scrollController);
-                },
-              ),
-            ),
-
-          /// BOTTOM NAV BAR
-          Positioned(
-            left: 20,
-            right: 20,
-            bottom: 22,
-            child: BottomNavBar(
-              currentIndex: _currentIndex,
-              onTabChanged: _onTabChanged,
-            ),
-          ),
         ],
       ),
     );

@@ -1,8 +1,8 @@
 import 'dart:convert';
-import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -23,13 +23,25 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
 
   String _phoneNumber = _defaultNigerianPhone;
+  String _selectedCountryCode = '+234';
+  String _selectedCountryFlag = '\u{1F1F3}\u{1F1EC}';
   String _selectedAvatarAsset = 'images/profile.png';
   Uint8List? _selectedAvatarBytes;
   bool _isLoading = true;
   bool _isSaving = false;
   final ImagePicker _imagePicker = ImagePicker();
+  final List<Map<String, String>> _countries = const [
+    {'flag': '\u{1F1F3}\u{1F1EC}', 'code': '+234', 'name': 'Nigeria'},
+    {'flag': '\u{1F1FA}\u{1F1F8}', 'code': '+1', 'name': 'USA'},
+    {'flag': '\u{1F1EC}\u{1F1E7}', 'code': '+44', 'name': 'UK'},
+    {'flag': '\u{1F1E8}\u{1F1E6}', 'code': '+1', 'name': 'Canada'},
+    {'flag': '\u{1F1EB}\u{1F1F7}', 'code': '+33', 'name': 'France'},
+    {'flag': '\u{1F1E9}\u{1F1EA}', 'code': '+49', 'name': 'Germany'},
+    {'flag': '\u{1F1EE}\u{1F1F3}', 'code': '+91', 'name': 'India'},
+  ];
 
   @override
   void initState() {
@@ -42,6 +54,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     _nameController.dispose();
     _usernameController.dispose();
     _emailController.dispose();
+    _phoneController.dispose();
     super.dispose();
   }
 
@@ -54,6 +67,35 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     } catch (_) {
       return null;
     }
+  }
+
+  void _applyPhoneInputState(String fullPhone) {
+    final normalized = fullPhone.replaceAll(RegExp(r'\s+'), '').trim();
+    final matchedCountry = _countries.firstWhere(
+      (country) => normalized.startsWith(country['code'] ?? ''),
+      orElse: () => _countries.first,
+    );
+
+    _selectedCountryCode = matchedCountry['code'] ?? '+234';
+    _selectedCountryFlag = matchedCountry['flag'] ?? '\u{1F1F3}\u{1F1EC}';
+
+    var localPhone = normalized;
+    if (localPhone.startsWith(_selectedCountryCode)) {
+      localPhone = localPhone.substring(_selectedCountryCode.length);
+    }
+    if (localPhone.startsWith('0')) {
+      localPhone = localPhone.substring(1);
+    }
+
+    _phoneController.text = localPhone;
+    _phoneController.selection = TextSelection.fromPosition(
+      TextPosition(offset: _phoneController.text.length),
+    );
+  }
+
+  String _buildPhoneNumberForSave() {
+    final digits = _phoneController.text.replaceAll(RegExp(r'\D'), '');
+    return digits.isEmpty ? _selectedCountryCode : '$_selectedCountryCode$digits';
   }
 
   Future<void> _loadProfile() async {
@@ -82,6 +124,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final userEmail = _safeText(userData?['email']);
     final userPhone = _safeText(userData?['phoneNumber']);
     final authPhone = auth.currentUser?.phoneNumber ?? '';
+    final resolvedPhone = userPhone.isNotEmpty
+        ? userPhone
+        : (authPhone.isNotEmpty
+            ? authPhone
+            : (localPhone.isNotEmpty ? localPhone : _defaultNigerianPhone));
+
+    _applyPhoneInputState(resolvedPhone);
 
     setState(() {
       _nameController.text =
@@ -89,11 +138,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       _usernameController.text =
           userUsername.isNotEmpty ? userUsername : localUsername;
       _emailController.text = userEmail.isNotEmpty ? userEmail : localEmail;
-      _phoneNumber = userPhone.isNotEmpty
-          ? userPhone
-          : (authPhone.isNotEmpty
-              ? authPhone
-              : (localPhone.isNotEmpty ? localPhone : _defaultNigerianPhone));
+      _phoneNumber = resolvedPhone;
       _selectedAvatarAsset = profileAvatarAsset;
       _selectedAvatarBytes = _decodeAvatarBase64(storedAvatarBase64);
       _isLoading = false;
@@ -261,6 +306,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       final name = _nameController.text.trim();
       final username = _usernameController.text.trim();
       final email = _emailController.text.trim();
+      _phoneNumber = _buildPhoneNumberForSave();
       String successMessage = 'Changes saved';
 
       await prefs.setString('profile_name', name);
@@ -364,8 +410,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Widget _phoneField() {
+    final selectedCountry = _countries.firstWhere(
+      (country) =>
+          country['code'] == _selectedCountryCode &&
+          country['flag'] == _selectedCountryFlag,
+      orElse: () => _countries.first,
+    );
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
         color: const Color(0xFFEDEDEF),
         borderRadius: BorderRadius.circular(28),
@@ -373,29 +426,72 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       child: Row(
         children: [
           Container(
-            width: 28,
-            height: 20,
+            padding: const EdgeInsets.symmetric(horizontal: 8),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(2),
+              borderRadius: BorderRadius.circular(18),
               color: Colors.white,
             ),
-            child: Row(
-              children: const [
-                Expanded(child: ColoredBox(color: Color(0xFF1FA300))),
-                Expanded(child: ColoredBox(color: Colors.white)),
-                Expanded(child: ColoredBox(color: Color(0xFF1FA300))),
-              ],
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<Map<String, String>>(
+                value: selectedCountry,
+                borderRadius: BorderRadius.circular(16),
+                icon: const Icon(
+                  Icons.keyboard_arrow_down,
+                  color: Color(0xFFA5A9B0),
+                  size: 22,
+                ),
+                items: _countries.map((country) {
+                  return DropdownMenuItem<Map<String, String>>(
+                    value: country,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(country['flag'] ?? ''),
+                        const SizedBox(width: 6),
+                        Text(
+                          country['code'] ?? '',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFF2F323D),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  if (value == null) return;
+                  setState(() {
+                    _selectedCountryCode = value['code'] ?? '+234';
+                    _selectedCountryFlag =
+                        value['flag'] ?? '\u{1F1F3}\u{1F1EC}';
+                  });
+                },
+              ),
             ),
           ),
-          const SizedBox(width: 8),
-          const Icon(Icons.keyboard_arrow_down, color: Color(0xFFA5A9B0), size: 26),
-          const SizedBox(width: 18),
+          const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              _phoneNumber,
+            child: TextFormField(
+              controller: _phoneController,
+              keyboardType: TextInputType.phone,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               style: const TextStyle(
                 fontSize: 18,
                 color: Color(0xFF2F323D),
+              ),
+              validator: (value) {
+                final digits = (value ?? '').replaceAll(RegExp(r'\D'), '');
+                if (digits.isEmpty) return 'Phone number is required';
+                if (digits.length < 7) return 'Enter a valid phone number';
+                return null;
+              },
+              decoration: const InputDecoration(
+                hintText: 'Phone number',
+                hintStyle: TextStyle(color: Color(0xFFA0A4AA), fontSize: 17),
+                border: InputBorder.none,
+                isDense: true,
               ),
             ),
           ),

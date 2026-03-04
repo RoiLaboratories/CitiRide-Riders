@@ -24,6 +24,7 @@ import 'screens/change_wallet_pin_screen.dart';
 import 'screens/create_wallet_pin_screen.dart';
 import 'screens/security_screen.dart';
 import 'screens/transaction_details_screen.dart';
+import 'screens/saved_places_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 
@@ -69,6 +70,7 @@ class MyApp extends StatelessWidget {
         '/create-wallet-pin': (context) => const CreateWalletPinScreen(),
         '/reset-wallet-pin': (context) =>
             const CreateWalletPinScreen(isResetFlow: true),
+        '/saved-places': (context) => const SavedPlacesScreen(),
       },
       home: const SplashScreen(),
     );
