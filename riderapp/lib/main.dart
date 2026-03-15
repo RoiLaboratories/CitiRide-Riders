@@ -40,7 +40,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: "Sure-Ride",
+      title: "Citi-Ride",
       initialRoute: '/splash',
       routes: {
         '/splash': (context) => const SplashScreen(),

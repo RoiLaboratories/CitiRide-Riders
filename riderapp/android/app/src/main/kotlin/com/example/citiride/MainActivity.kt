@@ -1,4 +1,4 @@
-package com.example.sureride
+package com.example.citiride
 
 import io.flutter.embedding.android.FlutterActivity
 

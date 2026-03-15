@@ -625,7 +625,7 @@ class _HomeScreenState extends State<HomeScreen> {
             urlTemplate:
                 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
             subdomains: const ['a', 'b', 'c', 'd'],
-            userAgentPackageName: 'com.example.sureride',
+            userAgentPackageName: 'com.example.citiride',
           ),
           fm.MarkerLayer(
             markers: [

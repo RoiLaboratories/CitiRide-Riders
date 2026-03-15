@@ -7,12 +7,21 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:829907800848:android:63f246f1ac55ab2a88cb95",
+        "mobilesdk_app_id": "1:829907800848:android:bbaa13da507f45c988cb95",
         "android_client_info": {
-          "package_name": "com.example.sureride"
+          "package_name": "com.example.citiride"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "829907800848-jqd90boagc26aov6pnusqu8fto3r4qb5.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.citiride",
+            "certificate_hash": "455cc0b1e62db1ac890e01026b7f794b3100a266"
+          }
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDghbSJA5oCRtFWvVn1ZzIllOvCmw5StV0"

@@ -52,7 +52,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyDghbSJA5oCRtFWvVn1ZzIllOvCmw5StV0',
-    appId: '1:829907800848:android:63f246f1ac55ab2a88cb95',
+    appId: '1:829907800848:android:bbaa13da507f45c988cb95',
     messagingSenderId: '829907800848',
     projectId: 'sureride-fbff8',
     storageBucket: 'sureride-fbff8.firebasestorage.app',
