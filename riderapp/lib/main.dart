@@ -40,7 +40,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: "Citi-Ride",
+      title: "CitiRide",
       initialRoute: '/splash',
       routes: {
         '/splash': (context) => const SplashScreen(),
@@ -49,7 +49,7 @@ class MyApp extends StatelessWidget {
         '/signup': (context) => SignUpScreen(),
         '/login': (context) => LoginScreen(),
         '/otp': (context) =>
-            const OTPScreen(phoneNumber: '', verificationId: ''),
+          const OTPScreen(phoneNumber: '', verificationId: ''),
         '/home': (context) => const HomeScreen(),
         '/route': (context) => const RouteScreen(),
         '/ride': (context) => RideScreen(),
@@ -69,7 +69,7 @@ class MyApp extends StatelessWidget {
         '/change-wallet-pin': (context) => const ChangeWalletPinScreen(),
         '/create-wallet-pin': (context) => const CreateWalletPinScreen(),
         '/reset-wallet-pin': (context) =>
-            const CreateWalletPinScreen(isResetFlow: true),
+          const CreateWalletPinScreen(isResetFlow: true),
         '/saved-places': (context) => const SavedPlacesScreen(),
       },
       home: const SplashScreen(),
