@@ -307,7 +307,7 @@ class _RideModalState extends ConsumerState<RideModal> {
 
           _paymentRow(
             image: "images/wallet2.png",
-            title: "Sureride Wallet",
+            title: "CitiRide Wallet",
             subtitleWidget: Row(
               children: [
                 RichText(

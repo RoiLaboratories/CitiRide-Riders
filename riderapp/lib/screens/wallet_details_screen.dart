@@ -59,7 +59,7 @@ class WalletDetailsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 40),
             _buildInfoRow(context, "Recipient's account name",
-              "Sureride - Umoru Osigbemhe"),
+              "CitiRide - Umoru Osigbemhe"),
             const Divider(),
             _buildInfoRow(context, "Account number", "98291029281"),
             const Divider(),

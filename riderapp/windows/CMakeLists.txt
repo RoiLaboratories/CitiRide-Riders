@@ -1,10 +1,13 @@
 # Project-level configuration.
 cmake_minimum_required(VERSION 3.14)
-project(sureride LANGUAGES CXX)
+project(citiride LANGUAGES CXX)
+
+# Suppress deprecation warnings from third-party CMake (e.g., Firebase SDK).
+set(CMAKE_WARN_DEPRECATED OFF CACHE BOOL "Suppress CMake deprecation warnings" FORCE)
 
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.
-set(BINARY_NAME "sureride")
+set(BINARY_NAME "citiride")
 
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.

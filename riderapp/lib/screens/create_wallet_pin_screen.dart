@@ -215,7 +215,7 @@ class _CreateWalletPinScreenState extends State<CreateWalletPinScreen> {
         : (widget.isResetFlow ? 'Reset PIN' : 'Create PIN');
     final subtitle = _isConfirmStep
         ? 'Confirm your 4-digit PIN'
-        : 'Create a PIN to secure your Sureride transactions';
+        : 'Create a PIN to secure your CitiRide transactions';
 
     return PopScope(
       canPop: false,

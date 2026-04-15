@@ -1,6 +1,6 @@
 {
-    "name": "sureride",
-    "short_name": "sureride",
+    "name": "CitiRide",
+    "short_name": "CitiRide",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

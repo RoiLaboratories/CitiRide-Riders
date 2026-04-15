@@ -41,48 +41,46 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyAlA0Pwsk0nJRzwqtrH1Bt9JnlxAhfiEIw',
-    appId: '1:829907800848:web:b2007916283a889f88cb95',
-    messagingSenderId: '829907800848',
-    projectId: 'sureride-fbff8',
-    authDomain: 'sureride-fbff8.firebaseapp.com',
-    storageBucket: 'sureride-fbff8.firebasestorage.app',
-    measurementId: 'G-4BG081DBT9',
+    apiKey: 'AIzaSyBX8KfaN0yFwGihxH5B7bK5IW6-YLUlnL8',
+    appId: '1:338914935245:web:45e381aeca633c2ae6c484',
+    messagingSenderId: '338914935245',
+    projectId: 'citiride-d7743',
+    authDomain: 'citiride-d7743.firebaseapp.com',
+    storageBucket: 'citiride-d7743.firebasestorage.app',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDghbSJA5oCRtFWvVn1ZzIllOvCmw5StV0',
-    appId: '1:829907800848:android:63f246f1ac55ab2a88cb95',
-    messagingSenderId: '829907800848',
-    projectId: 'sureride-fbff8',
-    storageBucket: 'sureride-fbff8.firebasestorage.app',
+    apiKey: 'AIzaSyDwCdjrlTEIWqhVjqHActn_u0yvOT_zf2k',
+    appId: '1:338914935245:android:6f964ea24c9c3e00e6c484',
+    messagingSenderId: '338914935245',
+    projectId: 'citiride-d7743',
+    storageBucket: 'citiride-d7743.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyBzZbD9x6PGYB1tI9itJDocWfU3n4Dz4Ic',
-    appId: '1:829907800848:ios:609a3c9cecde252088cb95',
-    messagingSenderId: '829907800848',
-    projectId: 'sureride-fbff8',
-    storageBucket: 'sureride-fbff8.firebasestorage.app',
-    iosBundleId: 'com.example.sureride',
+    apiKey: 'AIzaSyAJdb_kX56R5v_gBt-VbNMligUmBJBVHAQ',
+    appId: '1:338914935245:ios:08f3aa704b0fd460e6c484',
+    messagingSenderId: '338914935245',
+    projectId: 'citiride-d7743',
+    storageBucket: 'citiride-d7743.firebasestorage.app',
+    iosBundleId: 'com.example.citiride',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyBzZbD9x6PGYB1tI9itJDocWfU3n4Dz4Ic',
-    appId: '1:829907800848:ios:609a3c9cecde252088cb95',
-    messagingSenderId: '829907800848',
-    projectId: 'sureride-fbff8',
-    storageBucket: 'sureride-fbff8.firebasestorage.app',
-    iosBundleId: 'com.example.sureride',
+    apiKey: 'AIzaSyAJdb_kX56R5v_gBt-VbNMligUmBJBVHAQ',
+    appId: '1:338914935245:ios:08f3aa704b0fd460e6c484',
+    messagingSenderId: '338914935245',
+    projectId: 'citiride-d7743',
+    storageBucket: 'citiride-d7743.firebasestorage.app',
+    iosBundleId: 'com.example.citiride',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyAlA0Pwsk0nJRzwqtrH1Bt9JnlxAhfiEIw',
-    appId: '1:829907800848:web:20071a35739d8d4988cb95',
-    messagingSenderId: '829907800848',
-    projectId: 'sureride-fbff8',
-    authDomain: 'sureride-fbff8.firebaseapp.com',
-    storageBucket: 'sureride-fbff8.firebasestorage.app',
-    measurementId: 'G-QWREVYYL2S',
+    apiKey: 'AIzaSyBX8KfaN0yFwGihxH5B7bK5IW6-YLUlnL8',
+    appId: '1:338914935245:web:9940a53777a2b1c2e6c484',
+    messagingSenderId: '338914935245',
+    projectId: 'citiride-d7743',
+    authDomain: 'citiride-d7743.firebaseapp.com',
+    storageBucket: 'citiride-d7743.firebasestorage.app',
   );
 }

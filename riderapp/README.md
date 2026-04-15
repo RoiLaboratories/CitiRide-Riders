@@ -1,4 +1,4 @@
-# sureride
+# CitiRide
 
 A new Flutter project.
 
