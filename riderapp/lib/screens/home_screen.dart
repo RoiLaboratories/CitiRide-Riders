@@ -18,10 +18,7 @@ import '../screens/wallet_screen.dart';
 import '../utils/google_map_style.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({
-    super.key,
-    this.initialTabIndex = 0,
-  });
+  const HomeScreen({super.key, this.initialTabIndex = 0});
 
   final int initialTabIndex;
 
@@ -38,6 +35,7 @@ class _HomeScreenState extends State<HomeScreen> {
   late int _currentIndex;
   bool _locationLoading = false;
   bool _isCheckingWalletPin = false;
+  bool _isLocationModalOpen = false;
   String _drawerName = 'Rider';
   String _drawerUsername = '@user';
   String _drawerPhone = _defaultNigerianPhone;
@@ -46,10 +44,8 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isDrawerOpen = false;
 
   gmaps.LatLng _currentLocation = const gmaps.LatLng(6.5244, 3.3792);
-  gmaps.BitmapDescriptor _userLocationMarkerIcon =
-      gmaps.BitmapDescriptor.defaultMarkerWithHue(
-        gmaps.BitmapDescriptor.hueAzure,
-      );
+  gmaps.BitmapDescriptor _userLocationMarkerIcon = gmaps
+      .BitmapDescriptor.defaultMarkerWithHue(gmaps.BitmapDescriptor.hueAzure);
 
   // ---------------- INIT ----------------
 
@@ -363,8 +359,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // ---------------- LOCATION MODAL ----------------
 
-  void _showLocationPermissionModal() {
-    showGeneralDialog<void>(
+  Future<void> _showLocationPermissionModal() async {
+    if (_isLocationModalOpen) return;
+    _isLocationModalOpen = true;
+
+    await showGeneralDialog<void>(
       context: context,
       barrierDismissible: true,
       barrierLabel: 'Location Permission',
@@ -416,6 +415,8 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       },
     );
+
+    _isLocationModalOpen = false;
   }
 
   Future<void> _requestLocationPermission() async {
@@ -424,6 +425,11 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() => _locationLoading = true);
 
     try {
+      if (_isLocationModalOpen && mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+        _isLocationModalOpen = false;
+      }
+
       LocationPermission permission = await Geolocator.checkPermission();
 
       if (permission == LocationPermission.denied) {
@@ -453,8 +459,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
       await _refreshCurrentLocationForMap(requestIfDenied: false);
       if (!mounted) return;
-
-      Navigator.of(context, rootNavigator: true).pop();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -514,8 +518,22 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
     final topInset = MediaQuery.of(context).padding.top;
     final bottomInset = MediaQuery.of(context).padding.bottom;
+    final isCompactHeight = size.height < 700;
+    final horizontalInset = size.width < 360 ? 14.0 : 16.0;
+    final topBarOffset = topInset + (isCompactHeight ? 12.0 : 18.0);
+    final sheetTop = topInset + (isCompactHeight ? 74.0 : 82.0);
+    final navBottom = bottomInset + (bottomInset > 0 ? 10.0 : 16.0);
+    final sheetNavGap = isCompactHeight ? 20.0 : 26.0;
+    final sheetBottom = navBottom + BottomNavBar.barHeight + sheetNavGap;
+    final sheetAvailableHeight = size.height - sheetTop - sheetBottom;
+    final collapsedSheetHeight = isCompactHeight ? 94.0 : 96.0;
+    final collapsedSheetSize = (collapsedSheetHeight / sheetAvailableHeight)
+        .clamp(0.16, 0.32)
+        .toDouble();
+    final expandedSnapSize = collapsedSheetSize < 0.60 ? 0.60 : 0.72;
 
     return Scaffold(
       key: _scaffoldKey,
@@ -539,9 +557,9 @@ class _HomeScreenState extends State<HomeScreen> {
           /// TOP BAR
           if (_currentIndex != 2 && _currentIndex != 1) // hide in Wallet
             Positioned(
-              top: topInset + 18,
-              left: 16,
-              right: 16,
+              top: topBarOffset,
+              left: horizontalInset,
+              right: horizontalInset,
               child: Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(28),
@@ -564,16 +582,16 @@ class _HomeScreenState extends State<HomeScreen> {
           /// HOME DRAGGABLE SHEET (ONLY HOME TAB)
           if (_currentIndex == 0)
             Positioned(
-              left: 16,
-              right: 16,
-              bottom: 86 + bottomInset,
-              top: topInset + 82,
+              left: horizontalInset,
+              right: horizontalInset,
+              bottom: sheetBottom,
+              top: sheetTop,
               child: DraggableScrollableSheet(
-                initialChildSize: 0.16,
-                minChildSize: 0.16,
+                initialChildSize: collapsedSheetSize,
+                minChildSize: collapsedSheetSize,
                 maxChildSize: 0.82,
                 snap: true,
-                snapSizes: const [0.16, 0.60],
+                snapSizes: [collapsedSheetSize, expandedSnapSize],
                 builder: (context, scrollController) {
                   return HomeModalSheet(scrollController: scrollController);
                 },
@@ -584,7 +602,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Positioned(
             left: 0,
             right: 0,
-            bottom: bottomInset > 0 ? 10 : 16,
+            bottom: navBottom,
             child: BottomNavBar(
               currentIndex: _currentIndex,
               onTabChanged: _onTabChanged,

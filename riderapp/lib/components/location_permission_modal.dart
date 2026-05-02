@@ -60,7 +60,7 @@ class LocationPermissionModal extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  "Set your location",
+                  'Set your location',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.poppins(
                     fontSize: 20,
@@ -109,7 +109,7 @@ class LocationPermissionModal extends StatelessWidget {
                                 ),
                               )
                             : Text(
-                                "Set location",
+                                'Set location',
                                 style: GoogleFonts.poppins(
                                   fontWeight: FontWeight.bold,
                                   color: Colors.white,
@@ -131,7 +131,7 @@ class LocationPermissionModal extends StatelessWidget {
                           elevation: 0,
                         ),
                         child: Text(
-                          "Do it later",
+                          'Do it later',
                           style: GoogleFonts.poppins(
                             fontWeight: FontWeight.bold,
                             color: Colors.black87,

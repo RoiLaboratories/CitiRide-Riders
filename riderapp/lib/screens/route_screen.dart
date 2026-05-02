@@ -30,6 +30,7 @@ class _RouteScreenState extends State<RouteScreen> {
   bool _showBookRideButton = false;
   bool _isBooking = false;
   bool _appliedRouteArgs = false;
+  bool _isApplyingSuggestion = false;
   _RouteInputField _activeField = _RouteInputField.none;
   _RouteInputField _suggestionsForField = _RouteInputField.none;
 
@@ -89,7 +90,7 @@ class _RouteScreenState extends State<RouteScreen> {
   @override
   void dispose() {
     LocationManager().removeListener(_onLocationsUpdated);
-    _suggestionDebounce?.cancel();
+    _cancelPendingSuggestionWork();
 
     _pickupController.removeListener(_onPickupChanged);
     _destinationController.removeListener(_onDestinationChanged);
@@ -105,33 +106,47 @@ class _RouteScreenState extends State<RouteScreen> {
 
   void _onPickupFocusChanged() {
     if (!mounted) return;
+    if (!_pickupFocus.hasFocus && !_destinationFocus.hasFocus) {
+      _cancelPendingSuggestionWork();
+    }
     setState(() {
       if (_pickupFocus.hasFocus) {
         _activeField = _RouteInputField.pickup;
       } else if (!_destinationFocus.hasFocus) {
         _activeField = _RouteInputField.none;
+        _loadingSuggestions = false;
+        _suggestionsForField = _RouteInputField.none;
+        _suggestions = [];
       }
     });
   }
 
   void _onDestinationFocusChanged() {
     if (!mounted) return;
+    if (!_destinationFocus.hasFocus && !_pickupFocus.hasFocus) {
+      _cancelPendingSuggestionWork();
+    }
     setState(() {
       if (_destinationFocus.hasFocus) {
         _activeField = _RouteInputField.destination;
       } else if (!_pickupFocus.hasFocus) {
         _activeField = _RouteInputField.none;
+        _loadingSuggestions = false;
+        _suggestionsForField = _RouteInputField.none;
+        _suggestions = [];
       }
     });
   }
 
   void _onPickupChanged() {
+    if (_isApplyingSuggestion) return;
     final query = _pickupController.text.trim();
     _pickupCoordinates = null;
     _requestSuggestions(query, field: _RouteInputField.pickup);
   }
 
   void _onDestinationChanged() {
+    if (_isApplyingSuggestion) return;
     final query = _destinationController.text.trim();
     _destinationCoordinates = null;
     if (!mounted) return;
@@ -143,7 +158,7 @@ class _RouteScreenState extends State<RouteScreen> {
     String query, {
     required _RouteInputField field,
   }) {
-    _suggestionDebounce?.cancel();
+    _cancelPendingSuggestionWork();
 
     final shouldFetch = (field == _RouteInputField.pickup && _pickupFocus.hasFocus) ||
         (field == _RouteInputField.destination && _destinationFocus.hasFocus);
@@ -165,11 +180,24 @@ class _RouteScreenState extends State<RouteScreen> {
     });
   }
 
+  void _cancelPendingSuggestionWork() {
+    _suggestionDebounce?.cancel();
+    _suggestionDebounce = null;
+    _latestSuggestionRequestId++;
+  }
+
+  void _setControllerValue(TextEditingController controller, String value) {
+    controller.value = TextEditingValue(
+      text: value,
+      selection: TextSelection.collapsed(offset: value.length),
+    );
+  }
+
   Future<void> _fetchSuggestions(
     String query, {
     required _RouteInputField field,
   }) async {
-    final requestId = ++_latestSuggestionRequestId;
+    final requestId = _latestSuggestionRequestId;
     if (!mounted) return;
     setState(() {
       _activeField = field;
@@ -181,6 +209,11 @@ class _RouteScreenState extends State<RouteScreen> {
       query,
     );
     if (!mounted || requestId != _latestSuggestionRequestId) return;
+
+    final fieldStillFocused =
+        (field == _RouteInputField.pickup && _pickupFocus.hasFocus) ||
+        (field == _RouteInputField.destination && _destinationFocus.hasFocus);
+    if (!fieldStillFocused) return;
 
     setState(() {
       _suggestions = suggestions;
@@ -199,27 +232,30 @@ class _RouteScreenState extends State<RouteScreen> {
     if (value.isEmpty) return;
 
     final applyToPickup = targetField == _RouteInputField.pickup;
+    _cancelPendingSuggestionWork();
+    _isApplyingSuggestion = true;
 
     if (applyToPickup) {
-      _pickupController.text = value;
-      _pickupController.selection = TextSelection.fromPosition(
-        TextPosition(offset: _pickupController.text.length),
-      );
-      _pickupFocus.unfocus();
+      _setControllerValue(_pickupController, value);
     } else {
-      _destinationController.text = value;
-      _destinationController.selection = TextSelection.fromPosition(
-        TextPosition(offset: _destinationController.text.length),
-      );
-      _destinationFocus.unfocus();
+      _setControllerValue(_destinationController, value);
     }
+
+    _isApplyingSuggestion = false;
 
     setState(() {
       _activeField = _RouteInputField.none;
+      _loadingSuggestions = false;
       _suggestionsForField = _RouteInputField.none;
       _showBookRideButton = _destinationController.text.trim().isNotEmpty;
       _suggestions = [];
     });
+
+    if (applyToPickup) {
+      _pickupFocus.unfocus();
+    } else {
+      _destinationFocus.unfocus();
+    }
 
     final coordinates = await _resolveSuggestionLatLng(suggestion, fallbackValue: value);
     if (!mounted) return;
@@ -237,18 +273,6 @@ class _RouteScreenState extends State<RouteScreen> {
           _destinationCoordinates = coordinates;
         }
       });
-    }
-
-    if (!applyToPickup) {
-      final pickupLabel = _pickupController.text.trim();
-      final resolvedPickupCoordinates =
-          _pickupCoordinates ?? await _resolveAddressToLatLng(pickupLabel);
-
-      await _openBookRide(
-        value,
-        pickupCoordinates: resolvedPickupCoordinates,
-        destinationCoordinates: coordinates ?? _destinationCoordinates,
-      );
     }
   }
 

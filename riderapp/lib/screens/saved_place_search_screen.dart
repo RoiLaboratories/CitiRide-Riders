@@ -38,7 +38,7 @@ class _SavedPlaceSearchScreenState extends State<SavedPlaceSearchScreen> {
 
   @override
   void dispose() {
-    _debounce?.cancel();
+    _cancelPendingSuggestionWork();
     _searchController.removeListener(_onQueryChanged);
     _searchController.dispose();
     _searchFocus.dispose();
@@ -47,7 +47,7 @@ class _SavedPlaceSearchScreenState extends State<SavedPlaceSearchScreen> {
 
   void _onQueryChanged() {
     final query = _searchController.text.trim();
-    _debounce?.cancel();
+    _cancelPendingSuggestionWork();
 
     if (query.isEmpty) {
       if (!mounted) return;
@@ -63,8 +63,21 @@ class _SavedPlaceSearchScreenState extends State<SavedPlaceSearchScreen> {
     });
   }
 
+  void _cancelPendingSuggestionWork() {
+    _debounce?.cancel();
+    _debounce = null;
+    _latestRequestId++;
+  }
+
+  void _setSearchValue(String value) {
+    _searchController.value = TextEditingValue(
+      text: value,
+      selection: TextSelection.collapsed(offset: value.length),
+    );
+  }
+
   Future<void> _fetchSuggestions(String query) async {
-    final requestId = ++_latestRequestId;
+    final requestId = _latestRequestId;
     if (!mounted) return;
     setState(() => _loadingSuggestions = true);
 
@@ -73,6 +86,7 @@ class _SavedPlaceSearchScreenState extends State<SavedPlaceSearchScreen> {
     );
 
     if (!mounted || requestId != _latestRequestId) return;
+    if (!_searchFocus.hasFocus) return;
     setState(() {
       _loadingSuggestions = false;
       _suggestions = results;
@@ -83,6 +97,16 @@ class _SavedPlaceSearchScreenState extends State<SavedPlaceSearchScreen> {
     final selectedAddress =
         (suggestion['value'] ?? suggestion['name'] ?? '').trim();
     if (selectedAddress.isEmpty) return;
+
+    _cancelPendingSuggestionWork();
+    _searchFocus.unfocus();
+    _setSearchValue(selectedAddress);
+    if (mounted) {
+      setState(() {
+        _loadingSuggestions = false;
+        _suggestions = [];
+      });
+    }
 
     gmaps.LatLng target = const gmaps.LatLng(6.5244, 3.3792);
     try {
