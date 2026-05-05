@@ -31,6 +31,7 @@ class _RouteScreenState extends State<RouteScreen> {
   bool _isBooking = false;
   bool _appliedRouteArgs = false;
   bool _isApplyingSuggestion = false;
+  bool _isPressingSuggestion = false;
   _RouteInputField _activeField = _RouteInputField.none;
   _RouteInputField _suggestionsForField = _RouteInputField.none;
 
@@ -41,6 +42,7 @@ class _RouteScreenState extends State<RouteScreen> {
   gmaps.LatLng? _destinationCoordinates;
 
   Timer? _suggestionDebounce;
+  Timer? _focusClearTimer;
   int _latestSuggestionRequestId = 0;
   final GoogleMapsPlacesService _placesService = GoogleMapsPlacesService();
 
@@ -91,6 +93,7 @@ class _RouteScreenState extends State<RouteScreen> {
   void dispose() {
     LocationManager().removeListener(_onLocationsUpdated);
     _cancelPendingSuggestionWork();
+    _focusClearTimer?.cancel();
 
     _pickupController.removeListener(_onPickupChanged);
     _destinationController.removeListener(_onDestinationChanged);
@@ -106,34 +109,30 @@ class _RouteScreenState extends State<RouteScreen> {
 
   void _onPickupFocusChanged() {
     if (!mounted) return;
+    if (_pickupFocus.hasFocus) {
+      _focusClearTimer?.cancel();
+    }
     if (!_pickupFocus.hasFocus && !_destinationFocus.hasFocus) {
-      _cancelPendingSuggestionWork();
+      _scheduleInactiveFieldClear();
     }
     setState(() {
       if (_pickupFocus.hasFocus) {
         _activeField = _RouteInputField.pickup;
-      } else if (!_destinationFocus.hasFocus) {
-        _activeField = _RouteInputField.none;
-        _loadingSuggestions = false;
-        _suggestionsForField = _RouteInputField.none;
-        _suggestions = [];
       }
     });
   }
 
   void _onDestinationFocusChanged() {
     if (!mounted) return;
+    if (_destinationFocus.hasFocus) {
+      _focusClearTimer?.cancel();
+    }
     if (!_destinationFocus.hasFocus && !_pickupFocus.hasFocus) {
-      _cancelPendingSuggestionWork();
+      _scheduleInactiveFieldClear();
     }
     setState(() {
       if (_destinationFocus.hasFocus) {
         _activeField = _RouteInputField.destination;
-      } else if (!_pickupFocus.hasFocus) {
-        _activeField = _RouteInputField.none;
-        _loadingSuggestions = false;
-        _suggestionsForField = _RouteInputField.none;
-        _suggestions = [];
       }
     });
   }
@@ -154,13 +153,11 @@ class _RouteScreenState extends State<RouteScreen> {
     _requestSuggestions(query, field: _RouteInputField.destination);
   }
 
-  void _requestSuggestions(
-    String query, {
-    required _RouteInputField field,
-  }) {
+  void _requestSuggestions(String query, {required _RouteInputField field}) {
     _cancelPendingSuggestionWork();
 
-    final shouldFetch = (field == _RouteInputField.pickup && _pickupFocus.hasFocus) ||
+    final shouldFetch =
+        (field == _RouteInputField.pickup && _pickupFocus.hasFocus) ||
         (field == _RouteInputField.destination && _destinationFocus.hasFocus);
 
     if (!shouldFetch) return;
@@ -186,11 +183,38 @@ class _RouteScreenState extends State<RouteScreen> {
     _latestSuggestionRequestId++;
   }
 
+  void _scheduleInactiveFieldClear() {
+    _focusClearTimer?.cancel();
+    _focusClearTimer = Timer(const Duration(milliseconds: 120), () {
+      if (!mounted ||
+          _isPressingSuggestion ||
+          _pickupFocus.hasFocus ||
+          _destinationFocus.hasFocus) {
+        return;
+      }
+
+      _cancelPendingSuggestionWork();
+      setState(() {
+        _activeField = _RouteInputField.none;
+        _loadingSuggestions = false;
+        _suggestionsForField = _RouteInputField.none;
+        _suggestions = [];
+      });
+    });
+  }
+
   void _setControllerValue(TextEditingController controller, String value) {
     controller.value = TextEditingValue(
       text: value,
       selection: TextSelection.collapsed(offset: value.length),
     );
+  }
+
+  void _cancelSuggestionPress() {
+    _isPressingSuggestion = false;
+    if (!mounted || _pickupFocus.hasFocus || _destinationFocus.hasFocus) return;
+
+    _scheduleInactiveFieldClear();
   }
 
   Future<void> _fetchSuggestions(
@@ -205,9 +229,7 @@ class _RouteScreenState extends State<RouteScreen> {
       _suggestionsForField = field;
     });
 
-    final suggestions = await _placesService.autocompletePlaces(
-      query,
-    );
+    final suggestions = await _placesService.autocompletePlaces(query);
     if (!mounted || requestId != _latestSuggestionRequestId) return;
 
     final fieldStillFocused =
@@ -227,11 +249,19 @@ class _RouteScreenState extends State<RouteScreen> {
     required _RouteInputField targetField,
   }) async {
     final value =
-        (suggestion['value'] ?? suggestion['name'] ?? suggestion['subtitle'] ?? '')
+        (suggestion['value'] ??
+                suggestion['name'] ??
+                suggestion['subtitle'] ??
+                '')
             .trim();
-    if (value.isEmpty) return;
+    if (value.isEmpty) {
+      _isPressingSuggestion = false;
+      return;
+    }
 
     final applyToPickup = targetField == _RouteInputField.pickup;
+    _isPressingSuggestion = false;
+    _focusClearTimer?.cancel();
     _cancelPendingSuggestionWork();
     _isApplyingSuggestion = true;
 
@@ -257,7 +287,10 @@ class _RouteScreenState extends State<RouteScreen> {
       _destinationFocus.unfocus();
     }
 
-    final coordinates = await _resolveSuggestionLatLng(suggestion, fallbackValue: value);
+    final coordinates = await _resolveSuggestionLatLng(
+      suggestion,
+      fallbackValue: value,
+    );
     if (!mounted) return;
 
     final latestValue = applyToPickup
@@ -334,9 +367,10 @@ class _RouteScreenState extends State<RouteScreen> {
 
   Future<void> _loadSavedLocations() async {
     final prefs = await SharedPreferences.getInstance();
-    final homeAddress = (prefs.getString('saved_place_home_address') ?? '').trim();
-    final officeAddress =
-        (prefs.getString('saved_place_office_address') ?? '').trim();
+    final homeAddress = (prefs.getString('saved_place_home_address') ?? '')
+        .trim();
+    final officeAddress = (prefs.getString('saved_place_office_address') ?? '')
+        .trim();
 
     final loaded = <Map<String, dynamic>>[];
     if (homeAddress.isNotEmpty) {
@@ -416,10 +450,15 @@ class _RouteScreenState extends State<RouteScreen> {
 
       if (!mounted) return;
       if (_pickupController.text.trim().isEmpty) {
-        _pickupController.text = bestText.isEmpty ? 'Current location' : bestText;
+        _pickupController.text = bestText.isEmpty
+            ? 'Current location'
+            : bestText;
       }
       setState(() {
-        _pickupCoordinates = gmaps.LatLng(position.latitude, position.longitude);
+        _pickupCoordinates = gmaps.LatLng(
+          position.latitude,
+          position.longitude,
+        );
         _loadingPickup = false;
       });
     } catch (_) {
@@ -471,11 +510,7 @@ class _RouteScreenState extends State<RouteScreen> {
         'destinationLng': destinationCoordinates.longitude,
     };
 
-    await Navigator.pushNamed(
-      context,
-      '/bookride',
-      arguments: args,
-    );
+    await Navigator.pushNamed(context, '/bookride', arguments: args);
 
     if (!mounted || !clearDestinationOnReturn) return;
     _destinationController.clear();
@@ -535,8 +570,8 @@ class _RouteScreenState extends State<RouteScreen> {
   Widget build(BuildContext context) {
     final editingPickup = _activeField == _RouteInputField.pickup;
     final editingDestination = _activeField == _RouteInputField.destination;
-    final showingSuggestions = (editingPickup &&
-            _pickupController.text.trim().isNotEmpty) ||
+    final showingSuggestions =
+        (editingPickup && _pickupController.text.trim().isNotEmpty) ||
         (editingDestination && _destinationController.text.trim().isNotEmpty);
 
     return Scaffold(
@@ -746,7 +781,9 @@ class _RouteScreenState extends State<RouteScreen> {
                   child: InkWell(
                     customBorder: const CircleBorder(),
                     onTap: () {
-                      setState(() => _activeField = _RouteInputField.destination);
+                      setState(
+                        () => _activeField = _RouteInputField.destination,
+                      );
                       _destinationFocus.requestFocus();
                     },
                     child: const Icon(
@@ -844,10 +881,10 @@ class _RouteScreenState extends State<RouteScreen> {
                         : _activeField)
                   : _suggestionsForField;
               return InkWell(
-                onTap: () => _applySuggestion(
-                  suggestion,
-                  targetField: targetField,
-                ),
+                onTapDown: (_) => _isPressingSuggestion = true,
+                onTapCancel: _cancelSuggestionPress,
+                onTap: () =>
+                    _applySuggestion(suggestion, targetField: targetField),
                 borderRadius: BorderRadius.circular(12),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
@@ -1017,9 +1054,8 @@ class _RouteScreenState extends State<RouteScreen> {
               subtitle: location['subtitle'] as String,
               distance: location['distance'] as String,
               icon: location['icon'] as IconData,
-              onTap: () => _selectLocationFromList(
-                location['subtitle'] as String,
-              ),
+              onTap: () =>
+                  _selectLocationFromList(location['subtitle'] as String),
             ),
           ),
           const SizedBox(height: 10),
@@ -1052,9 +1088,8 @@ class _RouteScreenState extends State<RouteScreen> {
                   subtitle: address,
                   distance: '<1km',
                   icon: Icons.location_on,
-                  onTap: () => _selectLocationFromList(
-                    address.isEmpty ? name : address,
-                  ),
+                  onTap: () =>
+                      _selectLocationFromList(address.isEmpty ? name : address),
                 );
               }).toList()),
       ],
