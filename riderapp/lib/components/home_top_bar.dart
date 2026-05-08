@@ -268,12 +268,12 @@ class _HomeTopBarState extends State<HomeTopBar> {
                     const SizedBox(width: 7),
                     Expanded(
                       child: _isLoading
-                          ? const SizedBox(
+                          ? SizedBox(
                               width: 16,
                               height: 16,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                color: Color(0xFF1890F4),
+                                color: Theme.of(context).colorScheme.primary,
                               ),
                             )
                           : Column(

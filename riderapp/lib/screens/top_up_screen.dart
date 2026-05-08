@@ -3,6 +3,7 @@ import '../models/debit_card_model.dart';
 import '../components/amount_chip.dart';
 import '../components/card_selector_tile.dart';
 import '../components/change_card_sheet.dart';
+import '../theme/app_theme.dart';
 
 class TopUpScreen extends StatefulWidget {
   const TopUpScreen({super.key});
@@ -41,16 +42,19 @@ class _TopUpScreenState extends State<TopUpScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final colors = context.citiRideColors;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: colors.background,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(
+          icon: Icon(
             Icons.arrow_back_ios_new_rounded,
             size: 22,
-            color: Colors.black,
+            color: colors.text,
           ),
           onPressed: () => Navigator.pop(context),
         ),
@@ -99,7 +103,7 @@ class _TopUpScreenState extends State<TopUpScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 18),
               height: 54,
               decoration: BoxDecoration(
-                color: Colors.grey.shade200,
+                color: colors.inputFill,
                 borderRadius: BorderRadius.circular(28),
               ),
               child: TextField(
@@ -159,18 +163,19 @@ class _TopUpScreenState extends State<TopUpScreen> {
                     : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: selectedAmount != null
-                      ? Colors.blue
-                      : Colors.lightBlue,
+                      ? colorScheme.primary
+                      : colorScheme.primary.withValues(alpha: 0.35),
+                  foregroundColor: colorScheme.onPrimary,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(28),
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   'Fund Wallet',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.normal,
-                    color: Colors.white,
+                    color: colorScheme.onPrimary,
                   ),
                 ),
               ),

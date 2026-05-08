@@ -39,6 +39,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     final currentIndex = ref.watch(onboardingIndexProvider);
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       body: SafeArea(
@@ -78,7 +79,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         child: const Text(
                           "Skip",
                           style: TextStyle(
-                            color: Colors.blue,
+                            color: Color(0xFF2F323D),
                             fontSize: 16,
                           ),
                         ),
@@ -110,7 +111,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 child: ElevatedButton(
                   onPressed: () => _next(context, currentIndex),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
+                    backgroundColor: colorScheme.primary,
+                    foregroundColor: colorScheme.onPrimary,
                     elevation: 6,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(25),
@@ -120,10 +122,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     currentIndex == onboardingPages.length - 1
                         ? "Get Started"
                         : "Continue",
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: colorScheme.onPrimary,
                     ),
                   ),
                 ),

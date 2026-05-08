@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/saved_place_type.dart';
+import '../theme/app_theme.dart';
 import 'saved_place_search_screen.dart';
 
 class SavedPlacesScreen extends StatefulWidget {
@@ -48,7 +49,7 @@ class _SavedPlacesScreenState extends State<SavedPlacesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F4),
+      backgroundColor: Theme.of(context).extension<CitiRideThemeColors>()?.surface ?? const Color(0xFFF2F2F4),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -72,7 +73,7 @@ class _SavedPlacesScreenState extends State<SavedPlacesScreen> {
       ),
       body: _loading
           ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFF1690F0)),
+              child: CircularProgressIndicator(color: Color(0xFF2F323D)),
             )
           : ListView(
               padding: const EdgeInsets.fromLTRB(18, 10, 18, 24),

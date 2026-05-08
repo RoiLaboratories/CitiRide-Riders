@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../theme/app_theme.dart';
+
 class WalletDetailsScreen extends StatelessWidget {
   const WalletDetailsScreen({super.key, required int amount,});
 
@@ -20,6 +22,8 @@ class WalletDetailsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final colors = context.citiRideColors;
     final double amount =
       ModalRoute.of(context)!.settings.arguments as double;
 
@@ -32,7 +36,7 @@ class WalletDetailsScreen extends StatelessWidget {
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
-        foregroundColor: Colors.black,
+        foregroundColor: colors.text,
       ),
       body: Padding(
         padding: const EdgeInsets.all(20),
@@ -42,7 +46,7 @@ class WalletDetailsScreen extends StatelessWidget {
               padding: const EdgeInsets.all(15),
               width: double.infinity,
               decoration: BoxDecoration(
-                  color: Colors.blue[100],
+                  color: colors.primaryBlur,
                   borderRadius: BorderRadius.circular(15)),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -50,10 +54,10 @@ class WalletDetailsScreen extends StatelessWidget {
                   const Text("Amount", style: TextStyle(fontSize: 12)),
                   const SizedBox(height: 5),
                   Text("₦${amount.toStringAsFixed(0)}",
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
-                          color: Colors.blue)),
+                          color: colorScheme.primary)),
                 ],
               ),
             ),
@@ -73,10 +77,12 @@ class WalletDetailsScreen extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(25)),
-                  backgroundColor: Colors.blue,
+                  backgroundColor: colorScheme.primary,
+                  foregroundColor: colorScheme.onPrimary,
                 ),
-                child: const Text("I have paid",
-                    style: TextStyle(color: Colors.white, fontSize: 16)),
+                child: Text("I have paid",
+                    style: TextStyle(
+                        color: colorScheme.onPrimary, fontSize: 16)),
               ),
             ),
           ],
@@ -96,7 +102,10 @@ class WalletDetailsScreen extends StatelessWidget {
               children: [Text(title), Text(value)]),
           IconButton(
             onPressed: () => _copyToClipboard(context, value),
-            icon: const Icon(Icons.copy, color: Colors.blue),
+            icon: Icon(
+              Icons.copy,
+              color: Theme.of(context).colorScheme.primary,
+            ),
           )
         ],
       ),

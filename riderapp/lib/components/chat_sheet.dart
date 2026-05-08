@@ -241,7 +241,7 @@ class _ChatSheetState extends State<ChatSheet> {
   Widget _chatBubble(_ChatMessage message) {
     final isUser = message.isUser;
     final alignment = isUser ? Alignment.centerRight : Alignment.centerLeft;
-    final bubbleColor = isUser ? const Color(0xFF1690F0) : const Color(0xFFB03AE6);
+    final bubbleColor = isUser ? Theme.of(context).colorScheme.primary : const Color(0xFFB03AE6);
 
     return Align(
       alignment: alignment,

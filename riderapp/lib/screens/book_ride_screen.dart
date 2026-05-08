@@ -14,6 +14,7 @@ import '../components/pickup_collapsed_sheet.dart';
 import '../components/ride_modal.dart';
 import '../components/ride_top_bar.dart';
 import '../ride_flow/ride_history_store.dart';
+import '../theme/app_theme.dart';
 import 'home_screen.dart';
 import '../utils/google_map_style.dart';
 
@@ -512,7 +513,7 @@ class _BookRideScreenState extends State<BookRideScreen> {
                         height: 30,
                         child: CircularProgressIndicator(
                           strokeWidth: 2.6,
-                          color: Color(0xFF1690F0),
+                          color: Color(0xFF2F323D),
                         ),
                       ),
                     ),
@@ -612,7 +613,7 @@ class _BookRideScreenState extends State<BookRideScreen> {
             polylines: [
               fm.Polyline(
                 points: webFirst,
-                color: Colors.blue,
+                color: CitiRideTheme.primaryYellow,
                 strokeWidth: 5,
               ),
               fm.Polyline(
@@ -690,7 +691,7 @@ class _BookRideScreenState extends State<BookRideScreen> {
         gmaps.Polyline(
           polylineId: const gmaps.PolylineId('route_from'),
           points: firstSegment,
-          color: Colors.blue,
+          color: CitiRideTheme.primaryYellow,
           width: 5,
         ),
         gmaps.Polyline(

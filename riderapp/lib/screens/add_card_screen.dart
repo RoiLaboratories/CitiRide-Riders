@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../theme/app_theme.dart';
+
 enum CardType { visa, mastercard, verve, unknown }
 
 class AddCardScreen extends StatefulWidget {
@@ -91,8 +93,11 @@ class _AddCardScreenState extends State<AddCardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final colors = context.citiRideColors;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: colors.background,
       appBar: AppBar(
         title: const Text(
           'Add Debit Card',
@@ -100,12 +105,12 @@ class _AddCardScreenState extends State<AddCardScreen> {
         ),
         centerTitle: true,
         elevation: 0,
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(
+          icon: Icon(
             Icons.arrow_back_ios_new_rounded,
             size: 22,
-            color: Colors.black,
+            color: colors.text,
           ),
           onPressed: () => Navigator.pop(context),
         ),
@@ -206,21 +211,26 @@ class _AddCardScreenState extends State<AddCardScreen> {
                   onPressed: _isFormValid && !_loading ? _verifyCard : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _isFormValid
-                        ? const Color(0xFF0066FF) 
-                        : const Color(0xFFD9EEFF),
-                    disabledBackgroundColor: const Color(0xFFD9EEFF),
+                        ? colorScheme.primary
+                        : colorScheme.primary.withValues(alpha: 0.35),
+                    foregroundColor: colorScheme.onPrimary,
+                    disabledBackgroundColor: colorScheme.primary.withValues(
+                      alpha: 0.35,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(28),
                     ),
                   ),
                   child: _loading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text(
+                      ? CircularProgressIndicator(
+                          color: colorScheme.onPrimary,
+                        )
+                      : Text(
                           'Continue',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                            color: colorScheme.onPrimary,
                           ),
                         ),
                 ),

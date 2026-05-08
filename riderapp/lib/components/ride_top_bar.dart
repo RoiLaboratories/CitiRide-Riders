@@ -73,7 +73,7 @@ class RideTopBar extends StatelessWidget {
                         style: GoogleFonts.poppins(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
-                          color: const Color(0xFF1690F0),
+                          color: Theme.of(context).colorScheme.primary,
                         ),
                       ),
                     ),

@@ -13,6 +13,7 @@ import '../components/home_top_bar.dart';
 import '../components/home_modal_sheet.dart';
 import '../components/bottom_nav_bar.dart';
 import '../components/location_permission_modal.dart';
+import '../theme/app_theme.dart';
 import '../screens/ride_screen.dart';
 import '../screens/wallet_screen.dart';
 import '../utils/google_map_style.dart';
@@ -224,7 +225,7 @@ class _HomeScreenState extends State<HomeScreen> {
       width: MediaQuery.of(context).size.width * 0.64,
       child: Drawer(
         elevation: 0,
-        backgroundColor: const Color(0xFFF2F2F4),
+        backgroundColor: Theme.of(context).extension<CitiRideThemeColors>()?.surface ?? const Color(0xFFF2F2F4),
         surfaceTintColor: Colors.transparent,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.horizontal(right: Radius.circular(44)),

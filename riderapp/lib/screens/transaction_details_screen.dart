@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
 
 class TransactionDetailsScreen extends StatelessWidget {
   const TransactionDetailsScreen({super.key});
@@ -29,7 +30,7 @@ class TransactionDetailsScreen extends StatelessWidget {
         isCredit ? const Color(0xFF16B316) : const Color(0xFFFF3B3B);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F4),
+      backgroundColor: Theme.of(context).extension<CitiRideThemeColors>()?.surface ?? const Color(0xFFF2F2F4),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,

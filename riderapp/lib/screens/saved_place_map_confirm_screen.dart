@@ -114,7 +114,7 @@ class _SavedPlaceMapConfirmScreenState extends State<SavedPlaceMapConfirmScreen>
                       ),
                       Switch(
                         value: _alwaysUseThisLocation,
-                        activeThumbColor: const Color(0xFF1690F0),
+                        activeThumbColor: Theme.of(context).colorScheme.primary,
                         onChanged: (value) {
                           setState(() => _alwaysUseThisLocation = value);
                         },
@@ -152,7 +152,7 @@ class _SavedPlaceMapConfirmScreenState extends State<SavedPlaceMapConfirmScreen>
                     child: ElevatedButton(
                       onPressed: _saving ? null : _savePlace,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF1690F0),
+                        backgroundColor: Theme.of(context).colorScheme.primary,
                         foregroundColor: Colors.white,
                         elevation: 0,
                         shape: RoundedRectangleBorder(
@@ -219,7 +219,7 @@ class _SavedPlaceMapConfirmScreenState extends State<SavedPlaceMapConfirmScreen>
                 height: 46,
                 child: const Icon(
                   Icons.location_on_rounded,
-                  color: Color(0xFF1690F0),
+                  color: Color(0xFF2F323D),
                   size: 42,
                 ),
               ),

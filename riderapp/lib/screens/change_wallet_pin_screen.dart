@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../components/auth_components.dart';
+
 class ChangeWalletPinScreen extends StatefulWidget {
   const ChangeWalletPinScreen({super.key});
 
@@ -101,10 +103,7 @@ class _ChangeWalletPinScreenState extends State<ChangeWalletPinScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
+        Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
         const SizedBox(height: 8),
         TextFormField(
           controller: controller,
@@ -116,23 +115,7 @@ class _ChangeWalletPinScreenState extends State<ChangeWalletPinScreen> {
             LengthLimitingTextInputFormatter(4),
           ],
           validator: validator,
-          decoration: InputDecoration(
-            counterText: '',
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: Colors.grey.shade300),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: Colors.grey.shade300),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(color: Color(0xFF1F7BFF)),
-            ),
-          ),
+          decoration: authPinInputDecoration(context),
         ),
       ],
     );
@@ -140,17 +123,20 @@ class _ChangeWalletPinScreenState extends State<ChangeWalletPinScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
-        title: const Text(
+        title: Text(
           'Change Wallet PIN',
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600),
+          style: TextStyle(
+            color: colorScheme.onSurface,
+            fontWeight: FontWeight.w600,
+          ),
         ),
-        iconTheme: const IconThemeData(color: Colors.black),
+        iconTheme: IconThemeData(color: colorScheme.onSurface),
       ),
       body: Form(
         key: _formKey,
@@ -202,7 +188,8 @@ class _ChangeWalletPinScreenState extends State<ChangeWalletPinScreen> {
               child: ElevatedButton(
                 onPressed: _isSaving ? null : _savePin,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1F7BFF),
+                  backgroundColor: colorScheme.primary,
+                  foregroundColor: colorScheme.onPrimary,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
@@ -213,13 +200,12 @@ class _ChangeWalletPinScreenState extends State<ChangeWalletPinScreen> {
                         width: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Text(
+                        color: Color(0xFFFFFFFF),
+                      ),
+                    )
+                    : Text(
                         'Update wallet PIN',
                         style: TextStyle(
-                          color: Colors.white,
                           fontWeight: FontWeight.w600,
                         ),
                       ),

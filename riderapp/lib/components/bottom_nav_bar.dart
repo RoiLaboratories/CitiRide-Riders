@@ -44,16 +44,19 @@ class BottomNavBar extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             _buildNavItem(
+              context: context,
               index: 0,
               label: 'Home',
               iconAsset: 'images/home.png',
             ),
             _buildNavItem(
+              context: context,
               index: 1,
               label: 'Ride',
               iconAsset: 'images/ride.png',
             ),
             _buildNavItem(
+              context: context,
               index: 2,
               label: 'Wallet',
               iconAsset: 'images/wallet.png',
@@ -65,6 +68,7 @@ class BottomNavBar extends StatelessWidget {
   }
 
   Widget _buildNavItem({
+    required BuildContext context,
     required int index,
     required String label,
     required String iconAsset,
@@ -83,7 +87,7 @@ class BottomNavBar extends StatelessWidget {
           vertical: 5,
         ),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF1890F4) : Colors.transparent,
+          color: isSelected ? Theme.of(context).colorScheme.primary : Colors.transparent,
           borderRadius: BorderRadius.circular(999),
         ),
         child: Row(

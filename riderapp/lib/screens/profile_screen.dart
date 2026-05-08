@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../providers/auth_provider.dart';
+import '../theme/app_theme.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -400,8 +401,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(28),
-          borderSide: const BorderSide(
-            color: Color(0xFF1690F0),
+          borderSide: BorderSide(
+            color: Theme.of(context).colorScheme.primary,
             width: 1.2,
           ),
         ),
@@ -510,7 +511,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F4),
+      backgroundColor: Theme.of(context).extension<CitiRideThemeColors>()?.surface ?? const Color(0xFFF2F2F4),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -572,10 +573,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                   vertical: 10,
                                 ),
                               ),
-                              child: const Text(
+                              child: Text(
                                 'Upload photo',
                                 style: TextStyle(
-                                  color: Color(0xFF1690F0),
+                                  color: Theme.of(context).colorScheme.primary,
                                   fontSize: 16,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -644,8 +645,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 child: ElevatedButton(
                   onPressed: _isSaving ? null : _saveProfile,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1690F0),
-                    disabledBackgroundColor: const Color(0xFF8BC8F6),
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    disabledBackgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(32),
                     ),

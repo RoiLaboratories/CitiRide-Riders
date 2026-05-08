@@ -7,6 +7,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/google_maps_places_service.dart';
+import '../theme/app_theme.dart';
 import '../utils/location_manager.dart';
 
 enum _RouteInputField { none, pickup, destination }
@@ -568,6 +569,8 @@ class _RouteScreenState extends State<RouteScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final colors = context.citiRideColors;
     final editingPickup = _activeField == _RouteInputField.pickup;
     final editingDestination = _activeField == _RouteInputField.destination;
     final showingSuggestions =
@@ -575,23 +578,23 @@ class _RouteScreenState extends State<RouteScreen> {
         (editingDestination && _destinationController.text.trim().isNotEmpty);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F4),
+      backgroundColor: colors.background,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(
+          icon: Icon(
             Icons.close_rounded,
             size: 30,
-            color: Color(0xFF2D2F3A),
+            color: colors.text,
           ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Your Route',
           style: TextStyle(
-            color: Color(0xFF2D2F3A),
+            color: colors.text,
             fontSize: 22,
             fontWeight: FontWeight.w600,
           ),
@@ -620,10 +623,12 @@ class _RouteScreenState extends State<RouteScreen> {
                   child: ElevatedButton(
                     onPressed: _isBooking ? null : _bookRideFromButton,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1690F0),
-                      foregroundColor: Colors.white,
-                      disabledBackgroundColor: const Color(0xFF1690F0),
-                      disabledForegroundColor: Colors.white,
+                      backgroundColor: colorScheme.primary,
+                      foregroundColor: colorScheme.onPrimary,
+                      disabledBackgroundColor: colorScheme.primary.withValues(
+                        alpha: 0.45,
+                      ),
+                      disabledForegroundColor: colorScheme.onPrimary,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(26),
@@ -636,7 +641,7 @@ class _RouteScreenState extends State<RouteScreen> {
                             child: CircularProgressIndicator(
                               strokeWidth: 2.4,
                               valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white,
+                                Color(0xFFFFFFFF),
                               ),
                             ),
                           )
@@ -677,12 +682,12 @@ class _RouteScreenState extends State<RouteScreen> {
               height: 26,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xFF1690F0), width: 3),
+                border: Border.all(color: Theme.of(context).colorScheme.primary, width: 3),
               ),
-              child: const Center(
+              child: Center(
                 child: CircleAvatar(
                   radius: 6,
-                  backgroundColor: Color(0xFF1690F0),
+                  backgroundColor: Theme.of(context).colorScheme.primary,
                 ),
               ),
             ),
@@ -739,7 +744,7 @@ class _RouteScreenState extends State<RouteScreen> {
             decoration: BoxDecoration(
               color: const Color(0xFFF2F2F4),
               borderRadius: BorderRadius.circular(28),
-              border: Border.all(color: const Color(0xFF1690F0), width: 1.8),
+              border: Border.all(color: Theme.of(context).colorScheme.primary, width: 1.8),
             ),
             child: Row(
               children: [
@@ -825,7 +830,7 @@ class _RouteScreenState extends State<RouteScreen> {
             height: 24,
             child: CircularProgressIndicator(
               strokeWidth: 2.4,
-              color: Color(0xFF1690F0),
+              color: Color(0xFF2F323D),
             ),
           ),
         ),
@@ -1022,13 +1027,13 @@ class _RouteScreenState extends State<RouteScreen> {
 
   Widget _savedAndRecentLocationsContent() {
     if (_loadingRecents) {
-      return const Center(
+      return Center(
         child: SizedBox(
           width: 24,
           height: 24,
           child: CircularProgressIndicator(
             strokeWidth: 2.4,
-            color: Color(0xFF1690F0),
+            color: Theme.of(context).colorScheme.primary,
           ),
         ),
       );

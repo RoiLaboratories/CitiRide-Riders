@@ -92,7 +92,7 @@ class LocationPermissionModal extends StatelessWidget {
                               child: ElevatedButton(
                                 onPressed: loading ? null : onAllow,
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.blue,
+                                  backgroundColor: Theme.of(context).colorScheme.primary,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(30),
                                   ),

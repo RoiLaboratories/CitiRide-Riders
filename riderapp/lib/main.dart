@@ -27,6 +27,8 @@ import 'screens/transaction_details_screen.dart';
 import 'screens/saved_places_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'providers/theme_provider.dart';
+import 'theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,13 +36,18 @@ void main() async {
   runApp(const ProviderScope(child: MyApp()));
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(appThemeControllerProvider).themeMode;
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: "CitiRide",
+      theme: CitiRideTheme.light,
+      darkTheme: CitiRideTheme.dark,
+      themeMode: themeMode,
       initialRoute: '/splash',
       routes: {
         '/splash': (context) => const SplashScreen(),

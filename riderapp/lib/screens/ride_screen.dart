@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../ride_flow/ride_history_store.dart';
+import '../theme/app_theme.dart';
 
 class RideScreen extends StatefulWidget {
   const RideScreen({super.key});
@@ -79,7 +80,7 @@ class _RideScreenState extends State<RideScreen> {
     final rides = _showUpcoming ? _upcomingRides : _pastRides;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F4),
+      backgroundColor: Theme.of(context).extension<CitiRideThemeColors>()?.surface ?? const Color(0xFFF2F2F4),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 36, 16, 118),
@@ -98,12 +99,14 @@ class _RideScreenState extends State<RideScreen> {
               Row(
                 children: [
                   _tabChip(
+                    context: context,
                     label: 'Upcoming Rides',
                     selected: _showUpcoming,
                     onTap: () => setState(() => _showUpcoming = true),
                   ),
                   const SizedBox(width: 14),
                   _tabChip(
+                    context: context,
                     label: 'Past',
                     selected: !_showUpcoming,
                     onTap: () => setState(() => _showUpcoming = false),
@@ -132,6 +135,7 @@ class _RideScreenState extends State<RideScreen> {
   }
 
   Widget _tabChip({
+    required BuildContext context,
     required String label,
     required bool selected,
     required VoidCallback onTap,
@@ -146,10 +150,10 @@ class _RideScreenState extends State<RideScreen> {
           vertical: 9,
         ),
         decoration: BoxDecoration(
-          color: selected ? const Color(0xFF1690F0) : Colors.white,
+          color: selected ? Theme.of(context).colorScheme.primary : Colors.white,
           borderRadius: BorderRadius.circular(30),
           border: Border.all(
-            color: selected ? const Color(0xFF1690F0) : const Color(0xFFB3B5B9),
+            color: selected ? Theme.of(context).colorScheme.primary : const Color(0xFFB3B5B9),
             width: 2,
           ),
           boxShadow: [
@@ -244,8 +248,8 @@ class _RideScreenState extends State<RideScreen> {
                     const SizedBox(height: 2),
                     Text(
                       ride.price,
-                      style: const TextStyle(
-                        color: Color(0xFF1690F0),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.primary,
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                       ),
@@ -310,7 +314,7 @@ class _RideCompletedDetailsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F4),
+      backgroundColor: Theme.of(context).extension<CitiRideThemeColors>()?.surface ?? const Color(0xFFF2F2F4),
       body: SafeArea(
         child: Column(
           children: [
@@ -378,8 +382,9 @@ class _RideCompletedDetailsScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 22),
                     _routePoint(
+                      context: context,
                       label: 'Lagos Street, Benin City',
-                      color: const Color(0xFF1690F0),
+                      color: Theme.of(context).colorScheme.primary,
                     ),
                     Padding(
                       padding: const EdgeInsets.only(left: 8),
@@ -390,6 +395,7 @@ class _RideCompletedDetailsScreen extends StatelessWidget {
                       ),
                     ),
                     _routePoint(
+                      context: context,
                       label: 'Ring Road Bus Terminal, Benin City',
                       color: const Color(0xFFD21DDB),
                     ),
@@ -414,6 +420,7 @@ class _RideCompletedDetailsScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 14),
                           _paymentRow(
+                            context: context,
                             left: 'Cash Payment',
                             right: '\u20A61,500.00',
                             highlight: false,
@@ -422,6 +429,7 @@ class _RideCompletedDetailsScreen extends StatelessWidget {
                           const Divider(height: 1),
                           const SizedBox(height: 12),
                           _paymentRow(
+                            context: context,
                             left: 'Total',
                             right: '\u20A61,500.00',
                             highlight: true,
@@ -441,7 +449,7 @@ class _RideCompletedDetailsScreen extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: () => _rebook(context),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1690F0),
+                    backgroundColor: Theme.of(context).colorScheme.primary,
                     foregroundColor: Colors.white,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
@@ -465,7 +473,7 @@ class _RideCompletedDetailsScreen extends StatelessWidget {
     );
   }
 
-  Widget _routePoint({required String label, required Color color}) {
+  Widget _routePoint({required BuildContext context, required String label, required Color color}) {
     return Row(
       children: [
         Container(
@@ -480,7 +488,7 @@ class _RideCompletedDetailsScreen extends StatelessWidget {
             label,
             style: TextStyle(
               fontSize: 16,
-              color: color == const Color(0xFF1690F0)
+              color: color == Theme.of(context).colorScheme.primary
                   ? const Color(0xFF2F323D)
                   : const Color(0xFF8E9197),
               fontWeight: FontWeight.w500,
@@ -492,6 +500,7 @@ class _RideCompletedDetailsScreen extends StatelessWidget {
   }
 
   Widget _paymentRow({
+    required BuildContext context,
     required String left,
     required String right,
     required bool highlight,
@@ -504,7 +513,7 @@ class _RideCompletedDetailsScreen extends StatelessWidget {
             style: TextStyle(
               fontSize: 16,
               color: highlight
-                  ? const Color(0xFF1690F0)
+                  ? Theme.of(context).colorScheme.primary
                   : const Color(0xFF8E9197),
               fontWeight: FontWeight.w500,
             ),
@@ -515,7 +524,7 @@ class _RideCompletedDetailsScreen extends StatelessWidget {
           style: TextStyle(
             fontSize: 16,
             color: highlight
-                ? const Color(0xFF1690F0)
+                ? Theme.of(context).colorScheme.primary
                 : const Color(0xFF8E9197),
             fontWeight: FontWeight.w500,
           ),

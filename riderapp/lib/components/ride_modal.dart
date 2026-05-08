@@ -250,7 +250,7 @@ class _RideModalState extends ConsumerState<RideModal> {
                   price,
                   style: GoogleFonts.poppins(
                     fontSize: 16,
-                    color: Colors.blue,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
                 Text(
@@ -321,8 +321,8 @@ class _RideModalState extends ConsumerState<RideModal> {
                       TextSpan(
                         text:
                             "₦${WalletBalance.balance.toStringAsFixed(0)}",
-                        style: const TextStyle(
-                          color: Colors.blue,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.primary,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -422,7 +422,7 @@ class _RideModalState extends ConsumerState<RideModal> {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           border: Border.all(
-            color: isSelected ? Colors.blue : Colors.grey.shade400,
+            color: isSelected ? Theme.of(context).colorScheme.primary : Colors.grey.shade400,
             width: 2,
           ),
           color: Colors.white,
@@ -432,9 +432,9 @@ class _RideModalState extends ConsumerState<RideModal> {
                 child: Container(
                   width: 10,
                   height: 10,
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Colors.blue,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
               )
@@ -453,7 +453,7 @@ class _RideModalState extends ConsumerState<RideModal> {
         padding:
             const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
-          color: const Color.fromARGB(255, 144, 211, 242),
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
@@ -461,7 +461,7 @@ class _RideModalState extends ConsumerState<RideModal> {
           style: GoogleFonts.poppins(
             fontSize: 11,
             fontWeight: FontWeight.w500,
-            color: Colors.blue,
+            color: Theme.of(context).colorScheme.primary,
           ),
         ),
       ),
@@ -476,7 +476,7 @@ class _RideModalState extends ConsumerState<RideModal> {
           child: ElevatedButton(
             onPressed: handlePayment,
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue,
+              backgroundColor: Theme.of(context).colorScheme.primary,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(30),
               ),

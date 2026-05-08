@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../components/auth_components.dart';
+import '../theme/app_theme.dart';
+
 class CreateWalletPinScreen extends StatefulWidget {
   const CreateWalletPinScreen({super.key, this.isResetFlow = false});
 
@@ -16,6 +19,9 @@ class _CreateWalletPinScreenState extends State<CreateWalletPinScreen> {
   bool _isConfirmStep = false;
   bool _isSaving = false;
   String? _errorText;
+
+  int get _focusedPinIndex =>
+      _inputPin.length < 4 && !_isSaving ? _inputPin.length : -1;
 
   Future<void> _onBackPressed() async {
     if (_isConfirmStep) {
@@ -111,105 +117,9 @@ class _CreateWalletPinScreenState extends State<CreateWalletPinScreen> {
     }
   }
 
-  Widget _pinBox(int index) {
-    final hasValue = index < _inputPin.length;
-    final value = hasValue ? _inputPin[index] : '';
-
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 160),
-      width: 56,
-      height: 56,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: const Color(0xFF1E88E5), width: 1.8),
-        boxShadow: const [
-          BoxShadow(color: Color(0x4DB3DBFF), spreadRadius: 1.6, blurRadius: 0),
-        ],
-      ),
-      child: Text(
-        value,
-        style: const TextStyle(
-          fontSize: 22,
-          color: Color(0xFF2D2E3A),
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-    );
-  }
-
-  Widget _numberButton({
-    required String label,
-    required VoidCallback onTap,
-    IconData? icon,
-  }) {
-    return SizedBox(
-      width: 80,
-      height: 80,
-      child: ElevatedButton(
-        onPressed: onTap,
-        style: ElevatedButton.styleFrom(
-          shape: const CircleBorder(),
-          backgroundColor: const Color(0xFFE6E6E8),
-          foregroundColor: const Color(0xFF2D2E3A),
-          elevation: 0,
-          padding: EdgeInsets.zero,
-        ),
-        child: icon != null
-            ? Icon(icon, size: 28, color: const Color(0xFF8A8D93))
-            : Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 24,
-                  color: Color(0xFF2D2E3A),
-                  height: 1,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-      ),
-    );
-  }
-
-  Widget _clearButton() {
-    return SizedBox(
-      width: 80,
-      height: 80,
-      child: IconButton(
-        onPressed: _onDeletePressed,
-        icon: const Icon(Icons.backspace_outlined, size: 28),
-        style: IconButton.styleFrom(
-          shape: const CircleBorder(),
-          backgroundColor: const Color(0xFFE6E6E8),
-          foregroundColor: const Color(0xFF8A8D93),
-        ),
-      ),
-    );
-  }
-
-  Widget _numberRow(String a, String b, String c) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        _numberButton(label: a, onTap: () => _onDigitPressed(a)),
-        _numberButton(label: b, onTap: () => _onDigitPressed(b)),
-        _numberButton(label: c, onTap: () => _onDigitPressed(c)),
-      ],
-    );
-  }
-
-  Widget _lastRow() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        const SizedBox(width: 80, height: 80),
-        _numberButton(label: '0', onTap: () => _onDigitPressed('0')),
-        _clearButton(),
-      ],
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final title = _isConfirmStep
         ? 'Confirm PIN'
         : (widget.isResetFlow ? 'Reset PIN' : 'Create PIN');
@@ -224,126 +134,137 @@ class _CreateWalletPinScreenState extends State<CreateWalletPinScreen> {
         _onBackPressed();
       },
       child: Scaffold(
-        backgroundColor: const Color(0xFFF2F2F4),
+        backgroundColor: Theme.of(context).extension<CitiRideThemeColors>()?.surface ?? const Color(0xFFF2F2F4),
         body: SafeArea(
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(10, 12, 10, 0),
-                child: Row(
-                  children: [
-                    IconButton(
-                      onPressed: _isSaving ? null : _onBackPressed,
-                      icon: const Icon(
-                        Icons.arrow_back_ios_new_rounded,
-                        size: 26,
-                      ),
-                      color: const Color(0xFF2D2E3A),
-                    ),
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.only(right: 46),
-                        child: Text(
-                          title,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF2D2E3A),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: IntrinsicHeight(
+                    child: Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(0, 12, 0, 0),
+                          child: Row(
+                            children: [
+                              IconButton(
+                                onPressed: _isSaving ? null : _onBackPressed,
+                                icon: const Icon(
+                                  Icons.arrow_back_ios_new_rounded,
+                                  size: 26,
+                                ),
+                                color: const Color(0xFF2D2E3A),
+                              ),
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.only(right: 46),
+                                  child: Text(
+                                    title,
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF2D2E3A),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 10),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 50),
-                child: Text(
-                  subtitle,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    color: Color(0xFF8A8D93),
-                    height: 1.35,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 44),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: List.generate(4, _pinBox),
-                ),
-              ),
-              if (_errorText != null) ...[
-                const SizedBox(height: 12),
-                Text(
-                  _errorText!,
-                  style: const TextStyle(
-                    color: Colors.red,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-              const Spacer(),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Column(
-                  children: [
-                    _numberRow('1', '2', '3'),
-                    const SizedBox(height: 20),
-                    _numberRow('4', '5', '6'),
-                    const SizedBox(height: 20),
-                    _numberRow('7', '8', '9'),
-                    const SizedBox(height: 20),
-                    _lastRow(),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 28),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: ElevatedButton(
-                    onPressed: _inputPin.length == 4 && !_isSaving
-                        ? _onNextPressed
-                        : null,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1690F0),
-                      disabledBackgroundColor: const Color(0xFF8BC8F6),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(32),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: _isSaving
-                        ? const SizedBox(
-                            width: 22,
-                            height: 22,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : Text(
-                            _isConfirmStep ? 'Confirm' : 'Next',
+                        const SizedBox(height: 10),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 26),
+                          child: Text(
+                            subtitle,
+                            textAlign: TextAlign.center,
                             style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
+                              fontSize: 16,
+                              color: Color(0xFF8A8D93),
+                              height: 1.35,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        AuthCodeFields(
+                          length: 4,
+                          value: _inputPin,
+                          focusedIndex: _focusedPinIndex,
+                          preferredWidth: 76,
+                          height: 56,
+                          textStyle: const TextStyle(
+                            fontSize: 22,
+                            color: Color(0xFF2D2E3A),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        if (_errorText != null) ...[
+                          const SizedBox(height: 12),
+                          Text(
+                            _errorText!,
+                            style: const TextStyle(
+                              color: Colors.red,
+                              fontSize: 14,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
+                        ],
+                        const SizedBox(height: 24),
+                        Expanded(
+                          child: Center(
+                            child: AuthNumericKeypad(
+                              onDigitPressed: _onDigitPressed,
+                              onClearPressed: _onDeletePressed,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 28),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 56,
+                          child: ElevatedButton(
+                            onPressed: _inputPin.length == 4 && !_isSaving
+                                ? _onNextPressed
+                                : null,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: colorScheme.primary,
+                              foregroundColor: colorScheme.onPrimary,
+                              disabledBackgroundColor: colorScheme.primary
+                                  .withValues(alpha: 0.45),
+                              disabledForegroundColor: colorScheme.onPrimary
+                                  .withValues(alpha: 0.65),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(32),
+                              ),
+                              elevation: 0,
+                            ),
+                            child: _isSaving
+                                ? const SizedBox(
+                                    width: 22,
+                                    height: 22,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : Text(
+                                    _isConfirmStep ? 'Confirm' : 'Next',
+                                    style: const TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 24),
-            ],
+              );
+            },
           ),
         ),
       ),

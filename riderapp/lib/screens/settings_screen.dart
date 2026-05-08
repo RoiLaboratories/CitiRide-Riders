@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class SettingsScreen extends StatefulWidget {
+import '../providers/theme_provider.dart';
+import '../theme/app_theme.dart';
+
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> {
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _isLoading = true;
   bool _pushNotifications = true;
 
@@ -36,15 +40,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.citiRideColors;
+    final themeController = ref.watch(appThemeControllerProvider);
+
     if (_isLoading) {
-      return const Scaffold(
-        backgroundColor: Color(0xFFF2F2F4),
-        body: Center(child: CircularProgressIndicator()),
+      return Scaffold(
+        backgroundColor: colors.background,
+        body: Center(
+          child: CircularProgressIndicator(
+            color: Theme.of(context).colorScheme.primary,
+          ),
+        ),
       );
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F4),
+      backgroundColor: colors.background,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -53,14 +64,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
           icon: const Icon(
             Icons.arrow_back_ios_new_rounded,
             size: 30,
-            color: Color(0xFF2D2F3A),
           ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Settings',
           style: TextStyle(
-            color: Color(0xFF2D2F3A),
+            color: colors.text,
             fontWeight: FontWeight.w600,
             fontSize: 24,
           ),
@@ -71,7 +81,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: colors.surface,
             borderRadius: BorderRadius.circular(30),
           ),
           child: Column(
@@ -79,12 +89,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               ListTile(
                 contentPadding: const EdgeInsets.symmetric(horizontal: 30),
-                title: const Text(
+                title: Text(
                   'Enable push notifications',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w500,
-                    color: Color(0xFF30333F),
+                    color: colors.text,
                   ),
                 ),
                 trailing: Transform.scale(
@@ -97,23 +107,47 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
               ),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24),
-                child: Divider(height: 20),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Divider(height: 20, color: colors.border),
               ),
               ListTile(
                 contentPadding: const EdgeInsets.symmetric(horizontal: 30),
-                title: const Text(
+                title: Text(
+                  'Light theme',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w500,
+                    color: colors.text,
+                  ),
+                ),
+                trailing: Transform.scale(
+                  scale: 1.05,
+                  child: Switch.adaptive(
+                    value: themeController.isLightTheme,
+                    onChanged: themeController.setLightTheme,
+                    activeThumbColor: Colors.white,
+                    activeTrackColor: const Color(0xFF11B51A),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Divider(height: 20, color: colors.border),
+              ),
+              ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 30),
+                title: Text(
                   'Security',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w500,
-                    color: Color(0xFF30333F),
+                    color: colors.text,
                   ),
                 ),
-                trailing: const Icon(
+                trailing: Icon(
                   Icons.chevron_right_rounded,
-                  color: Color(0xFFA7ABB2),
+                  color: colors.mutedText,
                   size: 34,
                 ),
                 onTap: () => Navigator.pushNamed(context, '/security'),

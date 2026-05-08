@@ -92,7 +92,7 @@ class ChangeCardSheet extends StatelessWidget {
                       ..pushReplacementNamed('/add-card');
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
+                      backgroundColor: Theme.of(context).colorScheme.primary,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(26),
                       ),

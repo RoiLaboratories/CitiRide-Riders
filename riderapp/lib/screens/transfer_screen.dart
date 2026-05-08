@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../components/amount_chip.dart';
+import '../theme/app_theme.dart';
 // import your CardSelectorTile & ChangeCardSheet properly
 // import '../components/card_selector_tile.dart';
 // import '../components/change_card_sheet.dart';
@@ -26,16 +27,19 @@ class _TransferScreenState extends State<TransferScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final colors = context.citiRideColors;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: colors.background,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(
+          icon: Icon(
             Icons.arrow_back_ios_new_rounded,
             size: 22,
-            color: Colors.black,
+            color: colors.text,
           ),
           onPressed: () => Navigator.pop(context),
         ),
@@ -69,7 +73,7 @@ class _TransferScreenState extends State<TransferScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 18),
               height: 54,
               decoration: BoxDecoration(
-                color: Colors.grey.shade200,
+                color: colors.inputFill,
                 borderRadius: BorderRadius.circular(28),
               ),
               alignment: Alignment.centerLeft,
@@ -79,8 +83,8 @@ class _TransferScreenState extends State<TransferScreen> {
                     : '₦${selectedAmount!.toStringAsFixed(0)}',
                 style: TextStyle(
                   color: selectedAmount == null
-                      ? Colors.grey
-                      : Colors.black,
+                      ? colors.mutedText
+                      : colors.text,
                   fontSize: 16,
                 ),
               ),
@@ -113,17 +117,20 @@ class _TransferScreenState extends State<TransferScreen> {
               child: ElevatedButton(
                 onPressed: selectedAmount == null ? null : _continue,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  disabledBackgroundColor: Colors.lightBlue.shade100,
+                  backgroundColor: colorScheme.primary,
+                  foregroundColor: colorScheme.onPrimary,
+                  disabledBackgroundColor: colorScheme.primary.withValues(
+                    alpha: 0.35,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(28),
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   'Verify',
                   style: TextStyle(
                     fontSize: 16,
-                    color: Colors.white,
+                    color: colorScheme.onPrimary,
                   ),
                 ),
               ),

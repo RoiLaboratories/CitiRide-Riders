@@ -6,6 +6,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
 
 import '../models/saved_place_type.dart';
 import '../services/google_maps_places_service.dart';
+import '../theme/app_theme.dart';
 import 'saved_place_map_confirm_screen.dart';
 
 class SavedPlaceSearchScreen extends StatefulWidget {
@@ -133,7 +134,7 @@ class _SavedPlaceSearchScreenState extends State<SavedPlaceSearchScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F4),
+      backgroundColor: Theme.of(context).extension<CitiRideThemeColors>()?.surface ?? const Color(0xFFF2F2F4),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -163,9 +164,9 @@ class _SavedPlaceSearchScreenState extends State<SavedPlaceSearchScreen> {
               height: 56,
               padding: const EdgeInsets.symmetric(horizontal: 12),
               decoration: BoxDecoration(
-                color: const Color(0xFFF2F2F4),
+                color: Theme.of(context).extension<CitiRideThemeColors>()?.surface ?? const Color(0xFFF2F2F4),
                 borderRadius: BorderRadius.circular(28),
-                border: Border.all(color: const Color(0xFF1690F0), width: 1.8),
+                border: Border.all(color: Theme.of(context).colorScheme.primary, width: 1.8),
               ),
               child: Row(
                 children: [
@@ -222,7 +223,7 @@ class _SavedPlaceSearchScreenState extends State<SavedPlaceSearchScreen> {
                         height: 24,
                         child: CircularProgressIndicator(
                           strokeWidth: 2.4,
-                          color: Color(0xFF1690F0),
+                          color: Color(0xFF2F323D),
                         ),
                       ),
                     )
