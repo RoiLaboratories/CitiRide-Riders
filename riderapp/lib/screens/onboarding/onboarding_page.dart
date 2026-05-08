@@ -11,6 +11,8 @@ class OnboardingPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    
     return LayoutBuilder(
       builder: (context, constraints) {
         final imageHeight = math.min(353.0, constraints.maxHeight * 0.45);
@@ -40,7 +42,7 @@ class OnboardingPage extends StatelessWidget {
                           style: GoogleFonts.instrumentSerif(
                             fontSize: compact ? 32 : 36,
                             fontWeight: FontWeight.normal,
-                            color: Colors.black,
+                            color: isDarkMode ? Colors.white : Colors.black,
                           ),
                         );
                       } else {
@@ -65,7 +67,7 @@ class OnboardingPage extends StatelessWidget {
                   style: GoogleFonts.instrumentSans(
                     fontSize: compact ? 18 : 20,
                     fontWeight: FontWeight.normal,
-                    color: Colors.grey.shade600,
+                    color: isDarkMode ? Colors.grey[400] : Colors.grey.shade600,
                     height: 1.4,
                   ),
                 ),

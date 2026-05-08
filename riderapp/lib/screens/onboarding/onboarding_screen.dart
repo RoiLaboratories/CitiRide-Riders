@@ -64,7 +64,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           width: currentIndex == index ? 10 : 8,
                           decoration: BoxDecoration(
                             color: currentIndex == index
-                                ? Colors.black
+                                ? (Theme.of(context).brightness == Brightness.dark
+                                    ? Colors.white
+                                    : Colors.black)
                                 : Colors.grey.shade300,
                             borderRadius: BorderRadius.circular(10),
                           ),

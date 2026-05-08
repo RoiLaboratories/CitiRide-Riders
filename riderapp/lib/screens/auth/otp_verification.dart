@@ -279,37 +279,42 @@ class _OTPScreenState extends ConsumerState<OTPScreen> {
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        foregroundColor: Colors.black,
+        foregroundColor: Theme.of(context).brightness == Brightness.dark
+            ? Colors.white
+            : Colors.black,
         centerTitle: true,
         title: Text(
           "Enter the code",
           style: GoogleFonts.poppins(
             fontSize: 28,
             fontWeight: FontWeight.bold,
-            color: Colors.black,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.white
+                : Colors.black,
           ),
         ),
       ),
       body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: IntrinsicHeight(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Center(
-                        child: Text(
-                          'A verification code was sent to ${widget.phoneNumber}',
-                          style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            color: Colors.grey[600],
-                            height: 1.3,
-                          ),
-                          textAlign: TextAlign.center,
+                      const SizedBox(height: 20),
+                      Text(
+                        'A verification code was sent to ${widget.phoneNumber}',
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.grey[400]
+                              : Colors.grey[600],
+                          height: 1.3,
                         ),
+                        textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 40),
                       Column(
@@ -343,7 +348,11 @@ class _OTPScreenState extends ConsumerState<OTPScreen> {
                         children: [
                           Text(
                             'Resend code 0:${_resendTimer.toString().padLeft(2, '0')}',
-                            style: GoogleFonts.poppins(color: Colors.grey[600]),
+                            style: GoogleFonts.poppins(
+                              color: Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.grey[400]
+                                  : Colors.grey[600],
+                            ),
                           ),
                           TextButton(
                             onPressed: _resendTimer == 0 ? _resendOTP : null,
@@ -351,7 +360,7 @@ class _OTPScreenState extends ConsumerState<OTPScreen> {
                               "Send code",
                               style: GoogleFonts.poppins(
                                 fontWeight: FontWeight.w600,
-                        color: _resendTimer == 0
+                                color: _resendTimer == 0
                                     ? colorScheme.primary
                                     : Colors.grey,
                               ),
@@ -359,59 +368,55 @@ class _OTPScreenState extends ConsumerState<OTPScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 20),
-                      Expanded(
-                        child: Center(
-                          child: AuthNumericKeypad(
-                            onDigitPressed: _onDigitPressed,
-                            onClearPressed: _onClearPressed,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 56,
-                        child: ElevatedButton(
-                          onPressed: _isOtpVerified && !_isVerifying
-                              ? _onVerifyPressed
-                              : null,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: _isOtpVerified && !_isVerifying
-                                ? colorScheme.primary
-                                : Colors.grey[300],
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(28),
-                            ),
-                          ),
-                          child: _isVerifying
-                              ? const SizedBox(
-                                  width: 24,
-                                  height: 24,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      Color(0xFFFFFFFF),
-                                    ),
-                                  ),
-                                )
-                              : Text(
-                                  "Verify",
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: colorScheme.onPrimary,
-                                  ),
-                                ),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 40),
                     ],
                   ),
                 ),
               ),
-            );
-          },
+              AuthNumericKeypad(
+                onDigitPressed: _onDigitPressed,
+                onClearPressed: _onClearPressed,
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton(
+                  onPressed: _isOtpVerified && !_isVerifying
+                      ? _onVerifyPressed
+                      : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _isOtpVerified && !_isVerifying
+                        ? colorScheme.primary
+                        : Colors.grey[300],
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(28),
+                    ),
+                  ),
+                  child: _isVerifying
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Color(0xFFFFFFFF),
+                            ),
+                          ),
+                        )
+                      : Text(
+                          "Verify",
+                          style: GoogleFonts.poppins(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: colorScheme.onPrimary,
+                          ),
+                        ),
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
+          ),
         ),
       ),
     );
