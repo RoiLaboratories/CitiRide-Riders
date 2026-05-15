@@ -255,7 +255,9 @@ class LoginScreenState extends State<LoginScreen> {
                           'Enter your phone number to login',
                           style: GoogleFonts.poppins(
                             fontSize: 16,
-                            color: Colors.grey[600],
+                            color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.white
+                              : Colors.black,
                           ),
                         ),
                       ),
@@ -313,7 +315,7 @@ class LoginScreenState extends State<LoginScreen> {
                                   'Login',
                                   style: GoogleFonts.poppins(
                                     fontSize: 16,
-                                    fontWeight: FontWeight.bold,
+                                    fontWeight: FontWeight.normal,
                                   ),
                                 ),
                         ),

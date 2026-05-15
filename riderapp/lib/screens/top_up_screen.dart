@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import '../models/debit_card_model.dart';
-import '../components/amount_chip.dart';
-import '../components/card_selector_tile.dart';
-import '../components/change_card_sheet.dart';
+import 'package:flutter/services.dart';
+
 import '../theme/app_theme.dart';
 
 class TopUpScreen extends StatefulWidget {
@@ -13,174 +11,391 @@ class TopUpScreen extends StatefulWidget {
 }
 
 class _TopUpScreenState extends State<TopUpScreen> {
-  int? selectedAmount;
-  final TextEditingController _controller = TextEditingController();
+  static const Color _bg = Color(0xFF101010);
+  static const Color _panel = Color(0xFF181818);
+  static const Color _panelAlt = Color(0xFF242424);
+  static const Color _yellow = CitiRideTheme.primaryYellow;
+  static const Color _muted = Color(0xFF9B9B9B);
 
-  final card = DebitCard(
-    bankName: 'Moniepoint',
-    maskedNumber: '5064 8393 **** 4051',
-    logo: 'images/moniepoint.png',
-  );
+  final TextEditingController _amountController = TextEditingController();
+  int? _selectedAmount;
 
   @override
   void dispose() {
-    _controller.dispose();
+    _amountController.dispose();
     super.dispose();
+  }
+
+  void _setAmount(int amount) {
+    _amountController.text = amount.toString();
+    setState(() {
+      _selectedAmount = amount;
+    });
   }
 
   void _onAmountChanged(String value) {
     final parsed = int.tryParse(value);
     setState(() {
-      selectedAmount = parsed != null && parsed > 0 ? parsed : null;
+      _selectedAmount = parsed != null && parsed > 0 ? parsed : null;
     });
   }
 
-  void _onChipSelected(int amount) {
-    _controller.text = amount.toString(); // sync manual input
-    setState(() => selectedAmount = amount);
+  void _fundWallet() {
+    final amount = _selectedAmount;
+    if (amount == null) return;
+
+    Navigator.pushNamed(
+      context,
+      '/verify-transfer',
+      arguments: {'amount': amount.toDouble(), 'topUp': true},
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final colors = context.citiRideColors;
-
     return Scaffold(
-      backgroundColor: colors.background,
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios_new_rounded,
-            size: 22,
-            color: colors.text,
-          ),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
-          'Top Up',
-          style: TextStyle(fontWeight: FontWeight.w600),
-        ),
-        centerTitle: true,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.fromLTRB(30, 0, 30, 30),
+      backgroundColor: _bg,
+      body: SafeArea(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 24),
-            const Center(
-              child: Text(
-                'Add money with your debit card directly',
-                style: TextStyle(color: Colors.grey),
-              ),
+            _FlowHeader(
+              title: 'Add money',
+              onBack: () => Navigator.pop(context),
             ),
-            const SizedBox(height: 24),
-
-            // Card selector
-            CardSelectorTile(
-              card: card,
-              onChange: () {
-                showModalBottomSheet(
-                  context: context,
-                  backgroundColor: Colors.transparent,
-                  isScrollControlled: true,
-                  builder: (ctx) => ChangeCardSheet(card: card),
-                );
-              },
-            ),
-
-            const SizedBox(height: 30),
-            const Text(
-              'Amount',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 12),
-
-            // Manual input
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 18),
-              height: 54,
-              decoration: BoxDecoration(
-                color: colors.inputFill,
-                borderRadius: BorderRadius.circular(28),
-              ),
-              child: TextField(
-                controller: _controller,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  hintText: 'Enter amount',
-                  border: InputBorder.none,
-                  suffixIcon: selectedAmount != null
-                      ? IconButton(
-                          icon: const Icon(Icons.clear),
-                          onPressed: () {
-                            _controller.clear();
-                            setState(() => selectedAmount = null);
-                          },
-                        )
-                      : null,
+            Expanded(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(
+                  22,
+                  18,
+                  22,
+                  24 + MediaQuery.viewInsetsOf(context).bottom,
                 ),
-                onChanged: _onAmountChanged,
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // Amount chips
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [2000, 5000, 10000]
-                  .map(
-                    (e) => AmountChip(
-                      amount: e,
-                      selected: selectedAmount == e,
-                      onTap: () => _onChipSelected(e),
-                    ),
-                  )
-                  .toList(),
-            ),
-
-            const Spacer(),
-
-            // Fund Wallet button
-            SizedBox(
-              width: double.infinity,
-              height: 54,
-              child: ElevatedButton(
-                onPressed: selectedAmount != null
-                    ? () {
-                        Navigator.pushNamed(
-                          context,
-                          '/verify-transfer',
-                          arguments: {
-                            'amount': selectedAmount!.toDouble(),
-                            'topUp': true,
-                          },
-                        );
-                      }
-                    : null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: selectedAmount != null
-                      ? colorScheme.primary
-                      : colorScheme.primary.withValues(alpha: 0.35),
-                  foregroundColor: colorScheme.onPrimary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(28),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight:
+                        MediaQuery.sizeOf(context).height -
+                        MediaQuery.paddingOf(context).vertical -
+                        110,
                   ),
-                ),
-                child: Text(
-                  'Fund Wallet',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.normal,
-                    color: colorScheme.onPrimary,
+                  child: IntrinsicHeight(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Center(
+                          child: Text(
+                            'Add money with your debit card directly',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: _muted, fontSize: 12),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        const _DebitCardTile(),
+                        const SizedBox(height: 28),
+                        const Text(
+                          'Amount',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        _AmountInput(
+                          controller: _amountController,
+                          onChanged: _onAmountChanged,
+                          onClear: () {
+                            _amountController.clear();
+                            setState(() => _selectedAmount = null);
+                          },
+                          showClear: _selectedAmount != null,
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            _QuickAmountChip(
+                              amount: 2000,
+                              selected: _selectedAmount == 2000,
+                              onTap: () => _setAmount(2000),
+                            ),
+                            const SizedBox(width: 8),
+                            _QuickAmountChip(
+                              amount: 5000,
+                              selected: _selectedAmount == 5000,
+                              onTap: () => _setAmount(5000),
+                            ),
+                            const SizedBox(width: 8),
+                            _QuickAmountChip(
+                              amount: 10000,
+                              selected: _selectedAmount == 10000,
+                              onTap: () => _setAmount(10000),
+                            ),
+                          ],
+                        ),
+                        const Spacer(),
+                        _PrimaryButton(
+                          label: 'Fund wallet',
+                          onPressed: _selectedAmount == null
+                              ? null
+                              : _fundWallet,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FlowHeader extends StatelessWidget {
+  const _FlowHeader({required this.title, required this.onBack});
+
+  final String title;
+  final VoidCallback onBack;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 58,
+      child: Row(
+        children: [
+          SizedBox(
+            width: 56,
+            child: IconButton(
+              onPressed: onBack,
+              icon: const Icon(
+                Icons.arrow_back_ios_new_rounded,
+                color: Colors.white,
+                size: 18,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          const SizedBox(width: 56),
+        ],
+      ),
+    );
+  }
+}
+
+class _DebitCardTile extends StatelessWidget {
+  const _DebitCardTile();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: _TopUpScreenState._panelAlt,
+        borderRadius: BorderRadius.circular(9),
+        border: Border.all(color: const Color(0xFF333333)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: CitiRideTheme.primaryYellow.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(7),
+            ),
+            child: const Icon(
+              Icons.credit_card_rounded,
+              color: CitiRideTheme.primaryYellow,
+              size: 22,
+            ),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Moniepoint',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                SizedBox(height: 3),
+                Text(
+                  '5064 8393 **** 4051',
+                  style: TextStyle(color: Color(0xFF9B9B9B), fontSize: 11),
+                ),
+              ],
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pushNamed(context, '/add-card'),
+            style: TextButton.styleFrom(
+              minimumSize: Size.zero,
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            child: const Text(
+              'Change',
+              style: TextStyle(
+                color: CitiRideTheme.primaryYellow,
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AmountInput extends StatelessWidget {
+  const _AmountInput({
+    required this.controller,
+    required this.onChanged,
+    required this.onClear,
+    required this.showClear,
+  });
+
+  final TextEditingController controller;
+  final ValueChanged<String> onChanged;
+  final VoidCallback onClear;
+  final bool showClear;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 54,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: TextField(
+        controller: controller,
+        keyboardType: TextInputType.number,
+        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+        onChanged: onChanged,
+        style: const TextStyle(
+          color: Colors.black,
+          fontSize: 17,
+          fontWeight: FontWeight.w700,
+        ),
+        decoration: InputDecoration(
+          prefixText: '\u20A6 ',
+          prefixStyle: const TextStyle(
+            color: Colors.black,
+            fontSize: 17,
+            fontWeight: FontWeight.w700,
+          ),
+          hintText: 'Enter amount',
+          hintStyle: const TextStyle(color: Color(0xFF7B7B7B)),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 18,
+            vertical: 15,
+          ),
+          suffixIcon: showClear
+              ? IconButton(
+                  onPressed: onClear,
+                  icon: const Icon(Icons.close_rounded, color: Colors.black),
+                )
+              : null,
+        ),
+      ),
+    );
+  }
+}
+
+class _QuickAmountChip extends StatelessWidget {
+  const _QuickAmountChip({
+    required this.amount,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final int amount;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(999),
+        child: Container(
+          height: 32,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: selected
+                ? _TopUpScreenState._yellow
+                : _TopUpScreenState._panel,
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: selected
+                  ? _TopUpScreenState._yellow
+                  : const Color(0xFF333333),
+            ),
+          ),
+          child: Text(
+            '\u20A6$amount',
+            style: TextStyle(
+              color: selected ? Colors.black : Colors.white,
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PrimaryButton extends StatelessWidget {
+  const _PrimaryButton({required this.label, required this.onPressed});
+
+  final String label;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: 48,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          elevation: 0,
+          backgroundColor: CitiRideTheme.primaryYellow,
+          disabledBackgroundColor: CitiRideTheme.primaryYellow.withValues(
+            alpha: 0.42,
+          ),
+          foregroundColor: Colors.black,
+          disabledForegroundColor: Colors.black.withValues(alpha: 0.52),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(999),
+          ),
+        ),
+        child: Text(
+          label,
+          style: const TextStyle(
+            color: Colors.black,
+            fontSize: 14,
+            fontWeight: FontWeight.w800,
+          ),
         ),
       ),
     );

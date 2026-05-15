@@ -164,14 +164,18 @@ class SignUpScreenState extends ConsumerState<SignUpScreen> {
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        foregroundColor: Colors.black,
+        foregroundColor: Theme.of(context).brightness == Brightness.dark
+            ? Colors.black
+            : Colors.white,
         centerTitle: true,
         title: Text(
           "Enter your number",
           style: GoogleFonts.poppins(
             fontSize: 28,
             fontWeight: FontWeight.bold,
-            color: Colors.black,
+            color: Theme.of(context).brightness == Brightness.dark
+              ? Colors.white
+              : Colors.black,
           ),
         ),
       ),
@@ -239,7 +243,7 @@ class SignUpScreenState extends ConsumerState<SignUpScreen> {
                             'Continue',
                             style: GoogleFonts.poppins(
                               fontSize: 16,
-                              fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.normal,
                             ),
                           ),
                         ),

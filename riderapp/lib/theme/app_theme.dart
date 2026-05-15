@@ -101,7 +101,7 @@ class CitiRideTheme {
   static ThemeData get dark => _buildTheme(
     brightness: Brightness.dark,
     colors: darkColors,
-    onPrimary: Colors.white,
+    onPrimary: Colors.black,
   );
 
   static ThemeData get light => _buildTheme(

@@ -96,7 +96,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   String _buildPhoneNumberForSave() {
     final digits = _phoneController.text.replaceAll(RegExp(r'\D'), '');
-    return digits.isEmpty ? _selectedCountryCode : '$_selectedCountryCode$digits';
+    return digits.isEmpty
+        ? _selectedCountryCode
+        : '$_selectedCountryCode$digits';
   }
 
   Future<void> _loadProfile() async {
@@ -115,10 +117,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final userPhoto = _safeText(userData?['photoURL']);
     final profileAvatarAsset =
         storedAvatarAsset != null && storedAvatarAsset.isNotEmpty
-            ? storedAvatarAsset
-            : (userPhoto.startsWith('images/')
-                ? userPhoto
-                : _selectedAvatarAsset);
+        ? storedAvatarAsset
+        : (userPhoto.startsWith('images/') ? userPhoto : _selectedAvatarAsset);
 
     final userDisplayName = _safeText(userData?['displayName']);
     final userUsername = _safeText(userData?['username']);
@@ -128,16 +128,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final resolvedPhone = userPhone.isNotEmpty
         ? userPhone
         : (authPhone.isNotEmpty
-            ? authPhone
-            : (localPhone.isNotEmpty ? localPhone : _defaultNigerianPhone));
+              ? authPhone
+              : (localPhone.isNotEmpty ? localPhone : _defaultNigerianPhone));
 
     _applyPhoneInputState(resolvedPhone);
 
     setState(() {
-      _nameController.text =
-          userDisplayName.isNotEmpty ? userDisplayName : localName;
-      _usernameController.text =
-          userUsername.isNotEmpty ? userUsername : localUsername;
+      _nameController.text = userDisplayName.isNotEmpty
+          ? userDisplayName
+          : localName;
+      _usernameController.text = userUsername.isNotEmpty
+          ? userUsername
+          : localUsername;
       _emailController.text = userEmail.isNotEmpty ? userEmail : localEmail;
       _phoneNumber = resolvedPhone;
       _selectedAvatarAsset = profileAvatarAsset;
@@ -160,9 +162,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               Positioned.fill(
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                  child: Container(
-                    color: const Color(0x331E88E5),
-                  ),
+                  child: Container(color: Colors.black.withAlpha(82)),
                 ),
               ),
               Align(
@@ -175,8 +175,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     18 + MediaQuery.of(dialogContext).viewInsets.bottom,
                   ),
                   child: Material(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(28),
+                    color: const Color(0xFF171717),
+                    borderRadius: BorderRadius.circular(22),
                     elevation: 0,
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
@@ -190,9 +190,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               height: 6,
                               child: DecoratedBox(
                                 decoration: BoxDecoration(
-                                  color: Color(0xFFD0D3D8),
-                                  borderRadius:
-                                      BorderRadius.all(Radius.circular(10)),
+                                  color: CitiRideTheme.primaryYellow,
+                                  borderRadius: BorderRadius.all(
+                                    Radius.circular(10),
+                                  ),
                                 ),
                               ),
                             ),
@@ -203,7 +204,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF2D2F3A),
+                              color: Colors.white,
                             ),
                           ),
                           const SizedBox(height: 10),
@@ -214,8 +215,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             contentPadding: const EdgeInsets.symmetric(
                               horizontal: 10,
                             ),
-                            leading: const Icon(Icons.photo_library_outlined),
-                            title: const Text('Choose from gallery'),
+                            leading: const Icon(
+                              Icons.photo_library_outlined,
+                              color: CitiRideTheme.primaryYellow,
+                            ),
+                            title: const Text(
+                              'Choose from gallery',
+                              style: TextStyle(color: Colors.white),
+                            ),
                             onTap: () async {
                               Navigator.of(dialogContext).pop();
                               await _pickAvatar(ImageSource.gallery);
@@ -229,8 +236,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             contentPadding: const EdgeInsets.symmetric(
                               horizontal: 10,
                             ),
-                            leading: const Icon(Icons.photo_camera_outlined),
-                            title: const Text('Take a picture'),
+                            leading: const Icon(
+                              Icons.photo_camera_outlined,
+                              color: CitiRideTheme.primaryYellow,
+                            ),
+                            title: const Text(
+                              'Take a picture',
+                              style: TextStyle(color: Colors.white),
+                            ),
                             onTap: () async {
                               Navigator.of(dialogContext).pop();
                               await _pickAvatar(ImageSource.camera);
@@ -246,8 +259,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
         );
       },
-      transitionBuilder:
-          (dialogContext, animation, secondaryAnimation, child) {
+      transitionBuilder: (dialogContext, animation, secondaryAnimation, child) {
         final curved = CurvedAnimation(
           parent: animation,
           curve: Curves.easeOutCubic,
@@ -365,9 +377,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return Text(
       text,
       style: const TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.w500,
-        color: Color(0xFF2F323D),
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: Colors.white,
       ),
     );
   }
@@ -382,25 +394,26 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       controller: controller,
       keyboardType: keyboardType,
       validator: validator,
-      style: const TextStyle(
-        fontSize: 18,
-        color: Color(0xFF2F323D),
-      ),
+      style: const TextStyle(fontSize: 15, color: Colors.white),
       decoration: InputDecoration(
         hintText: hint,
         filled: true,
-        fillColor: const Color(0xFFEDEDEF),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 26, vertical: 18),
+        fillColor: const Color(0xFF242424),
+        hintStyle: const TextStyle(color: Color(0xFF8F8F8F)),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 18,
+          vertical: 16,
+        ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(28),
+          borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(28),
-          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Color(0xFF333333)),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(28),
+          borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(
             color: Theme.of(context).colorScheme.primary,
             width: 1.2,
@@ -421,16 +434,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFFEDEDEF),
-        borderRadius: BorderRadius.circular(28),
+        color: const Color(0xFF242424),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFF333333)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(18),
-              color: Colors.white,
+              borderRadius: BorderRadius.circular(6),
+              color: const Color(0xFF171717),
             ),
             child: DropdownButtonHideUnderline(
               child: DropdownButton<Map<String, String>>(
@@ -438,7 +452,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 borderRadius: BorderRadius.circular(16),
                 icon: const Icon(
                   Icons.keyboard_arrow_down,
-                  color: Color(0xFFA5A9B0),
+                  color: Color(0xFFBDBDBD),
                   size: 22,
                 ),
                 items: _countries.map((country) {
@@ -453,7 +467,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           country['code'] ?? '',
                           style: const TextStyle(
                             fontSize: 14,
-                            color: Color(0xFF2F323D),
+                            color: Colors.white,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -478,10 +492,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               controller: _phoneController,
               keyboardType: TextInputType.phone,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              style: const TextStyle(
-                fontSize: 18,
-                color: Color(0xFF2F323D),
-              ),
+              style: const TextStyle(fontSize: 15, color: Colors.white),
               validator: (value) {
                 final digits = (value ?? '').replaceAll(RegExp(r'\D'), '');
                 if (digits.isEmpty) return 'Phone number is required';
@@ -490,7 +501,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               },
               decoration: const InputDecoration(
                 hintText: 'Phone number',
-                hintStyle: TextStyle(color: Color(0xFFA0A4AA), fontSize: 17),
+                hintStyle: TextStyle(color: Color(0xFF8F8F8F), fontSize: 15),
                 border: InputBorder.none,
                 isDense: true,
               ),
@@ -505,13 +516,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Scaffold(
-        backgroundColor: Color(0xFFF2F2F4),
-        body: Center(child: CircularProgressIndicator()),
+        backgroundColor: Color(0xFF101010),
+        body: Center(
+          child: CircularProgressIndicator(color: CitiRideTheme.primaryYellow),
+        ),
       );
     }
 
     return Scaffold(
-      backgroundColor: Theme.of(context).extension<CitiRideThemeColors>()?.surface ?? const Color(0xFFF2F2F4),
+      backgroundColor: const Color(0xFF101010),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -519,17 +532,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         leading: IconButton(
           icon: const Icon(
             Icons.arrow_back_ios_new_rounded,
-            size: 30,
-            color: Color(0xFF2D2F3A),
+            size: 22,
+            color: Colors.white,
           ),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           'Personal info',
           style: TextStyle(
-            color: Color(0xFF2D2F3A),
-            fontSize: 24,
-            fontWeight: FontWeight.w600,
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ),
@@ -549,22 +562,31 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       Container(
                         width: double.infinity,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFECECEE),
-                          borderRadius: BorderRadius.circular(34),
+                          color: const Color(0xFF171717),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFF2E2E2E)),
                         ),
                         padding: const EdgeInsets.symmetric(vertical: 28),
                         child: Column(
                           children: [
-                            CircleAvatar(
-                              radius: 44,
-                              backgroundColor: const Color(0xFFF7E1EA),
-                              backgroundImage: _avatarImageProvider(),
+                            Container(
+                              width: 88,
+                              height: 88,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                image: DecorationImage(
+                                  image: _avatarImageProvider(),
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
                             ),
                             const SizedBox(height: 14),
                             OutlinedButton(
                               onPressed: _chooseAvatar,
                               style: OutlinedButton.styleFrom(
-                                side: const BorderSide(color: Color(0xFF8EC9F5)),
+                                side: const BorderSide(
+                                  color: CitiRideTheme.primaryYellow,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(28),
                                 ),
@@ -577,7 +599,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                 'Upload photo',
                                 style: TextStyle(
                                   color: Theme.of(context).colorScheme.primary,
-                                  fontSize: 16,
+                                  fontSize: 14,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -607,7 +629,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         validator: (value) {
                           final username = value?.trim() ?? '';
                           if (username.isEmpty) return 'Username is required';
-                          if (username.length < 3) return 'At least 3 characters';
+                          if (username.length < 3) {
+                            return 'At least 3 characters';
+                          }
                           return null;
                         },
                       ),
@@ -621,7 +645,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         validator: (value) {
                           final text = value?.trim() ?? '';
                           if (text.isEmpty) return null;
-                          final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+                          final emailRegex = RegExp(
+                            r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
+                          );
                           return emailRegex.hasMatch(text)
                               ? null
                               : 'Enter a valid email';
@@ -646,7 +672,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   onPressed: _isSaving ? null : _saveProfile,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Theme.of(context).colorScheme.primary,
-                    disabledBackgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
+                    disabledBackgroundColor: Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.5),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(32),
                     ),
@@ -658,15 +686,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           height: 24,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: Colors.white,
+                            color: Colors.black,
                           ),
                         )
                       : const Text(
                           'Save changes',
                           style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w500,
+                            color: Colors.black,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                 ),

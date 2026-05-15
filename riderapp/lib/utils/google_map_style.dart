@@ -2,7 +2,7 @@ const String kGoogleMapGrayscaleStyle = '''
 [
   {
     "elementType": "geometry",
-    "stylers": [{"color": "#f0f0f0"}]
+    "stylers": [{"color": "#0b0b0b"}]
   },
   {
     "elementType": "labels.icon",
@@ -10,16 +10,16 @@ const String kGoogleMapGrayscaleStyle = '''
   },
   {
     "elementType": "labels.text.fill",
-    "stylers": [{"color": "#8d8d8d"}]
+    "stylers": [{"color": "#3f3f3f"}]
   },
   {
     "elementType": "labels.text.stroke",
-    "stylers": [{"color": "#f0f0f0"}]
+    "stylers": [{"color": "#080808"}]
   },
   {
     "featureType": "administrative",
     "elementType": "geometry.stroke",
-    "stylers": [{"color": "#d9d9d9"}]
+    "stylers": [{"color": "#1b1b1b"}]
   },
   {
     "featureType": "poi",
@@ -28,22 +28,22 @@ const String kGoogleMapGrayscaleStyle = '''
   {
     "featureType": "road",
     "elementType": "geometry",
-    "stylers": [{"color": "#ffffff"}]
+    "stylers": [{"color": "#1b1b1b"}]
   },
   {
     "featureType": "road.arterial",
     "elementType": "geometry",
-    "stylers": [{"color": "#fbfbfb"}]
+    "stylers": [{"color": "#202020"}]
   },
   {
     "featureType": "road.highway",
     "elementType": "geometry",
-    "stylers": [{"color": "#f7f7f7"}]
+    "stylers": [{"color": "#242424"}]
   },
   {
     "featureType": "road.local",
     "elementType": "geometry",
-    "stylers": [{"color": "#ffffff"}]
+    "stylers": [{"color": "#171717"}]
   },
   {
     "featureType": "transit",
@@ -52,7 +52,7 @@ const String kGoogleMapGrayscaleStyle = '''
   {
     "featureType": "water",
     "elementType": "geometry",
-    "stylers": [{"color": "#ececec"}]
+    "stylers": [{"color": "#070707"}]
   }
 ]
 ''';

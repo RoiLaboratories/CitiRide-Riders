@@ -310,8 +310,8 @@ class _OTPScreenState extends ConsumerState<OTPScreen> {
                         style: GoogleFonts.poppins(
                           fontSize: 16,
                           color: Theme.of(context).brightness == Brightness.dark
-                              ? Colors.grey[400]
-                              : Colors.grey[600],
+                              ? Colors.white
+                              : Colors.black,
                           height: 1.3,
                         ),
                         textAlign: TextAlign.center,
@@ -408,7 +408,7 @@ class _OTPScreenState extends ConsumerState<OTPScreen> {
                           "Verify",
                           style: GoogleFonts.poppins(
                             fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.normal,
                             color: colorScheme.onPrimary,
                           ),
                         ),

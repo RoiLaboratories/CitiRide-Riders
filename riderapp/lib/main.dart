@@ -9,6 +9,7 @@ import 'screens/home_screen.dart';
 import 'screens/route_screen.dart';
 import 'screens/ride_screen.dart';
 import 'screens/book_ride_screen.dart';
+import 'screens/wallet_onboarding_flow.dart';
 import 'screens/wallet_screen.dart';
 import 'screens/add_card_screen.dart';
 import 'screens/top_up_screen.dart';
@@ -56,11 +57,12 @@ class MyApp extends ConsumerWidget {
         '/signup': (context) => SignUpScreen(),
         '/login': (context) => LoginScreen(),
         '/otp': (context) =>
-          const OTPScreen(phoneNumber: '', verificationId: ''),
+            const OTPScreen(phoneNumber: '', verificationId: ''),
         '/home': (context) => const HomeScreen(),
         '/route': (context) => const RouteScreen(),
         '/ride': (context) => RideScreen(),
         '/bookride': (context) => BookRideScreen(),
+        '/wallet-onboarding': (context) => const WalletOnboardingFlow(),
         '/wallet': (context) => WalletScreen(),
         '/add-card': (context) => const AddCardScreen(),
         '/top-up': (context) => TopUpScreen(),
@@ -76,7 +78,7 @@ class MyApp extends ConsumerWidget {
         '/change-wallet-pin': (context) => const ChangeWalletPinScreen(),
         '/create-wallet-pin': (context) => const CreateWalletPinScreen(),
         '/reset-wallet-pin': (context) =>
-          const CreateWalletPinScreen(isResetFlow: true),
+            const CreateWalletPinScreen(isResetFlow: true),
         '/saved-places': (context) => const SavedPlacesScreen(),
       },
       home: const SplashScreen(),

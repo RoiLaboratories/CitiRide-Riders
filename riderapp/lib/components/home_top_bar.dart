@@ -69,7 +69,8 @@ class _HomeTopBarState extends State<HomeTopBar> {
 
     setState(() {
       _profileAvatarAsset = prefs.getString('profile_avatar_asset');
-      final avatarBase64 = (prefs.getString('profile_avatar_base64') ?? '').trim();
+      final avatarBase64 = (prefs.getString('profile_avatar_base64') ?? '')
+          .trim();
       _profileAvatarBytes = _decodeAvatarBase64(avatarBase64);
     });
   }
@@ -78,12 +79,9 @@ class _HomeTopBarState extends State<HomeTopBar> {
     Widget defaultAvatar() {
       return Image.asset(
         'images/profile.png',
-        fit: BoxFit.fill,
-        errorBuilder: (_, _, _) => const Icon(
-          Icons.person,
-          color: Colors.white,
-          size: 24,
-        ),
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) =>
+            const Icon(Icons.person, color: Colors.white, size: 24),
       );
     }
 
@@ -105,7 +103,6 @@ class _HomeTopBarState extends State<HomeTopBar> {
 
     return defaultAvatar();
   }
-
 
   Future<void> _getCurrentLocation() async {
     try {
@@ -145,7 +142,9 @@ class _HomeTopBarState extends State<HomeTopBar> {
         final place = placemarks.first;
         setState(() {
           _locationText =
-              place.locality ?? place.subAdministrativeArea ?? 'Current Location';
+              place.locality ??
+              place.subAdministrativeArea ??
+              'Current Location';
           _currentAddress = [
             if (place.street != null && place.street!.isNotEmpty) place.street,
             if (place.subLocality != null && place.subLocality!.isNotEmpty)
@@ -183,7 +182,9 @@ class _HomeTopBarState extends State<HomeTopBar> {
           lower.contains('permission') || lower.contains('denied');
 
       setState(() {
-        _locationText = permissionError ? 'Permission Required' : 'Location Error';
+        _locationText = permissionError
+            ? 'Permission Required'
+            : 'Location Error';
         _currentAddress = permissionError
             ? 'Allow location in browser settings'
             : 'Unable to get location';
@@ -191,7 +192,6 @@ class _HomeTopBarState extends State<HomeTopBar> {
       });
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -226,14 +226,15 @@ class _HomeTopBarState extends State<HomeTopBar> {
             child: Container(
               width: 48,
               height: 48,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Color(0xFFF7CFE2),
+                color: Theme.of(context).colorScheme.primary,
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.primary,
+                  width: 3,
+                ),
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(3),
-                child: ClipOval(child: _buildAvatarImage()),
-              ),
+              child: ClipOval(child: _buildAvatarImage()),
             ),
           ),
         ),
@@ -247,11 +248,12 @@ class _HomeTopBarState extends State<HomeTopBar> {
                 height: 48,
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: const Color(0xE6171717),
                   borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: const Color(0xFF5E5E5E)),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withAlpha(30),
+                      color: Colors.black.withAlpha(80),
                       blurRadius: 14,
                       offset: const Offset(0, 5),
                     ),
@@ -284,7 +286,9 @@ class _HomeTopBarState extends State<HomeTopBar> {
                                   'Your Location',
                                   style: GoogleFonts.poppins(
                                     fontSize: 11,
-                                    color: const Color(0xFFB0B2B8),
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -294,7 +298,7 @@ class _HomeTopBarState extends State<HomeTopBar> {
                                   style: GoogleFonts.poppins(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w600,
-                                    color: const Color(0xFF2E313B),
+                                    color: Colors.white,
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -331,28 +335,12 @@ class _HomeTopBarState extends State<HomeTopBar> {
             child: CircleAvatar(
               radius: 22,
               backgroundColor: Colors.white,
-              child: Stack(
-                clipBehavior: Clip.hardEdge,
-                children: [
-                  Center(
-                    child: Image.asset(
-                      'images/bell.png',
-                      width: 18,
-                      height: 18,
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-                  Positioned(
-                    right: 13,
-                    top: 9,
-                    child: Image.asset(
-                      'images/dot.png',
-                      width: 9,
-                      height: 9,
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-                ],
+              child: Center(
+                child: Icon(
+                  Icons.navigation_rounded,
+                  color: const Color(0xFFE93A3A),
+                  size: 21,
+                ),
               ),
             ),
           ),

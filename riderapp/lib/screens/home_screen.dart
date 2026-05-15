@@ -5,6 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart' as fm;
 import 'package:geolocator/geolocator.dart';
+
+import 'wallet_onboarding_flow.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
 import 'package:latlong2/latlong.dart' as osm;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -174,9 +176,9 @@ class _HomeScreenState extends State<HomeScreen> {
     required String title,
     required String subtitle,
     required VoidCallback onTap,
-    Color titleColor = const Color(0xFF2D2F3A),
-    Color iconColor = const Color(0xFF2D2F3A),
-    Color iconBg = const Color(0xFFE3E4E6),
+    Color titleColor = Colors.white,
+    Color iconColor = const Color(0xFF101010),
+    Color iconBg = const Color(0xFFE6E6E6),
   }) {
     return InkWell(
       onTap: onTap,
@@ -208,7 +210,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     subtitle,
                     style: const TextStyle(
                       fontSize: 12,
-                      color: Color(0xFF80838A),
+                      color: Color(0xFF9B9B9B),
                     ),
                   ),
                 ],
@@ -225,10 +227,10 @@ class _HomeScreenState extends State<HomeScreen> {
       width: MediaQuery.of(context).size.width * 0.64,
       child: Drawer(
         elevation: 0,
-        backgroundColor: Theme.of(context).extension<CitiRideThemeColors>()?.surface ?? const Color(0xFFF2F2F4),
+        backgroundColor: const Color(0xFF171717),
         surfaceTintColor: Colors.transparent,
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.horizontal(right: Radius.circular(44)),
+          borderRadius: BorderRadius.horizontal(right: Radius.circular(28)),
         ),
         child: SafeArea(
           child: Padding(
@@ -240,7 +242,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     CircleAvatar(
                       radius: 32,
-                      backgroundColor: const Color(0xFFF6DCE8),
+                      backgroundColor: Colors.transparent,
                       backgroundImage: const AssetImage('images/profile.png'),
                     ),
                     const SizedBox(width: 12),
@@ -253,14 +255,14 @@ class _HomeScreenState extends State<HomeScreen> {
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF2D2F3A),
+                              color: Colors.white,
                             ),
                           ),
                           Text(
                             _drawerUsername,
                             style: const TextStyle(
                               fontSize: 14,
-                              color: Color(0xFF0A84FF),
+                              color: CitiRideTheme.primaryYellow,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -268,7 +270,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             _drawerPhone,
                             style: const TextStyle(
                               fontSize: 12,
-                              color: Color(0xFF7D8088),
+                              color: Color(0xFF9B9B9B),
                             ),
                           ),
                         ],
@@ -304,6 +306,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   subtitle: 'Log out from your account',
                   titleColor: const Color(0xFFFF3B3B),
                   iconColor: const Color(0xFFFF3B3B),
+                  iconBg: const Color(0xFF2A1717),
                   onTap: _signOutFromDrawer,
                 ),
                 const Spacer(),
@@ -314,8 +317,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     vertical: 14,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFCEE6FA),
-                    borderRadius: BorderRadius.circular(26),
+                    color: const Color(0xFF242424),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: const Color(0xFF333333)),
                   ),
                   child: Row(
                     children: [
@@ -327,7 +331,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               'Want to earn as a driver?',
                               style: TextStyle(
                                 fontSize: 14,
-                                color: Color(0xFF1082E4),
+                                color: CitiRideTheme.primaryYellow,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -336,7 +340,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               'Go to driver app',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Color(0xFF1082E4),
+                                color: Color(0xFFBDBDBD),
                               ),
                             ),
                           ],
@@ -344,7 +348,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       const Icon(
                         Icons.arrow_forward_ios,
-                        color: Color(0xFF1082E4),
+                        color: CitiRideTheme.primaryYellow,
                         size: 20,
                       ),
                     ],
@@ -377,7 +381,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Positioned.fill(
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                  child: Container(color: const Color(0x261E88E5)),
+                  child: Container(color: Colors.black.withAlpha(82)),
                 ),
               ),
               Align(
@@ -460,6 +464,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
       await _refreshCurrentLocationForMap(requestIfDenied: false);
       if (!mounted) return;
+
+      await Future<void>.delayed(const Duration(milliseconds: 500));
+      if (!mounted) return;
+
+      await _openWalletOnboarding(showWalletAfter: true);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -475,6 +484,36 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<bool> _openWalletOnboarding({required bool showWalletAfter}) async {
+    final prefs = await SharedPreferences.getInstance();
+    final onboardingComplete =
+        prefs.getBool('wallet_onboarding_complete') ?? false;
+
+    if (onboardingComplete) {
+      if (showWalletAfter && mounted) {
+        setState(() => _currentIndex = 2);
+        _pageController.jumpToPage(2);
+      }
+      return true;
+    }
+
+    if (!mounted) return false;
+
+    final completed = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (context) => const WalletOnboardingFlow()),
+    );
+
+    if (!mounted) return completed == true;
+
+    if (completed == true && showWalletAfter) {
+      setState(() => _currentIndex = 2);
+      _pageController.jumpToPage(2);
+    }
+
+    return completed == true;
+  }
+
   // ---------------- TAB HANDLING ----------------
 
   Future<void> _onTabChanged(int index) async {
@@ -488,21 +527,8 @@ class _HomeScreenState extends State<HomeScreen> {
     _isCheckingWalletPin = true;
 
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final pin = prefs.getString('wallet_pin') ?? '';
-
-      if (!mounted) return;
-
-      if (pin.isEmpty) {
-        final result = await Navigator.pushNamed(context, '/create-wallet-pin');
-        if (!mounted) return;
-
-        if (result == true) {
-          setState(() => _currentIndex = index);
-          _pageController.jumpToPage(index);
-        }
-        return;
-      }
+      final ready = await _openWalletOnboarding(showWalletAfter: false);
+      if (!mounted || !ready) return;
 
       setState(() => _currentIndex = index);
       _pageController.jumpToPage(index);
@@ -615,7 +641,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: IgnorePointer(
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                  child: Container(color: const Color(0x331E88E5)),
+                  child: Container(color: Colors.black.withAlpha(82)),
                 ),
               ),
             ),
@@ -642,7 +668,7 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           fm.TileLayer(
             urlTemplate:
-                'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+                'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
             subdomains: const ['a', 'b', 'c', 'd'],
             userAgentPackageName: 'com.example.citiride',
           ),

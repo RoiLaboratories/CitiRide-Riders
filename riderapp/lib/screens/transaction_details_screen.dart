@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
-import '../theme/app_theme.dart';
 
 class TransactionDetailsScreen extends StatelessWidget {
   const TransactionDetailsScreen({super.key});
+
+  static const Color _bg = Color(0xFF101010);
+  static const Color _panel = Color(0xFF242424);
+  static const Color _muted = Color(0xFF9B9B9B);
 
   @override
   Widget build(BuildContext context) {
@@ -10,167 +13,183 @@ class TransactionDetailsScreen extends StatelessWidget {
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>? ??
         const {};
 
-    final bool isCredit = args['isCredit'] == true;
-    final String title =
-        (args['title'] as String?) ??
-        (isCredit ? 'Wallet Top Up' : 'Payment to Ahmed');
-    final String amount =
+    final isCredit = args['isCredit'] == true;
+    final title =
+        (args['title'] as String?) ?? (isCredit ? 'Wallet Top Up' : 'Payment');
+    final amount =
         (args['amount'] as String?) ??
-        (isCredit ? '+\u20A6435.54' : '-\u20A6435.54');
-    final String date = (args['date'] as String?) ?? 'Fri, 21 Jun 2025';
-    final String time = (args['time'] as String?) ?? '2:30 PM';
-    final String name =
-        (args['name'] as String?) ??
-        (isCredit ? 'Umoru Osigbemhe' : 'Ahmed Singer');
-    final String accountNumber =
-        (args['accountNumber'] as String?) ?? '3748594032';
-    final String bank = (args['bank'] as String?) ?? 'UBA';
-
-    final Color amountColor =
-        isCredit ? const Color(0xFF16B316) : const Color(0xFFFF3B3B);
+        (isCredit ? '+\u20A60.00' : '-\u20A60.00');
+    final date = (args['date'] as String?) ?? 'Fri, 21 Jun 2025';
+    final time = (args['time'] as String?) ?? '2:30 PM';
+    final name =
+        (args['name'] as String?) ?? (isCredit ? 'Umoru Osigbemhe' : 'Rider');
+    final accountNumber = (args['accountNumber'] as String?) ?? '3748594032';
+    final bank = (args['bank'] as String?) ?? 'UBA';
+    final amountColor = isCredit
+        ? const Color(0xFF24D05A)
+        : const Color(0xFFFF4343);
 
     return Scaffold(
-      backgroundColor: Theme.of(context).extension<CitiRideThemeColors>()?.surface ?? const Color(0xFFF2F2F4),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new_rounded,
-            size: 28,
-            color: Color(0xFF2D2F3A),
-          ),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
-          'Transaction details',
-          style: TextStyle(
-            color: Color(0xFF2D2F3A),
-            fontWeight: FontWeight.w600,
-            fontSize: 22,
-          ),
-        ),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.fromLTRB(18, 16, 18, 20),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.fromLTRB(20, 26, 20, 28),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF4F4F5),
-            borderRadius: BorderRadius.circular(30),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: isCredit
-                    ? Container(
-                        width: 72,
-                        height: 72,
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Color(0xFFCBEED0),
-                        ),
-                        child: const Icon(
-                          Icons.arrow_downward_rounded,
-                          size: 40,
-                          color: Color(0xFF117E2A),
-                        ),
-                      )
-                    : const CircleAvatar(
-                        radius: 36,
-                        backgroundImage: AssetImage('images/driver.png'),
-                      ),
-              ),
-              const SizedBox(height: 22),
-              Center(
-                child: Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF2D2F3A),
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Center(
-                child: Text(
-                  amount,
-                  style: TextStyle(
-                    fontSize: 46,
-                    fontWeight: FontWeight.w500,
-                    color: amountColor,
-                    height: 1,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 30),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(22),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withAlpha(12),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
+      backgroundColor: _bg,
+      body: SafeArea(
+        child: Column(
+          children: [
+            _FlowHeader(
+              title: 'Transaction details',
+              onBack: () => Navigator.pop(context),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(22, 18, 22, 24),
                 child: Column(
                   children: [
-                    _detailRow('Name', name),
-                    if (isCredit) ...[
-                      const SizedBox(height: 18),
-                      _detailRow('Account number', accountNumber),
-                      const SizedBox(height: 18),
-                      _detailRow('Bank', bank),
-                    ],
-                    const SizedBox(height: 18),
-                    _detailRow('Date', date),
-                    const SizedBox(height: 18),
-                    _detailRow('Time', time),
+                    const Spacer(),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.fromLTRB(18, 24, 18, 22),
+                      decoration: BoxDecoration(
+                        color: _panel,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Column(
+                        children: [
+                          Container(
+                            width: 58,
+                            height: 58,
+                            decoration: BoxDecoration(
+                              color: isCredit
+                                  ? const Color(0xFFD9F5DD)
+                                  : const Color(0xFFF3C2CD),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              isCredit
+                                  ? Icons.arrow_downward_rounded
+                                  : Icons.person_rounded,
+                              color: Colors.black.withValues(alpha: 0.72),
+                              size: 30,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            title,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            amount,
+                            style: TextStyle(
+                              color: amountColor,
+                              fontSize: 32,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 18),
+                          _DetailRow(label: 'Name', value: name),
+                          if (isCredit) ...[
+                            _DetailRow(
+                              label: 'Account number',
+                              value: accountNumber,
+                            ),
+                            _DetailRow(label: 'Bank', value: bank),
+                          ],
+                          _DetailRow(label: 'Date', value: date),
+                          _DetailRow(label: 'Time', value: time),
+                        ],
+                      ),
+                    ),
+                    const Spacer(),
                   ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
+}
 
-  Widget _detailRow(String label, String value) {
-    return Row(
-      children: [
-        Expanded(
-          child: Text(
-            label,
-            style: const TextStyle(
-              color: Color(0xFF435057),
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
+class _FlowHeader extends StatelessWidget {
+  const _FlowHeader({required this.title, required this.onBack});
+
+  final String title;
+  final VoidCallback onBack;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 58,
+      child: Row(
+        children: [
+          SizedBox(
+            width: 56,
+            child: IconButton(
+              onPressed: onBack,
+              icon: const Icon(
+                Icons.arrow_back_ios_new_rounded,
+                color: Colors.white,
+                size: 18,
+              ),
             ),
           ),
-        ),
-        Expanded(
-          child: Text(
-            value,
-            textAlign: TextAlign.right,
-            style: const TextStyle(
-              color: Color(0xFF435057),
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
+          Expanded(
+            child: Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
-        ),
-      ],
+          const SizedBox(width: 56),
+        ],
+      ),
+    );
+  }
+}
+
+class _DetailRow extends StatelessWidget {
+  const _DetailRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 7),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: TransactionDetailsScreen._muted,
+                fontSize: 12,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

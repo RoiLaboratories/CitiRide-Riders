@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-
 import '../theme/app_theme.dart';
 
 class WelcomeScreen extends StatelessWidget {
@@ -51,7 +50,7 @@ class WelcomeScreen extends StatelessWidget {
                       shape: const CircleBorder(),
                       clipBehavior: Clip.antiAlias,
                       child: CircleAvatar(
-                        radius: screenHeight * 0.3, // 🔥 BIG
+                        radius: screenHeight * 0.3,
                         backgroundImage: const AssetImage(
                           'images/welcome.png',
                         ),
@@ -83,7 +82,7 @@ class WelcomeScreen extends StatelessWidget {
                       "Sign Up",
                       style: GoogleFonts.poppins(
                         fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.normal,
                         color: colorScheme.onPrimary,
                       ),
                     ),
@@ -111,7 +110,7 @@ class WelcomeScreen extends StatelessWidget {
                       "Log In",
                       style: GoogleFonts.poppins(
                         fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.normal,
                         color: colorScheme.primary,
                       ),
                     ),

@@ -30,11 +30,11 @@ class BottomNavBar extends StatelessWidget {
         height: barHeight,
         padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 6),
         decoration: BoxDecoration(
-          color: const Color(0xFF252A3A),
+          color: Theme.of(context).colorScheme.primary,
           borderRadius: BorderRadius.circular(999),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withAlpha(70),
+              color: Colors.black.withAlpha(90),
               blurRadius: 16,
               offset: const Offset(0, 8),
             ),
@@ -47,19 +47,22 @@ class BottomNavBar extends StatelessWidget {
               context: context,
               index: 0,
               label: 'Home',
-              iconAsset: 'images/home.png',
+              selectedIconAsset: 'images/home.png',
+              unselectedIconAsset: 'images/home2.png',
             ),
             _buildNavItem(
               context: context,
               index: 1,
               label: 'Ride',
-              iconAsset: 'images/ride.png',
+              selectedIconAsset: 'images/ride.png',
+              unselectedIconAsset: 'images/ride2.png',
             ),
             _buildNavItem(
               context: context,
               index: 2,
               label: 'Wallet',
-              iconAsset: 'images/wallet.png',
+              selectedIconAsset: 'images/wallet.png',
+              unselectedIconAsset: 'images/wallet2.png',
             ),
           ],
         ),
@@ -71,9 +74,11 @@ class BottomNavBar extends StatelessWidget {
     required BuildContext context,
     required int index,
     required String label,
-    required String iconAsset,
+    required String selectedIconAsset,
+    required String unselectedIconAsset,
   }) {
     final bool isSelected = currentIndex == index;
+    final iconAsset = isSelected ? selectedIconAsset : unselectedIconAsset;
 
     return InkWell(
       onTap: () => _onItemTapped(index),
@@ -87,7 +92,7 @@ class BottomNavBar extends StatelessWidget {
           vertical: 5,
         ),
         decoration: BoxDecoration(
-          color: isSelected ? Theme.of(context).colorScheme.primary : Colors.transparent,
+          color: isSelected ? const Color(0xFF101010) : Colors.transparent,
           borderRadius: BorderRadius.circular(999),
         ),
         child: Row(
@@ -97,8 +102,13 @@ class BottomNavBar extends StatelessWidget {
               iconAsset,
               height: 26,
               width: 26,
-              color: Colors.white.withAlpha(isSelected ? 255 : 205),
-              colorBlendMode: BlendMode.srcIn,
+              color: isSelected ? Colors.white : null,
+              colorBlendMode: isSelected ? BlendMode.srcIn : null,
+              errorBuilder: (_, _, _) => Icon(
+                _fallbackIcon(index),
+                size: 24,
+                color: isSelected ? Colors.white : Colors.black,
+              ),
             ),
             if (isSelected) ...[
               const SizedBox(width: 6),
@@ -118,5 +128,16 @@ class BottomNavBar extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  IconData _fallbackIcon(int index) {
+    switch (index) {
+      case 0:
+        return Icons.home_rounded;
+      case 1:
+        return Icons.local_taxi_rounded;
+      default:
+        return Icons.account_balance_wallet_rounded;
+    }
   }
 }

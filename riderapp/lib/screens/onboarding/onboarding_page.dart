@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../models/onboarding_model.dart';
@@ -15,8 +13,6 @@ class OnboardingPage extends StatelessWidget {
     
     return LayoutBuilder(
       builder: (context, constraints) {
-        final imageHeight = math.min(353.0, constraints.maxHeight * 0.45);
-        final imageWidth = math.min(353.0, constraints.maxWidth);
         final compact = constraints.maxHeight < 620;
 
         return SingleChildScrollView(
@@ -27,9 +23,10 @@ class OnboardingPage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 SizedBox(
-                  width: imageWidth,
-                  height: imageHeight,
-                  child: Image.asset(data.heroImage, fit: BoxFit.contain),
+                  child: Image.asset(
+                    data.heroImage, 
+                    fit: BoxFit.cover,
+                  ),
                 ),
                 SizedBox(height: compact ? 24 : 45),
                 RichText(
@@ -39,7 +36,7 @@ class OnboardingPage extends StatelessWidget {
                       if (part.text != null) {
                         return TextSpan(
                           text: part.text,
-                          style: GoogleFonts.instrumentSerif(
+                          style: GoogleFonts.poppins(
                             fontSize: compact ? 32 : 36,
                             fontWeight: FontWeight.normal,
                             color: isDarkMode ? Colors.white : Colors.black,
@@ -64,7 +61,7 @@ class OnboardingPage extends StatelessWidget {
                 Text(
                   data.subtitle,
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.instrumentSans(
+                  style: GoogleFonts.poppins(
                     fontSize: compact ? 18 : 20,
                     fontWeight: FontWeight.normal,
                     color: isDarkMode ? Colors.grey[400] : Colors.grey.shade600,

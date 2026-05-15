@@ -17,13 +17,10 @@ class LocationPermissionModal extends StatelessWidget {
   Widget build(BuildContext context) {
     final defaultTextStyle =
         Theme.of(context).textTheme.bodyMedium?.copyWith(
-          color: const Color(0xFF2D2F3A),
+          color: Colors.white,
           decoration: TextDecoration.none,
         ) ??
-        const TextStyle(
-          color: Color(0xFF2D2F3A),
-          decoration: TextDecoration.none,
-        );
+        const TextStyle(color: Colors.white, decoration: TextDecoration.none);
 
     return Material(
       type: MaterialType.transparency,
@@ -42,13 +39,13 @@ class LocationPermissionModal extends StatelessWidget {
               ),
               margin: const EdgeInsets.fromLTRB(12, 16, 12, 20),
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(25),
+                color: const Color(0xFF171717),
+                borderRadius: BorderRadius.circular(22),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withAlpha(150),
-                    blurRadius: 30,
-                    offset: const Offset(0, 10),
+                    color: Colors.black.withAlpha(190),
+                    blurRadius: 34,
+                    offset: const Offset(0, 14),
                   ),
                 ],
               ),
@@ -60,25 +57,25 @@ class LocationPermissionModal extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'Set your location',
+                          'Set your location?',
                           textAlign: TextAlign.center,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: GoogleFonts.poppins(
-                            color: const Color(0xFF2D2F3A),
+                            color: Colors.white,
                             decoration: TextDecoration.none,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 12),
                         Text(
                           'Set your location so we can find nearby drivers and pick '
                           'you up at the right spot.',
                           textAlign: TextAlign.center,
                           style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            color: Colors.grey.shade600,
+                            fontSize: 13,
+                            color: const Color(0xFFB7B7B7),
                             decoration: TextDecoration.none,
                             height: 1.4,
                           ),
@@ -92,7 +89,9 @@ class LocationPermissionModal extends StatelessWidget {
                               child: ElevatedButton(
                                 onPressed: loading ? null : onAllow,
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Theme.of(context).colorScheme.primary,
+                                  backgroundColor: Theme.of(
+                                    context,
+                                  ).colorScheme.primary,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(30),
                                   ),
@@ -116,7 +115,7 @@ class LocationPermissionModal extends StatelessWidget {
                                           maxLines: 1,
                                           style: GoogleFonts.poppins(
                                             fontWeight: FontWeight.bold,
-                                            color: Colors.white,
+                                            color: Colors.black,
                                             decoration: TextDecoration.none,
                                           ),
                                         ),
@@ -130,7 +129,12 @@ class LocationPermissionModal extends StatelessWidget {
                               child: ElevatedButton(
                                 onPressed: onLater,
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.grey.shade300,
+                                  backgroundColor: Colors.transparent,
+                                  foregroundColor: Colors.white,
+                                  side: const BorderSide(
+                                    color: Colors.white,
+                                    width: 1,
+                                  ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(30),
                                   ),
@@ -143,7 +147,7 @@ class LocationPermissionModal extends StatelessWidget {
                                     maxLines: 1,
                                     style: GoogleFonts.poppins(
                                       fontWeight: FontWeight.bold,
-                                      color: Colors.black87,
+                                      color: Colors.white,
                                       decoration: TextDecoration.none,
                                     ),
                                   ),
@@ -164,13 +168,13 @@ class LocationPermissionModal extends StatelessWidget {
                         width: 32,
                         height: 32,
                         decoration: BoxDecoration(
-                          color: Colors.grey.shade200,
+                          color: const Color(0xFFEDEDED),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
                           Icons.close,
                           size: 18,
-                          color: Colors.black54,
+                          color: Colors.black,
                         ),
                       ),
                     ),

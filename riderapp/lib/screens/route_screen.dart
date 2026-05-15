@@ -20,6 +20,12 @@ class RouteScreen extends StatefulWidget {
 }
 
 class _RouteScreenState extends State<RouteScreen> {
+  static const Color _bg = Color(0xFF101010);
+  static const Color _surface = Color(0xFF171717);
+  static const Color _surfaceAlt = Color(0xFF242424);
+  static const Color _border = Color(0xFF3A3A3A);
+  static const Color _muted = Color(0xFF9B9B9B);
+
   final TextEditingController _pickupController = TextEditingController();
   final TextEditingController _destinationController = TextEditingController();
   final FocusNode _pickupFocus = FocusNode();
@@ -570,7 +576,6 @@ class _RouteScreenState extends State<RouteScreen> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final colors = context.citiRideColors;
     final editingPickup = _activeField == _RouteInputField.pickup;
     final editingDestination = _activeField == _RouteInputField.destination;
     final showingSuggestions =
@@ -578,25 +583,21 @@ class _RouteScreenState extends State<RouteScreen> {
         (editingDestination && _destinationController.text.trim().isNotEmpty);
 
     return Scaffold(
-      backgroundColor: colors.background,
+      backgroundColor: _bg,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: Icon(
-            Icons.close_rounded,
-            size: 30,
-            color: colors.text,
-          ),
+          icon: Icon(Icons.close_rounded, size: 22, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Your Route',
           style: TextStyle(
-            color: colors.text,
-            fontSize: 22,
-            fontWeight: FontWeight.w600,
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ),
@@ -641,15 +642,16 @@ class _RouteScreenState extends State<RouteScreen> {
                             child: CircularProgressIndicator(
                               strokeWidth: 2.4,
                               valueColor: AlwaysStoppedAnimation<Color>(
-                                Color(0xFFFFFFFF),
+                                Color(0xFF101010),
                               ),
                             ),
                           )
                         : const Text(
                             'Book Ride',
                             style: TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.w600,
+                              color: Colors.black,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
                             ),
                           ),
                   ),
@@ -672,8 +674,9 @@ class _RouteScreenState extends State<RouteScreen> {
         height: 56,
         padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
-          color: const Color(0xFFD4D4D6),
+          color: _surface,
           borderRadius: BorderRadius.circular(28),
+          border: Border.all(color: _border),
         ),
         child: Row(
           children: [
@@ -682,7 +685,10 @@ class _RouteScreenState extends State<RouteScreen> {
               height: 26,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: Theme.of(context).colorScheme.primary, width: 3),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.primary,
+                  width: 3,
+                ),
               ),
               child: Center(
                 child: CircleAvatar(
@@ -700,15 +706,12 @@ class _RouteScreenState extends State<RouteScreen> {
                 decoration: InputDecoration(
                   isDense: true,
                   hintText: _loadingPickup ? 'Detecting location...' : 'Pickup',
-                  hintStyle: const TextStyle(
-                    color: Color(0xFF7F838A),
-                    fontSize: 16,
-                  ),
+                  hintStyle: const TextStyle(color: _muted, fontSize: 16),
                   border: InputBorder.none,
                 ),
                 style: const TextStyle(
                   fontSize: 16,
-                  color: Color(0xFF2E313B),
+                  color: Colors.white,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -721,11 +724,7 @@ class _RouteScreenState extends State<RouteScreen> {
               customBorder: const CircleBorder(),
               child: const Padding(
                 padding: EdgeInsets.all(4),
-                child: Icon(
-                  Icons.add_rounded,
-                  size: 34,
-                  color: Color(0xFF2E313B),
-                ),
+                child: Icon(Icons.add_rounded, size: 34, color: Colors.white),
               ),
             ),
           ],
@@ -742,15 +741,18 @@ class _RouteScreenState extends State<RouteScreen> {
             height: 56,
             padding: const EdgeInsets.symmetric(horizontal: 12),
             decoration: BoxDecoration(
-              color: const Color(0xFFF2F2F4),
+              color: _surface,
               borderRadius: BorderRadius.circular(28),
-              border: Border.all(color: Theme.of(context).colorScheme.primary, width: 1.8),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.primary,
+                width: 1.8,
+              ),
             ),
             child: Row(
               children: [
                 const Icon(
                   Icons.search_rounded,
-                  color: Color(0xFF666A73),
+                  color: Color(0xFFBDBDBD),
                   size: 26,
                 ),
                 const SizedBox(width: 8),
@@ -770,7 +772,7 @@ class _RouteScreenState extends State<RouteScreen> {
                       border: InputBorder.none,
                     ),
                     style: const TextStyle(
-                      color: Color(0xFF2E313B),
+                      color: Colors.white,
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
                     ),
@@ -793,7 +795,7 @@ class _RouteScreenState extends State<RouteScreen> {
                     },
                     child: const Icon(
                       Icons.location_on,
-                      color: Color(0xFFD21DDB),
+                      color: CitiRideTheme.primaryYellow,
                       size: 22,
                     ),
                   ),
@@ -808,11 +810,7 @@ class _RouteScreenState extends State<RouteScreen> {
           borderRadius: BorderRadius.circular(20),
           child: const Padding(
             padding: EdgeInsets.all(2),
-            child: Icon(
-              Icons.swap_vert_rounded,
-              size: 30,
-              color: Color(0xFF2E313B),
-            ),
+            child: Icon(Icons.swap_vert_rounded, size: 30, color: Colors.white),
           ),
         ),
       ],
@@ -830,7 +828,7 @@ class _RouteScreenState extends State<RouteScreen> {
             height: 24,
             child: CircularProgressIndicator(
               strokeWidth: 2.4,
-              color: Color(0xFF2F323D),
+              color: CitiRideTheme.primaryYellow,
             ),
           ),
         ),
@@ -845,14 +843,14 @@ class _RouteScreenState extends State<RouteScreen> {
           margin: const EdgeInsets.only(top: 6),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
-            color: const Color(0xFFE8E9EC),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFD7D9DF)),
+            color: _surfaceAlt,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: _border),
           ),
           child: const Text(
             'No matching places found. Try another search term.',
             style: TextStyle(
-              color: Color(0xFF7A7F88),
+              color: _muted,
               fontSize: 13,
               fontWeight: FontWeight.w500,
             ),
@@ -869,15 +867,15 @@ class _RouteScreenState extends State<RouteScreen> {
           width: double.infinity,
           margin: const EdgeInsets.only(top: 6),
           decoration: BoxDecoration(
-            color: const Color(0xFFE8E9EC),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFD7D9DF)),
+            color: _surfaceAlt,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: _border),
           ),
           child: ListView.separated(
             padding: EdgeInsets.zero,
             itemCount: _suggestions.length,
             separatorBuilder: (_, _) =>
-                const Divider(height: 1, color: Color(0xFFD7D9DF)),
+                const Divider(height: 1, color: Color(0xFF333333)),
             itemBuilder: (context, index) {
               final suggestion = _suggestions[index];
               final targetField = _suggestionsForField == _RouteInputField.none
@@ -901,7 +899,7 @@ class _RouteScreenState extends State<RouteScreen> {
                       const Icon(
                         Icons.location_on,
                         size: 18,
-                        color: Color(0xFF5C6068),
+                        color: CitiRideTheme.primaryYellow,
                       ),
                       const SizedBox(width: 10),
                       Expanded(
@@ -911,7 +909,7 @@ class _RouteScreenState extends State<RouteScreen> {
                             Text(
                               suggestion['name'] ?? '',
                               style: const TextStyle(
-                                color: Color(0xFF2E313B),
+                                color: Colors.white,
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -922,7 +920,7 @@ class _RouteScreenState extends State<RouteScreen> {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
-                                  color: Color(0xFF7F848D),
+                                  color: _muted,
                                   fontSize: 12,
                                 ),
                               ),
@@ -933,7 +931,7 @@ class _RouteScreenState extends State<RouteScreen> {
                       const Icon(
                         Icons.north_west_rounded,
                         size: 16,
-                        color: Color(0xFF8B909A),
+                        color: _muted,
                       ),
                     ],
                   ),
@@ -962,15 +960,9 @@ class _RouteScreenState extends State<RouteScreen> {
           margin: const EdgeInsets.only(bottom: 10),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withAlpha(14),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            color: _surface,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: _border),
           ),
           child: Row(
             children: [
@@ -978,10 +970,10 @@ class _RouteScreenState extends State<RouteScreen> {
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE9EAEC),
-                  borderRadius: BorderRadius.circular(12),
+                  color: const Color(0xFFE6E6E6),
+                  borderRadius: BorderRadius.circular(18),
                 ),
-                child: Icon(icon, color: const Color(0xFF4A4D55), size: 18),
+                child: Icon(icon, color: const Color(0xFF101010), size: 18),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -991,18 +983,15 @@ class _RouteScreenState extends State<RouteScreen> {
                     Text(
                       title,
                       style: const TextStyle(
-                        color: Color(0xFF2E313B),
-                        fontSize: 15,
+                        color: Colors.white,
+                        fontSize: 13,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       subtitle,
-                      style: const TextStyle(
-                        color: Color(0xFF8C9097),
-                        fontSize: 13,
-                      ),
+                      style: const TextStyle(color: _muted, fontSize: 11),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -1013,8 +1002,8 @@ class _RouteScreenState extends State<RouteScreen> {
               Text(
                 distance,
                 style: const TextStyle(
-                  color: Color(0xFF8C9097),
-                  fontSize: 13,
+                  color: _muted,
+                  fontSize: 11,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -1046,9 +1035,9 @@ class _RouteScreenState extends State<RouteScreen> {
           const Text(
             'Saved Locations',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: 14,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF2E313B),
+              color: Colors.white,
               letterSpacing: -0.1,
             ),
           ),
@@ -1068,9 +1057,9 @@ class _RouteScreenState extends State<RouteScreen> {
         const Text(
           'Recent locations',
           style: TextStyle(
-            fontSize: 18,
+            fontSize: 14,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF2E313B),
+            color: Colors.white,
             letterSpacing: -0.1,
           ),
         ),

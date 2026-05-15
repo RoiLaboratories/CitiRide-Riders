@@ -61,7 +61,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           duration: const Duration(milliseconds: 300),
                           margin: const EdgeInsets.only(right: 6),
                           height: 8,
-                          width: currentIndex == index ? 10 : 8,
+                          width: currentIndex == index ? 12 : 8,
                           decoration: BoxDecoration(
                             color: currentIndex == index
                                 ? (Theme.of(context).brightness == Brightness.dark
@@ -78,14 +78,16 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     if (currentIndex != onboardingPages.length - 1)
                       TextButton(
                         onPressed: _goToLastPage,
-                        child: const Text(
+                        child: Text(
                           "Skip",
                           style: TextStyle(
-                            color: Color(0xFF2F323D),
                             fontSize: 16,
+                            color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.white
+                              : Colors.black
+                            ),
                           ),
                         ),
-                      ),
                   ],
                 ),
               ),
@@ -126,7 +128,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         : "Continue",
                     style: TextStyle(
                       fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.normal,
                       color: colorScheme.onPrimary,
                     ),
                   ),

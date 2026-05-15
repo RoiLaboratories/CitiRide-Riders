@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/location_provider.dart';
+import '../theme/app_theme.dart';
 
 class HomeModalSheet extends ConsumerWidget {
   final ScrollController scrollController;
@@ -27,13 +28,14 @@ class HomeModalSheet extends ConsumerWidget {
     return Container(
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(34),
+        color: const Color(0xF2111111),
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(color: const Color(0xFF2E2E2E)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(26),
-            blurRadius: 24,
-            offset: const Offset(0, -2),
+            color: Colors.black.withAlpha(130),
+            blurRadius: 26,
+            offset: const Offset(0, -4),
           ),
         ],
       ),
@@ -74,8 +76,9 @@ class HomeModalSheet extends ConsumerWidget {
         height: 56,
         padding: EdgeInsets.symmetric(horizontal: compact ? 16 : 20),
         decoration: BoxDecoration(
-          color: const Color(0xFFE3E3E4),
+          color: const Color(0xFF171717),
           borderRadius: BorderRadius.circular(30),
+          border: Border.all(color: const Color(0xFF5A5A5A)),
         ),
         child: Row(
           children: [
@@ -83,16 +86,16 @@ class HomeModalSheet extends ConsumerWidget {
               'images/search_icon.png',
               width: compact ? 24 : 26,
               height: compact ? 24 : 26,
-              color: const Color(0xFF8A8B8E),
+              color: const Color(0xFFBDBDBD),
             ),
             SizedBox(width: compact ? 12 : 18),
             Expanded(
               child: Text(
                 'Where are we going today?',
                 style: TextStyle(
-                  color: const Color(0xFF6F7075),
+                  color: const Color(0xFFBDBDBD),
                   fontSize: compact ? 15.5 : 17,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w600,
                 ),
                 maxLines: 1,
                 softWrap: false,
@@ -119,10 +122,10 @@ class HomeModalSheet extends ConsumerWidget {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: const Color(0xFFE7E7E8),
+              color: const Color(0xFFE6E6E6),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: Icon(icon, color: const Color(0xFF30313A), size: 22),
+            child: Icon(icon, color: const Color(0xFF171717), size: 22),
           ),
           const SizedBox(width: 18),
           Expanded(
@@ -133,8 +136,8 @@ class HomeModalSheet extends ConsumerWidget {
                   name,
                   style: const TextStyle(
                     fontWeight: FontWeight.w800,
-                    fontSize: 17,
-                    color: Color(0xFF2D2F3A),
+                    fontSize: 14,
+                    color: Colors.white,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -143,9 +146,9 @@ class HomeModalSheet extends ConsumerWidget {
                 Text(
                   address,
                   style: const TextStyle(
-                    fontSize: 15,
+                    fontSize: 12,
                     fontWeight: FontWeight.w500,
-                    color: Color(0xFFA8A8AB),
+                    color: Color(0xFF9B9B9B),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -166,7 +169,7 @@ class HomeModalSheet extends ConsumerWidget {
         width: 48,
         height: 5,
         decoration: BoxDecoration(
-          color: const Color(0xFFD5D2CE),
+          color: CitiRideTheme.primaryYellow,
           borderRadius: BorderRadius.circular(10),
         ),
       ),
