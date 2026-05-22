@@ -10,7 +10,7 @@ class OnboardingPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final compact = constraints.maxHeight < 620;
@@ -22,47 +22,46 @@ class OnboardingPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                SizedBox(
-                  child: Image.asset(
-                    data.heroImage, 
-                    fit: BoxFit.cover,
-                  ),
-                ),
+                SizedBox(child: Image.asset(data.heroImage, fit: BoxFit.cover)),
                 SizedBox(height: compact ? 24 : 45),
-                RichText(
-                  textAlign: TextAlign.center,
-                  text: TextSpan(
-                    children: data.titleParts.map((part) {
-                      if (part.text != null) {
-                        return TextSpan(
-                          text: part.text,
-                          style: GoogleFonts.poppins(
-                            fontSize: compact ? 32 : 36,
-                            fontWeight: FontWeight.normal,
-                            color: isDarkMode ? Colors.white : Colors.black,
-                          ),
-                        );
-                      } else {
-                        return WidgetSpan(
-                          alignment: PlaceholderAlignment.middle,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 4),
-                            child: Image.asset(
-                              part.image!,
-                              height: compact ? 40 : 47,
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text.rich(
+                    TextSpan(
+                      children: data.titleParts.map((part) {
+                        if (part.text != null) {
+                          return TextSpan(
+                            text: part.text,
+                            style: GoogleFonts.poppins(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: isDarkMode ? Colors.white : Colors.black,
                             ),
-                          ),
-                        );
-                      }
-                    }).toList(),
+                          );
+                        } else {
+                          return WidgetSpan(
+                            alignment: PlaceholderAlignment.middle,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 4,
+                              ),
+                              child: Image.asset(part.image!, height: 28),
+                            ),
+                          );
+                        }
+                      }).toList(),
+                    ),
+                    maxLines: 1,
+                    softWrap: false,
+                    textAlign: TextAlign.center,
                   ),
                 ),
                 const SizedBox(height: 10),
                 Text(
                   data.subtitle,
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.poppins(
-                    fontSize: compact ? 18 : 20,
+                  style: GoogleFonts.instrumentSans(
+                    fontSize: 20,
                     fontWeight: FontWeight.normal,
                     color: isDarkMode ? Colors.grey[400] : Colors.grey.shade600,
                     height: 1.4,

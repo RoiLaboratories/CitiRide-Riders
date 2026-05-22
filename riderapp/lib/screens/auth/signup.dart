@@ -101,6 +101,15 @@ class SignUpScreenState extends ConsumerState<SignUpScreen> {
     }
   }
 
+  void _clearPhoneNumber() {
+    setState(() {
+      _isPhoneInputFocused = true;
+      _enteredDigits.clear();
+      _phoneController.clear();
+    });
+    _validatePhoneNumber();
+  }
+
   void _onCountryChanged(Map<String, String> country) {
     setState(() {
       _selectedCountryCode = country['code']!;
@@ -174,8 +183,8 @@ class SignUpScreenState extends ConsumerState<SignUpScreen> {
             fontSize: 28,
             fontWeight: FontWeight.bold,
             color: Theme.of(context).brightness == Brightness.dark
-              ? Colors.white
-              : Colors.black,
+                ? Colors.white
+                : Colors.black,
           ),
         ),
       ),
@@ -211,6 +220,7 @@ class SignUpScreenState extends ConsumerState<SignUpScreen> {
                         onTap: () {
                           setState(() => _isPhoneInputFocused = true);
                         },
+                        onClear: _clearPhoneNumber,
                       ),
                       const SizedBox(height: 28),
                       Expanded(

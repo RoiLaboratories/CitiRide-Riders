@@ -101,6 +101,15 @@ class LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  void _clearPhoneNumber() {
+    setState(() {
+      _isPhoneInputFocused = true;
+      _enteredDigits.clear();
+      _phoneController.clear();
+    });
+    _validatePhoneNumber();
+  }
+
   void _onCountryChanged(Map<String, String> country) {
     setState(() {
       _selectedCountryCode = country['code']!;
@@ -255,9 +264,10 @@ class LoginScreenState extends State<LoginScreen> {
                           'Enter your phone number to login',
                           style: GoogleFonts.poppins(
                             fontSize: 16,
-                            color: Theme.of(context).brightness == Brightness.dark
-                              ? Colors.white
-                              : Colors.black,
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? Colors.white
+                                : Colors.black,
                           ),
                         ),
                       ),
@@ -272,6 +282,7 @@ class LoginScreenState extends State<LoginScreen> {
                         onTap: () {
                           setState(() => _isPhoneInputFocused = true);
                         },
+                        onClear: _clearPhoneNumber,
                       ),
                       const SizedBox(height: 28),
                       Expanded(

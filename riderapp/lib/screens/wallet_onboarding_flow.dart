@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -19,40 +17,46 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
   static const Color _yellow = CitiRideTheme.primaryYellow;
   static const Color _muted = Color(0xFF9B9B9B);
 
-  final TextEditingController _identityController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController(
+    text: '907 010 7455',
+  );
+  final TextEditingController _phoneOtpController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
 
   int _step = 0;
-  String _documentType = 'Bank Verification Number (BVN)';
   String _pin = '';
   String _confirmPin = '';
+  bool _ageConsent = false;
+  bool _termsConsent = false;
+  bool _privacyConsent = false;
   bool _isConfirmingPin = false;
   bool _isSaving = false;
   String? _pinError;
 
-  final List<String> _documents = const [
-    'Bank Verification Number (BVN)',
-    'National Identification Number (NIN)',
-    'International passport',
-  ];
-
   @override
   void dispose() {
-    _identityController.dispose();
+    _phoneController.dispose();
+    _phoneOtpController.dispose();
+    _emailController.dispose();
     super.dispose();
   }
 
   double get _progress {
     switch (_step) {
       case 0:
-        return 0.18;
+        return 0.12;
       case 1:
-        return 0.34;
+        return 0.24;
       case 2:
-        return 0.52;
+        return 0.38;
       case 3:
-        return 0.70;
+        return 0.52;
       case 4:
-        return 0.86;
+        return 0.66;
+      case 5:
+        return 0.78;
+      case 6:
+        return 0.90;
       default:
         return 1;
     }
@@ -61,13 +65,18 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
   String get _title {
     switch (_step) {
       case 0:
-        return 'Citi Wallet';
+        return 'Wallet';
       case 1:
         return 'Wallet';
       case 2:
+        return 'Wallet';
       case 3:
-        return 'Verify your ID';
+        return 'CitiRide Wallet';
       case 4:
+        return 'Verify your phone number';
+      case 5:
+        return 'Wallet';
+      case 6:
         return _isConfirmingPin ? 'Confirm passcode' : 'Create passcode';
       default:
         return '';
@@ -78,9 +87,17 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
     if (_isSaving) return false;
 
     switch (_step) {
+      case 2:
+        return _phoneController.text.replaceAll(RegExp(r'\D'), '').length >= 8;
       case 3:
-        return _identityController.text.trim().length >= 5;
+        return _ageConsent && _termsConsent && _privacyConsent;
       case 4:
+        return _phoneOtpController.text.length == 6;
+      case 5:
+        return RegExp(
+          r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
+        ).hasMatch(_emailController.text.trim());
+      case 6:
         return (_isConfirmingPin ? _confirmPin : _pin).length == 6;
       default:
         return true;
@@ -100,6 +117,8 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
       await prefs.setString('wallet_account_name', 'CitiRide Wallet');
       await prefs.setString('wallet_account_bank', 'Paystack-Titan');
       await prefs.setString('wallet_account_number', '98291029281');
+      await prefs.setString('wallet_phone', '+234${_phoneController.text}');
+      await prefs.setString('wallet_email', _emailController.text.trim());
       await prefs.setString('wallet_pin', _pin);
       await prefs.setString(
         'wallet_pin_last_updated',
@@ -120,7 +139,7 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
   void _next() {
     if (!_canContinue) return;
 
-    if (_step == 4) {
+    if (_step == 6) {
       if (!_isConfirmingPin) {
         setState(() {
           _isConfirmingPin = true;
@@ -139,7 +158,7 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
       }
 
       setState(() {
-        _step = 5;
+        _step = 7;
       });
       return;
     }
@@ -151,15 +170,15 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
 
   void _skipIdentity() {
     setState(() {
-      _step = 4;
+      _step = 6;
       _pinError = null;
     });
   }
 
   void _back() {
-    if (_step == 5) return;
+    if (_step == 7) return;
 
-    if (_step == 4 && _isConfirmingPin) {
+    if (_step == 6 && _isConfirmingPin) {
       setState(() {
         _isConfirmingPin = false;
         _confirmPin = '';
@@ -206,6 +225,21 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
     });
   }
 
+  void _onOtpDigit(String digit) {
+    if (_phoneOtpController.text.length >= 6) return;
+    setState(() {
+      _phoneOtpController.text += digit;
+    });
+  }
+
+  void _onOtpDelete() {
+    final value = _phoneOtpController.text;
+    if (value.isEmpty) return;
+    setState(() {
+      _phoneOtpController.text = value.substring(0, value.length - 1);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -221,12 +255,12 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
             children: [
               _FlowHeader(
                 title: _title,
-                canBack: _step != 5,
-                showSkip: _step == 2 || _step == 3,
+                canBack: _step != 7,
+                showSkip: false,
                 onBack: _back,
                 onSkip: _skipIdentity,
               ),
-              if (_step != 5)
+              if (_step != 7)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(24, 2, 24, 0),
                   child: _ProgressStrip(progress: _progress),
@@ -256,10 +290,14 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
       case 1:
         return _buildRequirementsStep();
       case 2:
-        return _buildDocumentStep();
+        return _buildPhoneStep();
       case 3:
-        return _buildIdentityNumberStep();
+        return _buildConsentStep();
       case 4:
+        return _buildPhoneVerificationStep();
+      case 5:
+        return _buildEmailStep();
+      case 6:
         return _buildPinStep();
       default:
         return _buildSuccessStep();
@@ -336,20 +374,20 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
           ),
           const SizedBox(height: 8),
           const Text(
-            'We only need a few details to keep your wallet compliant and safe.',
+            'Confirm these requirements so your wallet can be created securely.',
             style: TextStyle(color: _muted, fontSize: 13, height: 1.5),
           ),
           const SizedBox(height: 24),
           const _RequirementTile(
-            icon: Icons.badge_outlined,
-            title: 'Government issued ID',
-            subtitle: 'BVN, NIN or passport details for verification.',
+            icon: Icons.cake_outlined,
+            title: 'You are 18 years and older',
+            subtitle: 'CitiRide wallet is available to eligible adults.',
           ),
           const SizedBox(height: 12),
           const _RequirementTile(
-            icon: Icons.home_work_outlined,
-            title: 'Home address',
-            subtitle: 'Your account address keeps transfers protected.',
+            icon: Icons.badge_outlined,
+            title: 'You have a valid ID',
+            subtitle: 'Keep a government ID ready for account checks.',
           ),
           const SizedBox(height: 12),
           const _RequirementTile(
@@ -364,14 +402,14 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
     );
   }
 
-  Widget _buildDocumentStep() {
+  Widget _buildPhoneStep() {
     return _screenPadding(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 8),
           const Text(
-            'Verify your government ID',
+            "What's your phone number?",
             style: TextStyle(
               color: Colors.white,
               fontSize: 18,
@@ -380,54 +418,187 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
           ),
           const SizedBox(height: 8),
           const Text(
-            'Choose the document you want to use for wallet verification.',
+            'Enter the phone number you want to use for wallet security.',
             style: TextStyle(color: _muted, fontSize: 13, height: 1.5),
           ),
           const SizedBox(height: 24),
-          ..._documents.map(
-            (document) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: _DocumentChoice(
-                title: document,
-                selected: _documentType == document,
-                onTap: () {
-                  setState(() {
-                    _documentType = document;
-                    _identityController.clear();
-                  });
-                },
-              ),
+          Container(
+            height: 54,
+            decoration: BoxDecoration(
+              color: _panelAlt,
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: _yellow),
+            ),
+            child: Row(
+              children: [
+                const SizedBox(width: 14),
+                Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0D5F2A),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  alignment: Alignment.center,
+                  child: const Text(
+                    'NG',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                const Text(
+                  '+234',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextField(
+                    controller: _phoneController,
+                    keyboardType: TextInputType.phone,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'[0-9 ]')),
+                    ],
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    cursorColor: _yellow,
+                    onChanged: (_) => setState(() {}),
+                    decoration: const InputDecoration(
+                      hintText: 'Phone number',
+                      hintStyle: TextStyle(color: _muted, fontSize: 13),
+                      border: InputBorder.none,
+                      isDense: true,
+                    ),
+                  ),
+                ),
+                const Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  color: _muted,
+                  size: 22,
+                ),
+                const SizedBox(width: 10),
+              ],
             ),
           ),
+          const SizedBox(height: 12),
+          const _WalletNotice(
+            icon: Icons.info_outline_rounded,
+            title: 'SMS verification',
+            subtitle: 'A one-time code will be sent to this phone number.',
+          ),
           const Spacer(),
-          _PrimaryWalletButton(label: 'Next', onPressed: _next),
+          _PrimaryWalletButton(
+            label: 'Next',
+            onPressed: _canContinue ? _next : null,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildIdentityNumberStep() {
-    final hint = _documentType.contains('BVN')
-        ? 'Enter your BVN'
-        : _documentType.contains('NIN')
-        ? 'Enter your NIN'
-        : 'Enter passport number';
-    final keyboardType = _documentType.contains('passport')
-        ? TextInputType.text
-        : TextInputType.number;
-    final inputFormatters = _documentType.contains('passport')
-        ? <TextInputFormatter>[
-            FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9]')),
-          ]
-        : <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly];
-
+  Widget _buildConsentStep() {
     return _screenPadding(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 8),
           const Text(
-            'Verify your government ID',
+            'CitiRide needs your consent to continue',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 18),
+          _ConsentTile(
+            selected: _ageConsent,
+            title: 'I am 18 years old and above',
+            subtitle: 'Your wallet account requires age confirmation.',
+            onTap: () => setState(() => _ageConsent = !_ageConsent),
+          ),
+          const SizedBox(height: 12),
+          _ConsentTile(
+            selected: _termsConsent,
+            title: 'I have read and agree to the Terms',
+            subtitle: 'This covers wallet access, transfers and fees.',
+            onTap: () => setState(() => _termsConsent = !_termsConsent),
+          ),
+          const SizedBox(height: 12),
+          _ConsentTile(
+            selected: _privacyConsent,
+            title: 'I consent to wallet verification checks',
+            subtitle: 'CitiRide may verify submitted details securely.',
+            onTap: () => setState(() => _privacyConsent = !_privacyConsent),
+          ),
+          const Spacer(),
+          _PrimaryWalletButton(
+            label: 'Continue',
+            onPressed: _canContinue ? _next : null,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPhoneVerificationStep() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+      child: Column(
+        children: [
+          const SizedBox(height: 10),
+          const Text(
+            'Enter the 6-digit code sent to your phone number',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: _muted, fontSize: 13, height: 1.5),
+          ),
+          const SizedBox(height: 24),
+          _CodeBoxes(value: _phoneOtpController.text),
+          const SizedBox(height: 12),
+          TextButton(
+            onPressed: () {},
+            child: const Text(
+              "Didn't get the code?",
+              style: TextStyle(
+                color: _yellow,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          const Spacer(),
+          _WalletKeypad(
+            onDigitPressed: _onOtpDigit,
+            onDeletePressed: _onOtpDelete,
+          ),
+          const SizedBox(height: 22),
+          _PrimaryWalletButton(
+            label: 'Next',
+            onPressed: _canContinue ? _next : null,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmailStep() {
+    return _screenPadding(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 8),
+          const Text(
+            "What's your email address",
             style: TextStyle(
               color: Colors.white,
               fontSize: 18,
@@ -435,13 +606,9 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
             ),
           ),
           const SizedBox(height: 8),
-          Text(
-            _documentType,
-            style: const TextStyle(
-              color: _yellow,
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-            ),
+          const Text(
+            'Enter the email address that should receive wallet updates.',
+            style: TextStyle(color: _muted, fontSize: 13, height: 1.5),
           ),
           const SizedBox(height: 24),
           Container(
@@ -450,15 +617,17 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
               color: _panelAlt,
               borderRadius: BorderRadius.circular(6),
               border: Border.all(
-                color: _identityController.text.trim().isEmpty
+                color: _emailController.text.trim().isEmpty
                     ? const Color(0xFF2D2D2D)
                     : _yellow,
               ),
             ),
             child: TextField(
-              controller: _identityController,
-              keyboardType: keyboardType,
-              inputFormatters: inputFormatters,
+              controller: _emailController,
+              keyboardType: TextInputType.emailAddress,
+              inputFormatters: [
+                FilteringTextInputFormatter.deny(RegExp(r'\s')),
+              ],
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 15,
@@ -467,7 +636,7 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
               cursorColor: _yellow,
               onChanged: (_) => setState(() {}),
               decoration: InputDecoration(
-                hintText: hint,
+                hintText: 'Email address',
                 hintStyle: const TextStyle(color: _muted, fontSize: 13),
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(
@@ -479,10 +648,10 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
           ),
           const SizedBox(height: 12),
           const _WalletNotice(
-            icon: Icons.verified_user_outlined,
-            title: 'Your details stay encrypted',
+            icon: Icons.mark_email_read_outlined,
+            title: 'Email alerts',
             subtitle:
-                'CitiRide only uses this to create and protect your wallet.',
+                'Statements, transfer updates and security alerts can be sent here.',
           ),
           const Spacer(),
           _PrimaryWalletButton(
@@ -689,119 +858,7 @@ class _WalletHeroGraphic extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       height: 182,
-      child: Stack(
-        clipBehavior: Clip.none,
-        alignment: Alignment.center,
-        children: [
-          Positioned(
-            top: 18,
-            left: 34,
-            right: 34,
-            child: Transform.rotate(
-              angle: -math.pi / 18,
-              child: Container(
-                height: 70,
-                decoration: BoxDecoration(
-                  color: CitiRideTheme.primaryYellow,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            top: 50,
-            left: 18,
-            right: 18,
-            child: Transform.rotate(
-              angle: -math.pi / 28,
-              child: Container(
-                height: 74,
-                decoration: BoxDecoration(
-                  color: CitiRideTheme.primaryYellow,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Align(
-                  alignment: Alignment.centerRight,
-                  child: Padding(
-                    padding: EdgeInsets.only(right: 18),
-                    child: Text(
-                      'CitiRide',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 18,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            left: 10,
-            right: 10,
-            bottom: 0,
-            child: Container(
-              height: 96,
-              decoration: BoxDecoration(
-                color: const Color(0xFF171717),
-                borderRadius: BorderRadius.circular(13),
-                border: Border.all(color: const Color(0xFF2B2B2B)),
-              ),
-              child: Stack(
-                children: [
-                  Positioned(
-                    right: -26,
-                    bottom: -18,
-                    child: Container(
-                      width: 130,
-                      height: 78,
-                      decoration: BoxDecoration(
-                        color: CitiRideTheme.primaryYellow.withValues(
-                          alpha: 0.28,
-                        ),
-                        borderRadius: BorderRadius.circular(44),
-                      ),
-                    ),
-                  ),
-                  const Positioned(
-                    left: 18,
-                    top: 16,
-                    child: Text(
-                      'Wallet balance',
-                      style: TextStyle(
-                        color: Color(0xFFB9B9B9),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                  const Positioned(
-                    left: 18,
-                    top: 38,
-                    child: Text(
-                      '\u20A60.00',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ),
-                  const Positioned(
-                    left: 18,
-                    bottom: 14,
-                    child: Text(
-                      'Paystack-Titan 98291029281',
-                      style: TextStyle(color: Color(0xFF777777), fontSize: 10),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
+      child: Image.asset('images/modal.png', fit: BoxFit.contain),
     );
   }
 }
@@ -872,14 +929,16 @@ class _RequirementTile extends StatelessWidget {
   }
 }
 
-class _DocumentChoice extends StatelessWidget {
-  const _DocumentChoice({
+class _ConsentTile extends StatelessWidget {
+  const _ConsentTile({
     required this.title,
+    required this.subtitle,
     required this.selected,
     required this.onTap,
   });
 
   final String title;
+  final String subtitle;
   final bool selected;
   final VoidCallback onTap;
 
@@ -889,8 +948,8 @@ class _DocumentChoice extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(7),
       child: Container(
-        constraints: const BoxConstraints(minHeight: 54),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        constraints: const BoxConstraints(minHeight: 64),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           color: selected ? const Color(0xFF22220F) : const Color(0xFF181818),
           borderRadius: BorderRadius.circular(7),
@@ -929,13 +988,27 @@ class _DocumentChoice extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(
-                title,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      color: Color(0xFF9B9B9B),
+                      fontSize: 11,
+                      height: 1.3,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -996,6 +1069,47 @@ class _WalletNotice extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _CodeBoxes extends StatelessWidget {
+  const _CodeBoxes({required this.value});
+
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: List.generate(6, (index) {
+        final digit = index < value.length ? value[index] : '';
+        final isFocused = index == value.length && value.length < 6;
+
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          width: 42,
+          height: 42,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: const Color(0xFF232323),
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(
+              color: isFocused
+                  ? CitiRideTheme.primaryYellow
+                  : const Color(0xFF303030),
+            ),
+          ),
+          child: Text(
+            digit,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        );
+      }),
     );
   }
 }

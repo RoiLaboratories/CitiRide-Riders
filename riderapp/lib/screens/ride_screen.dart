@@ -11,13 +11,19 @@ class RideScreen extends StatefulWidget {
 
 class _RideItem {
   const _RideItem({
+    required this.entry,
     required this.date,
+    required this.pickup,
+    required this.destination,
     required this.route,
     required this.price,
     required this.status,
   });
 
+  final RideLogEntry entry;
   final String date;
+  final String pickup;
+  final String destination;
   final String route;
   final String price;
   final RideLogStatus status;
@@ -30,7 +36,10 @@ class _RideScreenState extends State<RideScreen> {
   List<_RideItem> get _upcomingRides => _rideStore.upcomingRides.value
       .map(
         (entry) => _RideItem(
+          entry: entry,
           date: entry.date,
+          pickup: entry.pickup,
+          destination: entry.destination,
           route: entry.route,
           price: entry.price,
           status: entry.status,
@@ -41,7 +50,10 @@ class _RideScreenState extends State<RideScreen> {
   List<_RideItem> get _pastRides => _rideStore.pastRides
       .map(
         (entry) => _RideItem(
+          entry: entry,
           date: entry.date,
+          pickup: entry.pickup,
+          destination: entry.destination,
           route: entry.route,
           price: entry.price,
           status: entry.status,
@@ -75,24 +87,49 @@ class _RideScreenState extends State<RideScreen> {
     );
   }
 
+  void _openDriverChat(_RideItem ride) {
+    Navigator.pushNamed(
+      context,
+      '/bookride',
+      arguments: {
+        'currentLocation': ride.pickup,
+        'destination': ride.destination,
+        'initialStage': 'chat',
+        'existingRide': true,
+      },
+    );
+  }
+
+  void _cancelRide(_RideItem ride) {
+    _rideStore.removeRide(ride.entry);
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Ride cancelled'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final rides = _showUpcoming ? _upcomingRides : _pastRides;
+    final colors = context.citiRideColors;
 
     return Scaffold(
-      backgroundColor: Theme.of(context).extension<CitiRideThemeColors>()?.surface ?? const Color(0xFFF2F2F4),
+      backgroundColor: colors.surface,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 36, 16, 118),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Rides',
                 style: TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF2D2F3A),
+                  color: colors.text,
                 ),
               ),
               const SizedBox(height: 14),
@@ -141,6 +178,8 @@ class _RideScreenState extends State<RideScreen> {
     required VoidCallback onTap,
     bool compact = false,
   }) {
+    final colors = context.citiRideColors;
+
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
@@ -150,10 +189,14 @@ class _RideScreenState extends State<RideScreen> {
           vertical: 9,
         ),
         decoration: BoxDecoration(
-          color: selected ? Theme.of(context).colorScheme.primary : Colors.white,
+          color: selected
+              ? Theme.of(context).colorScheme.primary
+              : colors.background,
           borderRadius: BorderRadius.circular(30),
           border: Border.all(
-            color: selected ? Theme.of(context).colorScheme.primary : const Color(0xFFB3B5B9),
+            color: selected
+                ? Theme.of(context).colorScheme.primary
+                : colors.border,
             width: 2,
           ),
           boxShadow: [
@@ -167,7 +210,7 @@ class _RideScreenState extends State<RideScreen> {
         child: Text(
           label,
           style: TextStyle(
-            color: selected ? Colors.white : const Color(0xFF3A3D47),
+            color: selected ? Colors.black : colors.text,
             fontSize: 14,
             fontWeight: FontWeight.w500,
           ),
@@ -177,15 +220,19 @@ class _RideScreenState extends State<RideScreen> {
   }
 
   Widget _rideRow({required _RideItem ride, required bool upcoming}) {
+    final colors = context.citiRideColors;
+    final isOngoing = ride.status == RideLogStatus.ongoing;
+    final isActionable = ride.status == RideLogStatus.upcoming || isOngoing;
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
         borderRadius: BorderRadius.circular(22),
-        onTap: () => _openRideDetails(ride),
+        onTap: upcoming ? null : () => _openRideDetails(ride),
         child: Container(
           padding: const EdgeInsets.fromLTRB(8, 8, 4, 8),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: colors.background,
             borderRadius: BorderRadius.circular(22),
             boxShadow: [
               BoxShadow(
@@ -218,8 +265,8 @@ class _RideScreenState extends State<RideScreen> {
                       children: [
                         Text(
                           ride.date,
-                          style: const TextStyle(
-                            color: Color(0xFF7F838A),
+                          style: TextStyle(
+                            color: colors.mutedText,
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
                           ),
@@ -227,10 +274,7 @@ class _RideScreenState extends State<RideScreen> {
                         if (ride.status != RideLogStatus.upcoming) ...[
                           const Text(
                             '  \u00B7  ',
-                            style: TextStyle(
-                              color: Color(0xFF7F838A),
-                              fontSize: 13,
-                            ),
+                            style: TextStyle(fontSize: 13),
                           ),
                           _statusChip(ride.status),
                         ],
@@ -239,8 +283,8 @@ class _RideScreenState extends State<RideScreen> {
                     const SizedBox(height: 2),
                     Text(
                       ride.route,
-                      style: const TextStyle(
-                        color: Color(0xFF2E313B),
+                      style: TextStyle(
+                        color: colors.text,
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                       ),
@@ -258,18 +302,20 @@ class _RideScreenState extends State<RideScreen> {
                 ),
               ),
               const SizedBox(width: 8),
-              Container(
-                width: 56,
-                height: 56,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFE3E4E6),
-                  shape: BoxShape.circle,
+              if (isOngoing) ...[
+                _rideActionButton(
+                  imageAsset: 'images/chat.png',
+                  onTap: () => _openDriverChat(ride),
                 ),
-                child: Icon(
-                  upcoming ? Icons.close_rounded : Icons.refresh_rounded,
-                  size: 30,
-                  color: const Color(0xFF15181F),
-                ),
+                const SizedBox(width: 8),
+              ],
+              _rideActionButton(
+                icon: isActionable
+                    ? Icons.close_rounded
+                    : Icons.refresh_rounded,
+                onTap: isActionable
+                    ? () => _cancelRide(ride)
+                    : () => _openRideDetails(ride),
               ),
             ],
           ),
@@ -280,18 +326,64 @@ class _RideScreenState extends State<RideScreen> {
 
   Widget _statusChip(RideLogStatus status) {
     final bool completed = status == RideLogStatus.completed;
+    final bool ongoing = status == RideLogStatus.ongoing;
+    final label = completed
+        ? 'Completed'
+        : ongoing
+        ? 'Ongoing'
+        : 'Cancelled';
+    final background = completed
+        ? const Color(0xFFBDE7B8)
+        : ongoing
+        ? const Color(0xFFDFF5A3)
+        : const Color(0xFFF4C3DA);
+    final foreground = completed
+        ? const Color(0xFF0A8A14)
+        : ongoing
+        ? const Color(0xFF627000)
+        : const Color(0xFFE2197D);
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 1),
       decoration: BoxDecoration(
-        color: completed ? const Color(0xFFBDE7B8) : const Color(0xFFF4C3DA),
+        color: background,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Text(
-        completed ? 'Completed' : 'Cancelled',
+        label,
         style: TextStyle(
-          color: completed ? const Color(0xFF0A8A14) : const Color(0xFFE2197D),
+          color: foreground,
           fontSize: 13,
           fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
+
+  Widget _rideActionButton({
+    IconData? icon,
+    String? imageAsset,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      customBorder: const CircleBorder(),
+      child: Container(
+        width: 48,
+        height: 48,
+        decoration: const BoxDecoration(
+          color: Color(0xFFE3E4E6),
+          shape: BoxShape.circle,
+        ),
+        child: Center(
+          child: imageAsset == null
+              ? Icon(icon, size: 28, color: const Color(0xFF15181F))
+              : Image.asset(
+                  imageAsset,
+                  width: 24,
+                  height: 24,
+                  fit: BoxFit.contain,
+                ),
         ),
       ),
     );
@@ -314,7 +406,9 @@ class _RideCompletedDetailsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).extension<CitiRideThemeColors>()?.surface ?? const Color(0xFFF2F2F4),
+      backgroundColor:
+          Theme.of(context).extension<CitiRideThemeColors>()?.surface ??
+          const Color(0xFFF2F2F4),
       body: SafeArea(
         child: Column(
           children: [
@@ -473,7 +567,11 @@ class _RideCompletedDetailsScreen extends StatelessWidget {
     );
   }
 
-  Widget _routePoint({required BuildContext context, required String label, required Color color}) {
+  Widget _routePoint({
+    required BuildContext context,
+    required String label,
+    required Color color,
+  }) {
     return Row(
       children: [
         Container(

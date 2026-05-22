@@ -30,6 +30,7 @@ class _OTPScreenState extends ConsumerState<OTPScreen> {
   bool _isOtpVerified = false;
   bool _isVerifying = false;
   String _errorMessage = '';
+  Color? _otpFeedbackBorderColor;
 
   final List<String> _enteredDigits = [];
   int _currentFocusIndex = 0; // Track which field should be "focused"
@@ -70,6 +71,7 @@ class _OTPScreenState extends ConsumerState<OTPScreen> {
           : _enteredDigits.length;
       if (_currentFocusIndex >= otpLength) _currentFocusIndex = -1;
       _errorMessage = '';
+      _otpFeedbackBorderColor = null;
     });
   }
 
@@ -79,6 +81,7 @@ class _OTPScreenState extends ConsumerState<OTPScreen> {
       setState(() {
         _enteredDigits.add(digit);
         _errorMessage = '';
+        _otpFeedbackBorderColor = null;
         _currentFocusIndex = _enteredDigits.length;
         if (_currentFocusIndex >= otpLength) _currentFocusIndex = -1;
         _isOtpVerified = _enteredDigits.length == otpLength;
@@ -91,6 +94,7 @@ class _OTPScreenState extends ConsumerState<OTPScreen> {
       setState(() {
         _enteredDigits.removeLast();
         _errorMessage = '';
+        _otpFeedbackBorderColor = null;
         _currentFocusIndex = _enteredDigits.length;
         _isOtpVerified = false;
       });
@@ -102,6 +106,7 @@ class _OTPScreenState extends ConsumerState<OTPScreen> {
     setState(() {
       _enteredDigits.clear();
       _errorMessage = '';
+      _otpFeedbackBorderColor = null;
       _currentFocusIndex = 0;
       _isOtpVerified = false;
     });
@@ -164,45 +169,8 @@ class _OTPScreenState extends ConsumerState<OTPScreen> {
       setState(() {
         _currentFocusIndex = -1;
         _isOtpVerified = true;
+        _otpFeedbackBorderColor = Colors.green;
       });
-
-      // Show success overlay/snackbar
-      final overlay = Overlay.of(context);
-      final overlayEntry = OverlayEntry(
-        builder: (context) => Positioned(
-          top: MediaQuery.of(context).padding.top + 20,
-          left: 20,
-          right: 20,
-          child: Material(
-            color: Colors.transparent,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              decoration: BoxDecoration(
-                color: Colors.green,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withAlpha(26),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Center(
-                child: Text(
-                  'OTP verified successfully!',
-                  style: GoogleFonts.poppins(color: Colors.white, fontSize: 16),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ),
-          ),
-        ),
-      );
-      overlay.insert(overlayEntry);
-
-      // Remove overlay after 2 seconds
-      Future.delayed(const Duration(seconds: 2), () => overlayEntry.remove());
 
       // Navigate to home screen
       Future.delayed(const Duration(milliseconds: 500), () {
@@ -227,43 +195,8 @@ class _OTPScreenState extends ConsumerState<OTPScreen> {
       _currentFocusIndex = -1;
       _isOtpVerified = false;
       _errorMessage = 'Incorrect code';
+      _otpFeedbackBorderColor = Colors.red;
     });
-
-    final overlay = Overlay.of(context);
-    final overlayEntry = OverlayEntry(
-      builder: (context) => Positioned(
-        top: MediaQuery.of(context).padding.top + 20,
-        left: 20,
-        right: 20,
-        child: Material(
-          color: Colors.transparent,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            decoration: BoxDecoration(
-              color: Colors.red,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withAlpha(26),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Center(
-              child: Text(
-                'Invalid OTP. Please try again.',
-                style: GoogleFonts.poppins(color: Colors.white, fontSize: 16),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-
-    overlay.insert(overlayEntry);
-    Future.delayed(const Duration(seconds: 3), () => overlayEntry.remove());
   }
 
   // ---------------- UI ----------------
@@ -327,6 +260,7 @@ class _OTPScreenState extends ConsumerState<OTPScreen> {
                             onTap: _onOtpCircleTapped,
                             preferredWidth: 48,
                             height: 44,
+                            feedbackBorderColor: _otpFeedbackBorderColor,
                           ),
                           if (_errorMessage.isNotEmpty)
                             Padding(

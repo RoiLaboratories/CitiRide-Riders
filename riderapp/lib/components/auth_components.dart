@@ -62,6 +62,7 @@ class AuthPhoneInput extends StatelessWidget {
     required this.isFocused,
     required this.onCountryChanged,
     required this.onTap,
+    this.onClear,
   });
 
   final List<Map<String, String>> countries;
@@ -71,13 +72,18 @@ class AuthPhoneInput extends StatelessWidget {
   final bool isFocused;
   final ValueChanged<Map<String, String>> onCountryChanged;
   final VoidCallback onTap;
+  final VoidCallback? onClear;
 
-  static const double _countryWidth = 84;
+  static const double _countryWidth = 94;
+  static const double _inputHeight = 58;
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.citiRideColors;
-    final primary = Theme.of(context).colorScheme.primary;
+    const borderColor = Color(0xFFEFEFF4);
+    const fillColor = Colors.transparent;
+    final textColor = Theme.of(context).brightness == Brightness.dark
+        ? Colors.white
+        : const Color(0xFF151515);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -86,30 +92,38 @@ class AuthPhoneInput extends StatelessWidget {
           children: [
             SizedBox(
               width: _countryWidth,
-              height: 48,
+              height: _inputHeight,
               child: Container(
-                decoration: authPillDecoration(
-                  isFocused: false,
-                  fillColor: colors.inputFill,
-                  focusColor: primary,
+                decoration: BoxDecoration(
+                  color: fillColor,
+                  borderRadius: BorderRadius.circular(_inputHeight / 2),
+                  border: Border.all(color: borderColor, width: 1.6),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 18),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<Map<String, String>>(
                     value: countries.firstWhere(
                       (country) => country['code'] == selectedCountryCode,
                     ),
                     isExpanded: true,
+                    dropdownColor: const Color(0xFF151515),
                     items: countries.map((country) {
                       return DropdownMenuItem<Map<String, String>>(
                         value: country,
-                        child: Text(country['flag']!),
+                        child: Text(
+                          country['flag']!,
+                          style: const TextStyle(fontSize: 23),
+                        ),
                       );
                     }).toList(),
                     onChanged: (value) {
                       if (value != null) onCountryChanged(value);
                     },
-                    icon: const Icon(Icons.arrow_drop_down),
+                    icon: const Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: borderColor,
+                      size: 30,
+                    ),
                   ),
                 ),
               ),
@@ -121,40 +135,48 @@ class AuthPhoneInput extends StatelessWidget {
                 onTap: onTap,
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 160),
-                  height: 48,
-                  decoration: authPillDecoration(
-                    isFocused: isFocused,
-                    fillColor: colors.inputFill,
-                    focusColor: primary,
+                  height: _inputHeight,
+                  decoration: BoxDecoration(
+                    color: fillColor,
+                    borderRadius: BorderRadius.circular(_inputHeight / 2),
+                    border: Border.all(color: borderColor, width: 1.6),
                   ),
                   child: Row(
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Text(
-                          selectedCountryCode,
-                          style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            color: colors.text,
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.only(left: 20, right: 10),
+                          child: Text(
+                            phoneText.isEmpty ? '123 456 7890' : phoneText,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.poppins(
+                              fontSize: 18,
+                              fontWeight: FontWeight.normal,
+                              letterSpacing: 1,
+                              color: phoneText.isEmpty
+                                  ? const Color(0xFF8E8E90)
+                                  : textColor,
+                            ),
                           ),
                         ),
                       ),
-                      Container(
-                        width: 1,
-                        height: 24,
-                        color: Colors.grey.shade400,
-                      ),
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Text(
-                            phoneText,
-                            style: GoogleFonts.poppins(
-                              fontSize: 16,
-                              fontWeight: FontWeight.normal,
-                              letterSpacing: 1,
-                              color: colors.text,
+                      Padding(
+                        padding: const EdgeInsets.only(right: 10),
+                        child: InkWell(
+                          onTap: onClear,
+                          customBorder: const CircleBorder(),
+                          child: Container(
+                            width: 34,
+                            height: 34,
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Color(0xFF2D2F3A),
+                            ),
+                            child: const Icon(
+                              Icons.close_rounded,
+                              color: Colors.white,
+                              size: 24,
                             ),
                           ),
                         ),
@@ -186,9 +208,10 @@ class AuthCodeFields extends StatelessWidget {
     required this.value,
     required this.focusedIndex,
     this.onTap,
-    this.preferredWidth = 64,
-    this.height = 52,
+    this.preferredWidth = 76,
+    this.height = 58,
     this.textStyle,
+    this.feedbackBorderColor,
   });
 
   final int length;
@@ -198,31 +221,34 @@ class AuthCodeFields extends StatelessWidget {
   final double preferredWidth;
   final double height;
   final TextStyle? textStyle;
+  final Color? feedbackBorderColor;
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.citiRideColors;
     final primary = Theme.of(context).colorScheme.primary;
+    final textColor = Theme.of(context).brightness == Brightness.dark
+        ? Colors.white
+        : const Color(0xFF151515);
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        const gap = 10.0;
+        const gap = 12.0;
         final availableWidth = math.max(0, constraints.maxWidth);
         final maxFieldWidth = math.max(
           0,
           (availableWidth - gap * (length - 1)) / length,
         );
         final minimumFlatWidth = math.min(height + 8, maxFieldWidth);
-        final fieldWidth = math.max(
-          minimumFlatWidth,
-          math.min(preferredWidth, maxFieldWidth),
-        ).toDouble();
+        final fieldWidth = math
+            .max(minimumFlatWidth, math.min(preferredWidth, maxFieldWidth))
+            .toDouble();
 
         return Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: List.generate(length, (index) {
             final isFocused = index == focusedIndex;
             final text = index < value.length ? value[index] : '';
+            final isFilled = text.isNotEmpty;
 
             return GestureDetector(
               onTap: onTap == null ? null : () => onTap!(index),
@@ -231,20 +257,26 @@ class AuthCodeFields extends StatelessWidget {
                 width: fieldWidth,
                 height: height,
                 alignment: Alignment.center,
-                decoration: authPillDecoration(
-                  isFocused: isFocused,
-                  height: height,
-                  fillColor: colors.inputFill,
-                  focusColor: primary,
+                decoration: BoxDecoration(
+                  color: isFilled ? Colors.white : Colors.transparent,
+                  borderRadius: BorderRadius.circular(height / 2),
+                  border: Border.all(
+                    color: feedbackBorderColor ??
+                        (isFocused || isFilled
+                        ? primary
+                        : const Color(0xFFEFEFF4)),
+                    width: 1.6,
+                  ),
                 ),
                 child: Text(
                   text,
                   style:
                       textStyle ??
                       GoogleFonts.poppins(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: colors.text,
+                        fontSize: 34,
+                        fontWeight: FontWeight.w500,
+                        color: isFilled ? const Color(0xFF2D2F3A) : textColor,
+                        height: 1,
                       ),
                 ),
               ),
@@ -261,7 +293,7 @@ class AuthNumericKeypad extends StatelessWidget {
     super.key,
     required this.onDigitPressed,
     required this.onClearPressed,
-    this.rowSpacing = 20,
+    this.rowSpacing = 22,
   });
 
   final ValueChanged<String> onDigitPressed;
@@ -270,8 +302,6 @@ class AuthNumericKeypad extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.citiRideColors;
-
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -284,18 +314,29 @@ class AuthNumericKeypad extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            const SizedBox(width: 80, height: 80),
+            const SizedBox(width: 72, height: 72),
             Button(digit: '0', onPressed: () => onDigitPressed('0')),
             SizedBox(
-              width: 80,
-              height: 80,
-              child: IconButton(
-                onPressed: onClearPressed,
-                icon: const Icon(Icons.backspace_outlined, size: 28),
-                style: IconButton.styleFrom(
-                  shape: const CircleBorder(),
-                  backgroundColor: colors.surfaceAlt,
-                  foregroundColor: colors.text,
+              width: 72,
+              height: 72,
+              child: InkResponse(
+                onTap: onClearPressed,
+                customBorder: const CircleBorder(),
+                child: Container(
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.transparent,
+                    border: Border.all(
+                      color: const Color(0xFFB0B0B0),
+                      width: 0.8,
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.backspace_rounded,
+                    size: 32,
+                    color: Color(0xFF8E8E90),
+                  ),
                 ),
               ),
             ),

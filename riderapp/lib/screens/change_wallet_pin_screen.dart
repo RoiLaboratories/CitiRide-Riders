@@ -12,6 +12,8 @@ class ChangeWalletPinScreen extends StatefulWidget {
 }
 
 class _ChangeWalletPinScreenState extends State<ChangeWalletPinScreen> {
+  static const int _pinLength = 6;
+
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _currentPinController = TextEditingController();
   final TextEditingController _newPinController = TextEditingController();
@@ -109,10 +111,10 @@ class _ChangeWalletPinScreenState extends State<ChangeWalletPinScreen> {
           controller: controller,
           keyboardType: TextInputType.number,
           obscureText: true,
-          maxLength: 4,
+          maxLength: _pinLength,
           inputFormatters: [
             FilteringTextInputFormatter.digitsOnly,
-            LengthLimitingTextInputFormatter(4),
+            LengthLimitingTextInputFormatter(_pinLength),
           ],
           validator: validator,
           decoration: authPinInputDecoration(context),
@@ -153,8 +155,9 @@ class _ChangeWalletPinScreenState extends State<ChangeWalletPinScreen> {
                 label: 'Current PIN',
                 controller: _currentPinController,
                 validator: (value) {
-                  if (_hasExistingPin && (value == null || value.length != 4)) {
-                    return 'Enter your current 4-digit PIN';
+                  if (_hasExistingPin &&
+                      (value == null || value.length != _pinLength)) {
+                    return 'Enter your current 6-digit PIN';
                   }
                   return null;
                 },
@@ -165,8 +168,8 @@ class _ChangeWalletPinScreenState extends State<ChangeWalletPinScreen> {
               label: _hasExistingPin ? 'New PIN' : 'Create PIN',
               controller: _newPinController,
               validator: (value) {
-                if (value == null || value.length != 4) {
-                  return 'PIN must be 4 digits';
+                if (value == null || value.length != _pinLength) {
+                  return 'PIN must be 6 digits';
                 }
                 return null;
               },

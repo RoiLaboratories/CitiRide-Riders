@@ -14,10 +14,7 @@ class WalletScreen extends StatefulWidget {
 }
 
 class _WalletScreenState extends State<WalletScreen> {
-  static const Color _bg = Color(0xFF101010);
-  static const Color _panelAlt = Color(0xFF242424);
   static const Color _yellow = CitiRideTheme.primaryYellow;
-  static const Color _muted = Color(0xFF9B9B9B);
 
   double balance = WalletBalance.balance;
 
@@ -102,14 +99,15 @@ class _WalletScreenState extends State<WalletScreen> {
       backgroundColor: Colors.transparent,
       builder: (sheetContext) {
         final bottomInset = MediaQuery.paddingOf(sheetContext).bottom;
+        final colors = sheetContext.citiRideColors;
 
         return Container(
           margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
           padding: EdgeInsets.fromLTRB(18, 10, 18, bottomInset + 18),
           decoration: BoxDecoration(
-            color: _panelAlt,
+            color: colors.surfaceAlt,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFF333333)),
+            border: Border.all(color: colors.border),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -126,18 +124,18 @@ class _WalletScreenState extends State<WalletScreen> {
                   ),
                 ),
               ),
-              const Text(
+              Text(
                 'Add money',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: colors.text,
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
                 ),
               ),
               const SizedBox(height: 4),
-              const Text(
+              Text(
                 'Choose how you want to fund your CitiRide wallet.',
-                style: TextStyle(color: _muted, fontSize: 12),
+                style: TextStyle(color: colors.mutedText, fontSize: 12),
               ),
               const SizedBox(height: 18),
               _FundingMethodTile(
@@ -175,13 +173,14 @@ class _WalletScreenState extends State<WalletScreen> {
     final args =
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     final showBack = args?['showBack'] == true;
+    final colors = context.citiRideColors;
 
     return Scaffold(
-      backgroundColor: _bg,
+      backgroundColor: colors.background,
       body: SafeArea(
         child: RefreshIndicator(
           color: _yellow,
-          backgroundColor: _panelAlt,
+          backgroundColor: colors.surfaceAlt,
           onRefresh: _refreshBalance,
           child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
@@ -243,6 +242,8 @@ class _WalletHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.citiRideColors;
+
     return SizedBox(
       height: 58,
       child: Padding(
@@ -254,20 +255,20 @@ class _WalletHeader extends StatelessWidget {
               child: showBack
                   ? IconButton(
                       onPressed: () => Navigator.pop(context),
-                      icon: const Icon(
+                      icon: Icon(
                         Icons.arrow_back_ios_new_rounded,
-                        color: Colors.white,
+                        color: colors.text,
                         size: 18,
                       ),
                     )
                   : null,
             ),
-            const Expanded(
+            Expanded(
               child: Text(
                 'Wallet',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Colors.white,
+                  color: colors.text,
                   fontSize: 17,
                   fontWeight: FontWeight.w700,
                 ),
@@ -277,9 +278,9 @@ class _WalletHeader extends StatelessWidget {
               width: 48,
               child: IconButton(
                 onPressed: () => Navigator.pushNamed(context, '/notifications'),
-                icon: const Icon(
+                icon: Icon(
                   Icons.notifications_none_rounded,
-                  color: Colors.white,
+                  color: colors.text,
                   size: 22,
                 ),
               ),
@@ -300,103 +301,119 @@ class _WalletBalanceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 164,
-      decoration: BoxDecoration(
-        color: CitiRideTheme.primaryYellow,
-        borderRadius: BorderRadius.circular(13),
-      ),
+      height: 174,
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(18)),
       clipBehavior: Clip.antiAlias,
       child: Stack(
         children: [
-          Positioned(
-            right: -52,
-            bottom: -34,
-            child: Container(
-              width: 172,
-              height: 92,
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.62),
-                borderRadius: BorderRadius.circular(54),
+          Positioned.fill(
+            child: Image.asset('images/modal 1.png', fit: BoxFit.fill),
+          ),
+          const Positioned(
+            top: 19,
+            left: 0,
+            right: 0,
+            child: Text(
+              'Username',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.black,
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
               ),
             ),
           ),
           Positioned(
+            left: 22,
             right: 22,
-            bottom: 25,
-            child: Container(
-              width: 56,
-              height: 24,
-              decoration: BoxDecoration(
-                color: const Color(0xFF34340F),
-                borderRadius: BorderRadius.circular(99),
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16),
+            top: 76,
+            bottom: 18,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Align(
-                  alignment: Alignment.topLeft,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 7,
+                Row(
+                  children: [
+                    Container(
+                      width: 16,
+                      height: 16,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFF5332F),
+                        shape: BoxShape.circle,
+                      ),
                     ),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.88),
-                      borderRadius: BorderRadius.circular(99),
+                    Transform.translate(
+                      offset: const Offset(-5, 0),
+                      child: Container(
+                        width: 16,
+                        height: 16,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFFFA929),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
                     ),
-                    child: const Text(
-                      'Balance',
+                  ],
+                ),
+                const Spacer(),
+                const Text(
+                  'Total Balance',
+                  style: TextStyle(
+                    color: Color(0xFF9C9CA3),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '\u20A6${balance.toStringAsFixed(2)}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 28,
+                          height: 1,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    InkWell(
+                      onTap: onCopy,
+                      customBorder: const CircleBorder(),
+                      child: const Padding(
+                        padding: EdgeInsets.all(6),
+                        child: Icon(
+                          Icons.visibility_outlined,
+                          color: Color(0xFFD5D5D8),
+                          size: 18,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                const Row(
+                  children: [
+                    Text(
+                      '**2345',
                       style: TextStyle(
-                        color: CitiRideTheme.primaryYellow,
+                        color: Color(0xFF8B8B91),
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                  ),
-                ),
-                const Spacer(),
-                Text(
-                  '\u20A6${balance.toStringAsFixed(2)}',
-                  style: const TextStyle(
-                    color: Colors.black,
-                    fontSize: 34,
-                    height: 1,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                InkWell(
-                  onTap: onCopy,
-                  borderRadius: BorderRadius.circular(99),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
+                    Spacer(),
+                    Text(
+                      '****4342',
+                      style: TextStyle(
+                        color: Color(0xFF8B8B91),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(99),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'Paystack-Titan 98291029281',
-                          style: TextStyle(
-                            color: Colors.black,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        SizedBox(width: 7),
-                        Icon(Icons.copy_rounded, color: Colors.black, size: 14),
-                      ],
-                    ),
-                  ),
+                  ],
                 ),
               ],
             ),
@@ -420,6 +437,8 @@ class _WalletAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.citiRideColors;
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
@@ -431,17 +450,17 @@ class _WalletAction extends StatelessWidget {
               width: 46,
               height: 46,
               decoration: BoxDecoration(
-                color: const Color(0xFF242424),
+                color: colors.surfaceAlt,
                 shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xFF333333)),
+                border: Border.all(color: colors.border),
               ),
-              child: Icon(icon, color: Colors.white, size: 23),
+              child: Icon(icon, color: colors.text, size: 23),
             ),
             const SizedBox(height: 7),
             Text(
               label,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: colors.text,
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
               ),
@@ -466,11 +485,13 @@ class _TransactionsPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.citiRideColors;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 6),
       decoration: BoxDecoration(
-        color: const Color(0xFF1F1F1F),
+        color: colors.surface,
         borderRadius: BorderRadius.circular(9),
       ),
       child: Column(
@@ -478,11 +499,11 @@ class _TransactionsPanel extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Expanded(
+              Expanded(
                 child: Text(
                   'Transactions',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: colors.text,
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                   ),
@@ -510,13 +531,13 @@ class _TransactionsPanel extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10),
-          const Row(
+          Row(
             children: [
               _FilterChip(label: 'All', selected: true),
-              SizedBox(width: 8),
-              _FilterChip(label: 'Earned'),
-              SizedBox(width: 8),
-              _FilterChip(label: 'Spent'),
+              const SizedBox(width: 8),
+              const _FilterChip(label: 'Earned'),
+              const SizedBox(width: 8),
+              const _FilterChip(label: 'Spent'),
             ],
           ),
           const SizedBox(height: 12),
@@ -540,18 +561,20 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.citiRideColors;
+
     return Container(
       height: 26,
       padding: const EdgeInsets.symmetric(horizontal: 12),
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: selected ? Colors.white : const Color(0xFF303030),
+        color: selected ? colors.text : colors.surfaceAlt,
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
         label,
         style: TextStyle(
-          color: selected ? Colors.black : Colors.white,
+          color: selected ? colors.background : colors.text,
           fontSize: 10,
           fontWeight: FontWeight.w700,
         ),
@@ -571,6 +594,8 @@ class _WalletTransactionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.citiRideColors;
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(7),
@@ -600,8 +625,8 @@ class _WalletTransactionTile extends StatelessWidget {
                     transaction.title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: colors.text,
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
                     ),
@@ -611,10 +636,7 @@ class _WalletTransactionTile extends StatelessWidget {
                     transaction.subtitle,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: _WalletScreenState._muted,
-                      fontSize: 10,
-                    ),
+                    style: TextStyle(color: colors.mutedText, fontSize: 10),
                   ),
                 ],
               ),
@@ -650,15 +672,17 @@ class _FundingMethodTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.citiRideColors;
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(9),
       child: Container(
         padding: const EdgeInsets.all(13),
         decoration: BoxDecoration(
-          color: const Color(0xFF181818),
+          color: colors.background,
           borderRadius: BorderRadius.circular(9),
-          border: Border.all(color: const Color(0xFF333333)),
+          border: Border.all(color: colors.border),
         ),
         child: Row(
           children: [
@@ -678,8 +702,8 @@ class _FundingMethodTile extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: colors.text,
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
                     ),
@@ -689,10 +713,7 @@ class _FundingMethodTile extends StatelessWidget {
                     subtitle,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Color(0xFF9B9B9B),
-                      fontSize: 11,
-                    ),
+                    style: TextStyle(color: colors.mutedText, fontSize: 11),
                   ),
                 ],
               ),

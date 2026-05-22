@@ -61,10 +61,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new_rounded,
-            size: 30,
-          ),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 30),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -114,7 +111,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ListTile(
                 contentPadding: const EdgeInsets.symmetric(horizontal: 30),
                 title: Text(
-                  'Light theme',
+                  'Dark theme',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w500,
@@ -124,8 +121,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 trailing: Transform.scale(
                   scale: 1.05,
                   child: Switch.adaptive(
-                    value: themeController.isLightTheme,
-                    onChanged: themeController.setLightTheme,
+                    value: !themeController.isLightTheme,
+                    onChanged: (value) => themeController.setLightTheme(!value),
                     activeThumbColor: Colors.white,
                     activeTrackColor: const Color(0xFF11B51A),
                   ),

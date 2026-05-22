@@ -14,6 +14,8 @@ class CreateWalletPinScreen extends StatefulWidget {
 }
 
 class _CreateWalletPinScreenState extends State<CreateWalletPinScreen> {
+  static const int _pinLength = 6;
+
   String _draftPin = '';
   String _inputPin = '';
   bool _isConfirmStep = false;
@@ -21,7 +23,7 @@ class _CreateWalletPinScreenState extends State<CreateWalletPinScreen> {
   String? _errorText;
 
   int get _focusedPinIndex =>
-      _inputPin.length < 4 && !_isSaving ? _inputPin.length : -1;
+      _inputPin.length < _pinLength && !_isSaving ? _inputPin.length : -1;
 
   Future<void> _onBackPressed() async {
     if (_isConfirmStep) {
@@ -36,7 +38,7 @@ class _CreateWalletPinScreenState extends State<CreateWalletPinScreen> {
   }
 
   void _onDigitPressed(String digit) {
-    if (_inputPin.length >= 4 || _isSaving) return;
+    if (_inputPin.length >= _pinLength || _isSaving) return;
     setState(() {
       _inputPin += digit;
       _errorText = null;
@@ -52,7 +54,7 @@ class _CreateWalletPinScreenState extends State<CreateWalletPinScreen> {
   }
 
   Future<void> _onNextPressed() async {
-    if (_inputPin.length != 4 || _isSaving) return;
+    if (_inputPin.length != _pinLength || _isSaving) return;
 
     if (!_isConfirmStep) {
       setState(() {
@@ -124,8 +126,8 @@ class _CreateWalletPinScreenState extends State<CreateWalletPinScreen> {
         ? 'Confirm PIN'
         : (widget.isResetFlow ? 'Reset PIN' : 'Create PIN');
     final subtitle = _isConfirmStep
-        ? 'Confirm your 4-digit PIN'
-        : 'Create a PIN to secure your CitiRide transactions';
+        ? 'Confirm your 6-digit PIN'
+        : 'Create a 6-digit PIN to secure your CitiRide transactions';
 
     return PopScope(
       canPop: false,
@@ -189,10 +191,10 @@ class _CreateWalletPinScreenState extends State<CreateWalletPinScreen> {
                         ),
                         const SizedBox(height: 24),
                         AuthCodeFields(
-                          length: 4,
+                          length: _pinLength,
                           value: _inputPin,
                           focusedIndex: _focusedPinIndex,
-                          preferredWidth: 76,
+                          preferredWidth: 54,
                           height: 56,
                           textStyle: const TextStyle(
                             fontSize: 22,
@@ -225,7 +227,8 @@ class _CreateWalletPinScreenState extends State<CreateWalletPinScreen> {
                           width: double.infinity,
                           height: 56,
                           child: ElevatedButton(
-                            onPressed: _inputPin.length == 4 && !_isSaving
+                            onPressed:
+                                _inputPin.length == _pinLength && !_isSaving
                                 ? _onNextPressed
                                 : null,
                             style: ElevatedButton.styleFrom(

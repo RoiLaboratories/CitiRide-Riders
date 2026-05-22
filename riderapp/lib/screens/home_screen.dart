@@ -653,10 +653,12 @@ class _HomeScreenState extends State<HomeScreen> {
   // ---------------- MAP ----------------
 
   Widget _buildHomeMap() {
+    final isDarkMap = Theme.of(context).brightness == Brightness.dark;
+
     if (kIsWeb) {
       return fm.FlutterMap(
         key: ValueKey(
-          'home_map_web_${_currentLocation.latitude}_${_currentLocation.longitude}',
+          'home_map_web_${isDarkMap ? 'dark' : 'light'}_${_currentLocation.latitude}_${_currentLocation.longitude}',
         ),
         options: fm.MapOptions(
           initialCenter: osm.LatLng(
@@ -668,7 +670,7 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           fm.TileLayer(
             urlTemplate:
-                'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+                'https://{s}.basemaps.cartocdn.com/${isDarkMap ? 'dark_all' : 'light_all'}/{z}/{x}/{y}{r}.png',
             subdomains: const ['a', 'b', 'c', 'd'],
             userAgentPackageName: 'com.example.citiride',
           ),
@@ -694,7 +696,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return gmaps.GoogleMap(
       key: ValueKey(
-        'home_map_mobile_${_currentLocation.latitude}_${_currentLocation.longitude}',
+        'home_map_mobile_${isDarkMap ? 'dark' : 'light'}_${_currentLocation.latitude}_${_currentLocation.longitude}',
       ),
       initialCameraPosition: gmaps.CameraPosition(
         target: _currentLocation,
@@ -706,7 +708,7 @@ class _HomeScreenState extends State<HomeScreen> {
       mapToolbarEnabled: false,
       myLocationButtonEnabled: false,
       myLocationEnabled: false,
-      style: kGoogleMapGrayscaleStyle,
+      style: isDarkMap ? kGoogleMapGrayscaleStyle : null,
       markers: {
         gmaps.Marker(
           markerId: const gmaps.MarkerId('current_location'),

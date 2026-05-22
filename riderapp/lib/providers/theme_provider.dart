@@ -1,19 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/legacy.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_riverpod/legacy.dart';
 
-final appThemeControllerProvider = ChangeNotifierProvider<AppThemeController>(
-  (ref) => AppThemeController(),
-);
-
-class AppThemeController extends ChangeNotifier {
+class AppThemeNotifier extends ChangeNotifier {
   static const _preferenceKey = 'settings_light_theme';
+  ThemeMode _themeMode = ThemeMode.dark;
 
-  AppThemeController() {
+  AppThemeNotifier() {
     _loadTheme();
   }
-
-  ThemeMode _themeMode = ThemeMode.dark;
 
   ThemeMode get themeMode => _themeMode;
   bool get isLightTheme => _themeMode == ThemeMode.light;
@@ -33,3 +28,8 @@ class AppThemeController extends ChangeNotifier {
     await prefs.setBool(_preferenceKey, value);
   }
 }
+
+final appThemeControllerProvider =
+    ChangeNotifierProvider<AppThemeNotifier>((ref) {
+  return AppThemeNotifier();
+});
