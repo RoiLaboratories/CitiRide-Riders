@@ -435,15 +435,131 @@ class _BookRideScreenState extends State<BookRideScreen> {
         _fromLabel = fromLabel.isEmpty ? _fromLabel : fromLabel;
         _toLabel = destinationLabel.isEmpty ? _toLabel : destinationLabel;
       });
+      _scheduleMapOverlaySync(fitRoute: true);
     } catch (_) {
       if (!mounted) return;
       setState(() {
         _routePoints = _buildBentRoutePoints(_fromLatLng, _toLatLng);
       });
+      _scheduleMapOverlaySync(fitRoute: true);
     } finally {
       if (mounted) {
         setState(() => _isRefreshingRoute = false);
       }
+    }
+  }
+
+  List<gmaps.LatLng> get _activeRoutePoints => _routePoints.isEmpty
+      ? _buildBentRoutePoints(_fromLatLng, _toLatLng)
+      : _routePoints;
+
+  gmaps.LatLng _routePointAt(double fraction) {
+    final points = _activeRoutePoints;
+    if (points.isEmpty) return _fromLatLng;
+    final index = ((points.length - 1) * fraction.clamp(0.0, 1.0)).round();
+    final safeIndex = index.clamp(0, points.length - 1).toInt();
+    return points[safeIndex];
+  }
+
+  void _scheduleMapOverlaySync({bool fitRoute = false}) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (fitRoute) {
+        _fitRideMapToRoute();
+      } else {
+        _syncMapOverlayPositions();
+      }
+    });
+  }
+
+  Future<void> _fitRideMapToRoute() async {
+    if (kIsWeb) return;
+    final controller = _googleMapController;
+    if (controller == null) return;
+
+    try {
+      await controller.animateCamera(
+        gmaps.CameraUpdate.newLatLngBounds(
+          _boundsFromPoints(_activeRoutePoints),
+          84,
+        ),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 180));
+    } catch (_) {}
+
+    await _syncMapOverlayPositions();
+  }
+
+  gmaps.LatLngBounds _boundsFromPoints(List<gmaps.LatLng> points) {
+    final allPoints = points.isEmpty ? [_fromLatLng, _toLatLng] : points;
+    var minLat = allPoints.first.latitude;
+    var maxLat = allPoints.first.latitude;
+    var minLng = allPoints.first.longitude;
+    var maxLng = allPoints.first.longitude;
+
+    for (final point in allPoints) {
+      minLat = math.min(minLat, point.latitude);
+      maxLat = math.max(maxLat, point.latitude);
+      minLng = math.min(minLng, point.longitude);
+      maxLng = math.max(maxLng, point.longitude);
+    }
+
+    if (minLat == maxLat) {
+      minLat -= 0.001;
+      maxLat += 0.001;
+    }
+    if (minLng == maxLng) {
+      minLng -= 0.001;
+      maxLng += 0.001;
+    }
+
+    return gmaps.LatLngBounds(
+      southwest: gmaps.LatLng(minLat, minLng),
+      northeast: gmaps.LatLng(maxLat, maxLng),
+    );
+  }
+
+  Future<Offset> _screenOffsetForLatLng(gmaps.LatLng point) async {
+    final controller = _googleMapController;
+    if (controller == null) return Offset.zero;
+
+    final size = MediaQuery.sizeOf(context);
+    final devicePixelRatio = MediaQuery.devicePixelRatioOf(context);
+    final coordinate = await controller.getScreenCoordinate(point);
+    var dx = coordinate.x.toDouble();
+    var dy = coordinate.y.toDouble();
+
+    if (dx > size.width || dy > size.height) {
+      dx /= devicePixelRatio;
+      dy /= devicePixelRatio;
+    }
+
+    return Offset(dx, dy);
+  }
+
+  Future<void> _syncMapOverlayPositions() async {
+    if (kIsWeb || _googleMapController == null || _syncingMapOverlay) return;
+
+    _syncingMapOverlay = true;
+    try {
+      final arrival = await _screenOffsetForLatLng(_routePointAt(0.92));
+      final duration = await _screenOffsetForLatLng(_routePointAt(0.50));
+      final pickup = await _screenOffsetForLatLng(_routePointAt(0.08));
+      final firstCar = await _screenOffsetForLatLng(_routePointAt(0.28));
+      final secondCar = await _screenOffsetForLatLng(_routePointAt(0.68));
+
+      if (!mounted) return;
+      setState(() {
+        _arrivalPillOffset = arrival;
+        _durationPillOffset = duration;
+        _pickupPillOffset = pickup;
+        _firstCarOffset = firstCar;
+        _secondCarOffset = secondCar;
+      });
+    } catch (_) {
+      // Keep the deterministic fallback positions if projection is unavailable.
+    } finally {
+      _syncingMapOverlay = false;
     }
   }
 
@@ -1885,7 +2001,7 @@ class _BookRideScreenState extends State<BookRideScreen> {
               height: 46,
               padding: const EdgeInsets.symmetric(horizontal: 14),
               decoration: BoxDecoration(
-                color: Colors.black.withAlpha(158),
+                color: Colors.black,
                 borderRadius: BorderRadius.circular(28),
                 border: Border.all(color: Colors.white.withAlpha(178)),
               ),
@@ -1945,28 +2061,70 @@ class _BookRideScreenState extends State<BookRideScreen> {
       builder: (context, constraints) {
         final width = constraints.maxWidth;
         final height = constraints.maxHeight;
+        final panelTop = height - _bottomPanelHeight;
+        final arrivalOffset =
+            _arrivalPillOffset ?? Offset(width * 0.68, height * 0.24);
+        final durationOffset =
+            _durationPillOffset ?? Offset(width * 0.48, height * 0.36);
+        final pickupOffset =
+            _pickupPillOffset ?? Offset(width * 0.42, height * 0.48);
+        final firstCarOffset =
+            _firstCarOffset ?? Offset(width * 0.26, height * 0.34);
+        final secondCarOffset =
+            _secondCarOffset ?? Offset(width * 0.62, height * 0.54);
+
+        double clampLeft(double value, double childWidth) =>
+            value.clamp(8.0, math.max(8.0, width - childWidth - 8));
+        double clampTop(double value, double childHeight) {
+          final maxTop = math.max(70.0, panelTop - childHeight - 12);
+          return value.clamp(70.0, maxTop);
+        }
+
+        Widget positionedAt({
+          required Offset anchor,
+          required Widget child,
+          required double childWidth,
+          required double childHeight,
+          double dx = 0,
+          double dy = 0,
+        }) {
+          return Positioned(
+            left: clampLeft(anchor.dx + dx, childWidth),
+            top: clampTop(anchor.dy + dy, childHeight),
+            child: SizedBox(width: childWidth, child: child),
+          );
+        }
 
         return IgnorePointer(
           ignoring: false,
           child: Stack(
             children: [
-              Positioned(
-                top: height * 0.18,
-                right: width * 0.15,
+              positionedAt(
+                anchor: arrivalOffset,
+                childWidth: 136,
+                childHeight: 32,
+                dx: -68,
+                dy: -52,
                 child: _mapPill(
                   _stage == _BookRideStage.arriving
                       ? 'Arrive by 10:53am'
                       : 'Arrive by 10:53am',
                 ),
               ),
-              Positioned(
-                top: height * 0.34,
-                left: width * 0.28,
+              positionedAt(
+                anchor: durationOffset,
+                childWidth: 68,
+                childHeight: 30,
+                dx: -34,
+                dy: -36,
                 child: _mapPill('4 mins', compact: true),
               ),
-              Positioned(
-                top: height * 0.44,
-                left: width * 0.30,
+              positionedAt(
+                anchor: pickupOffset,
+                childWidth: 104,
+                childHeight: 32,
+                dx: -52,
+                dy: -48,
                 child: InkWell(
                   onTap: () => _setStage(_BookRideStage.pickupSearch),
                   borderRadius: BorderRadius.circular(16),
@@ -1980,14 +2138,20 @@ class _BookRideScreenState extends State<BookRideScreen> {
                   ),
                 ),
               ),
-              Positioned(
-                top: height * 0.30,
-                left: width * 0.10,
+              positionedAt(
+                anchor: firstCarOffset,
+                childWidth: 34,
+                childHeight: 46,
+                dx: -17,
+                dy: -23,
                 child: _mapCar(angle: -0.45),
               ),
-              Positioned(
-                top: height * 0.54,
-                right: width * 0.26,
+              positionedAt(
+                anchor: secondCarOffset,
+                childWidth: 34,
+                childHeight: 46,
+                dx: -17,
+                dy: -23,
                 child: _mapCar(angle: 0.62),
               ),
             ],
@@ -2744,7 +2908,9 @@ class _BookRideScreenState extends State<BookRideScreen> {
       ),
       onMapCreated: (controller) {
         _googleMapController = controller;
+        _scheduleMapOverlaySync(fitRoute: true);
       },
+      onCameraIdle: _syncMapOverlayPositions,
       mapType: gmaps.MapType.normal,
       compassEnabled: false,
       zoomControlsEnabled: false,

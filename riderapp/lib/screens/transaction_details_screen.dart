@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
+
 class TransactionDetailsScreen extends StatelessWidget {
   const TransactionDetailsScreen({super.key});
 
-  static const Color _bg = Color(0xFF101010);
-  static const Color _panel = Color(0xFF242424);
-  static const Color _muted = Color(0xFF9B9B9B);
-
   @override
   Widget build(BuildContext context) {
+    final colors = context.citiRideColors;
     final args =
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>? ??
         const {};
@@ -30,7 +29,7 @@ class TransactionDetailsScreen extends StatelessWidget {
         : const Color(0xFFFF4343);
 
     return Scaffold(
-      backgroundColor: _bg,
+      backgroundColor: colors.background,
       body: SafeArea(
         child: Column(
           children: [
@@ -48,7 +47,8 @@ class TransactionDetailsScreen extends StatelessWidget {
                       width: double.infinity,
                       padding: const EdgeInsets.fromLTRB(18, 24, 18, 22),
                       decoration: BoxDecoration(
-                        color: _panel,
+                        color: colors.surfaceAlt,
+                        border: Border.all(color: colors.border),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Column(
@@ -74,8 +74,8 @@ class TransactionDetailsScreen extends StatelessWidget {
                           Text(
                             title,
                             textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: Colors.white,
+                            style: TextStyle(
+                              color: colors.text,
                               fontSize: 16,
                               fontWeight: FontWeight.w800,
                             ),
@@ -123,6 +123,8 @@ class _FlowHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.citiRideColors;
+
     return SizedBox(
       height: 58,
       child: Row(
@@ -131,9 +133,9 @@ class _FlowHeader extends StatelessWidget {
             width: 56,
             child: IconButton(
               onPressed: onBack,
-              icon: const Icon(
+              icon: Icon(
                 Icons.arrow_back_ios_new_rounded,
-                color: Colors.white,
+                color: colors.text,
                 size: 18,
               ),
             ),
@@ -142,8 +144,8 @@ class _FlowHeader extends StatelessWidget {
             child: Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: colors.text,
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
               ),
@@ -164,6 +166,8 @@ class _DetailRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.citiRideColors;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 7),
       child: Row(
@@ -171,8 +175,8 @@ class _DetailRow extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: const TextStyle(
-                color: TransactionDetailsScreen._muted,
+              style: TextStyle(
+                color: colors.mutedText,
                 fontSize: 12,
               ),
             ),
@@ -181,8 +185,8 @@ class _DetailRow extends StatelessWidget {
             child: Text(
               value,
               textAlign: TextAlign.right,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: colors.text,
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
               ),

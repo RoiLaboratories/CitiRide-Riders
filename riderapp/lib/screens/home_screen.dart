@@ -15,6 +15,7 @@ import '../components/home_top_bar.dart';
 import '../components/home_modal_sheet.dart';
 import '../components/bottom_nav_bar.dart';
 import '../components/location_permission_modal.dart';
+import '../components/profile_avatar.dart';
 import '../theme/app_theme.dart';
 import '../screens/ride_screen.dart';
 import '../screens/wallet_screen.dart';
@@ -180,6 +181,10 @@ class _HomeScreenState extends State<HomeScreen> {
     Color iconColor = const Color(0xFF101010),
     Color iconBg = const Color(0xFFE6E6E6),
   }) {
+    final colors = context.citiRideColors;
+    final resolvedTitleColor = titleColor == Colors.white
+        ? colors.text
+        : titleColor;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
@@ -201,16 +206,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     title,
                     style: TextStyle(
                       fontSize: 15,
-                      color: titleColor,
+                      color: resolvedTitleColor,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
-                      color: Color(0xFF9B9B9B),
+                      color: colors.mutedText,
                     ),
                   ),
                 ],
@@ -223,11 +228,14 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildProfileDrawer() {
+    final colors = context.citiRideColors;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return SizedBox(
       width: MediaQuery.of(context).size.width * 0.64,
       child: Drawer(
         elevation: 0,
-        backgroundColor: const Color(0xFF171717),
+        backgroundColor: colors.surface,
         surfaceTintColor: Colors.transparent,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.horizontal(right: Radius.circular(28)),
@@ -240,10 +248,11 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Row(
                   children: [
-                    CircleAvatar(
-                      radius: 32,
-                      backgroundColor: Colors.transparent,
-                      backgroundImage: const AssetImage('images/profile.png'),
+                    ProfileAvatar(
+                      size: 64,
+                      refreshSeed: _profileRefreshSeed,
+                      borderColor: CitiRideTheme.primaryYellow,
+                      borderWidth: 2,
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -252,10 +261,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         children: [
                           Text(
                             _drawerName,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
-                              color: Colors.white,
+                              color: colors.text,
                             ),
                           ),
                           Text(
@@ -268,9 +277,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           Text(
                             _drawerPhone,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
-                              color: Color(0xFF9B9B9B),
+                              color: colors.mutedText,
                             ),
                           ),
                         ],
@@ -317,13 +326,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     vertical: 14,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF242424),
+                    color: isDark ? const Color(0xFF242424) : Colors.white,
                     borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: const Color(0xFF333333)),
+                    border: Border.all(color: colors.border),
                   ),
                   child: Row(
                     children: [
-                      const Expanded(
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -340,7 +349,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               'Go to driver app',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Color(0xFFBDBDBD),
+                                color: colors.mutedText,
                               ),
                             ),
                           ],

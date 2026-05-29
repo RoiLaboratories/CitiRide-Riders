@@ -44,6 +44,7 @@ class _VerifyingTransactionScreenState extends State<VerifyingTransactionScreen>
       if (!mounted) return;
       if (!_balanceUpdated && _amount > 0) {
         WalletBalance.balance += _amount;
+        WalletBalance.addTopUp(_amount);
         _balanceUpdated = true;
       }
       setState(() {

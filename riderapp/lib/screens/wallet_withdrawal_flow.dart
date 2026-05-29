@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../components/bank_logo.dart';
+import '../components/wallet_balance_card.dart';
+import '../models/nigerian_bank.dart';
 import '../models/wallet_balance.dart';
+import '../services/nigerian_banks_service.dart';
 import '../theme/app_theme.dart';
 
 class WalletWithdrawalFlow extends StatefulWidget {
@@ -18,18 +22,39 @@ class _WalletWithdrawalFlowState extends State<WalletWithdrawalFlow> {
   static const Color _muted = Color(0xFF9B9B9B);
 
   final TextEditingController _amountController = TextEditingController();
+  final TextEditingController _newAccountNumberController =
+      TextEditingController();
+  final TextEditingController _newAccountNameController =
+      TextEditingController(text: 'Umoru Osigbemhe');
   int _step = 0;
   int _selectedAccount = 0;
   bool _processing = false;
+  bool _hideBalance = false;
 
-  final List<_WithdrawalAccount> _accounts = const [
+  static NigerianBank _bankByName(String name) {
+    return NigerianBanksService.offlineBanks.firstWhere(
+      (bank) => bank.name.toLowerCase().contains(name.toLowerCase()),
+      orElse: () => NigerianBank(
+        name: name,
+        code: '',
+        slug: name.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '-'),
+      ),
+    );
+  }
+
+  final List<_WithdrawalAccount> _accounts = [
     _WithdrawalAccount(
-      bank: 'Moniepoint',
+      bank: _bankByName('Moniepoint'),
       number: '5064 8393 2937',
       name: 'Umoru Osigbemhe',
     ),
     _WithdrawalAccount(
-      bank: 'UBA',
+      bank: _bankByName('First Bank'),
+      number: '2243 5678 2837 1763',
+      name: 'Umoru Osigbemhe',
+    ),
+    _WithdrawalAccount(
+      bank: _bankByName('United Bank'),
       number: '3748 5940 32',
       name: 'Umoru Osigbemhe',
     ),
@@ -44,6 +69,8 @@ class _WalletWithdrawalFlowState extends State<WalletWithdrawalFlow> {
   @override
   void dispose() {
     _amountController.dispose();
+    _newAccountNumberController.dispose();
+    _newAccountNameController.dispose();
     super.dispose();
   }
 
@@ -80,6 +107,12 @@ class _WalletWithdrawalFlowState extends State<WalletWithdrawalFlow> {
       0,
       double.infinity,
     );
+    final account = _accounts[_selectedAccount];
+    WalletBalance.addWithdrawal(
+      amount: _amount,
+      bank: account.bank.name,
+      accountNumber: account.number,
+    );
 
     if (!mounted) return;
     setState(() {
@@ -90,6 +123,8 @@ class _WalletWithdrawalFlowState extends State<WalletWithdrawalFlow> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.citiRideColors;
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
@@ -97,7 +132,7 @@ class _WalletWithdrawalFlowState extends State<WalletWithdrawalFlow> {
         _back();
       },
       child: Scaffold(
-        backgroundColor: _bg,
+        backgroundColor: colors.background,
         body: SafeArea(
           child: Column(
             children: [
@@ -158,7 +193,12 @@ class _WalletWithdrawalFlowState extends State<WalletWithdrawalFlow> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _MiniWalletCard(balance: WalletBalance.balance),
+          _MiniWalletCard(
+            balance: WalletBalance.balance,
+            hidden: _hideBalance,
+            onToggleVisibility: () =>
+                setState(() => _hideBalance = !_hideBalance),
+          ),
           const SizedBox(height: 22),
           const Text(
             'Select bank account',
@@ -185,7 +225,7 @@ class _WalletWithdrawalFlowState extends State<WalletWithdrawalFlow> {
               ),
             );
           }),
-          _AddAccountTile(onTap: () {}),
+          _AddAccountTile(onTap: _showAddBankSheet),
           const Spacer(),
           _PrimaryButton(label: 'Withdraw', onPressed: _continue),
         ],
@@ -195,12 +235,18 @@ class _WalletWithdrawalFlowState extends State<WalletWithdrawalFlow> {
 
   Widget _buildAmountStep() {
     final insufficient = _amount > WalletBalance.balance;
+    final colors = context.citiRideColors;
 
     return _page(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _MiniWalletCard(balance: WalletBalance.balance),
+          _MiniWalletCard(
+            balance: WalletBalance.balance,
+            hidden: _hideBalance,
+            onToggleVisibility: () =>
+                setState(() => _hideBalance = !_hideBalance),
+          ),
           const SizedBox(height: 22),
           const Text(
             'Amount to withdraw',
@@ -214,8 +260,9 @@ class _WalletWithdrawalFlowState extends State<WalletWithdrawalFlow> {
           Container(
             height: 54,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: colors.inputFill,
               borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: colors.border),
             ),
             child: TextField(
               controller: _amountController,
@@ -224,20 +271,20 @@ class _WalletWithdrawalFlowState extends State<WalletWithdrawalFlow> {
                 FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
               ],
               onChanged: (_) => setState(() {}),
-              style: const TextStyle(
-                color: Colors.black,
+              style: TextStyle(
+                color: colors.text,
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
               ),
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 prefixText: '\u20A6 ',
                 prefixStyle: TextStyle(
-                  color: Colors.black,
+                  color: colors.text,
                   fontSize: 17,
                   fontWeight: FontWeight.w700,
                 ),
                 hintText: 'Enter amount',
-                hintStyle: TextStyle(color: Color(0xFF7B7B7B)),
+                hintStyle: TextStyle(color: colors.mutedText),
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.symmetric(
                   horizontal: 18,
@@ -342,7 +389,7 @@ class _WalletWithdrawalFlowState extends State<WalletWithdrawalFlow> {
                 ),
                 const SizedBox(height: 18),
                 _DetailRow(label: 'Name', value: account.name),
-                _DetailRow(label: 'Bank', value: account.bank),
+                _DetailRow(label: 'Bank', value: account.bank.name),
                 _DetailRow(label: 'Account', value: account.number),
                 _DetailRow(
                   label: 'You receive',
@@ -366,6 +413,101 @@ class _WalletWithdrawalFlowState extends State<WalletWithdrawalFlow> {
     _amountController.text = amount.toString();
     setState(() {});
   }
+
+  Future<void> _showAddBankSheet() async {
+    final bank = await showModalBottomSheet<NigerianBank>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return _BankPickerSheet(
+          onSelected: (selectedBank) =>
+              Navigator.of(sheetContext).pop(selectedBank),
+        );
+      },
+    );
+
+    if (bank == null || !mounted) return;
+
+    _newAccountNumberController.clear();
+    final added = await showModalBottomSheet<_WithdrawalAccount>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        final inset = MediaQuery.viewInsetsOf(sheetContext).bottom;
+
+        return Container(
+          margin: EdgeInsets.fromLTRB(14, 0, 14, 18 + inset),
+          padding: const EdgeInsets.fromLTRB(18, 12, 18, 18),
+          decoration: BoxDecoration(
+            color: _panelAlt,
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 54,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: Colors.white70,
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                bank.name,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 16),
+              _SheetInput(
+                controller: _newAccountNumberController,
+                label: 'Account Number',
+                hint: '2243 5678 2837 1763',
+                keyboardType: TextInputType.number,
+              ),
+              const SizedBox(height: 14),
+              _SheetInput(
+                controller: _newAccountNameController,
+                label: 'Bank Name',
+                hint: bank.name,
+                readOnly: true,
+              ),
+              const SizedBox(height: 18),
+              _PrimaryButton(
+                label: 'Add bank',
+                onPressed: () {
+                  final number = _newAccountNumberController.text.trim();
+                  if (number.length < 8) return;
+                  Navigator.of(sheetContext).pop(
+                    _WithdrawalAccount(
+                      bank: bank,
+                      number: number,
+                      name: _newAccountNameController.text.trim(),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (added == null || !mounted) return;
+    setState(() {
+      _accounts.add(added);
+      _selectedAccount = _accounts.length - 1;
+    });
+  }
 }
 
 class _FlowHeader extends StatelessWidget {
@@ -381,6 +523,8 @@ class _FlowHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.citiRideColors;
+
     return SizedBox(
       height: 58,
       child: Row(
@@ -390,9 +534,9 @@ class _FlowHeader extends StatelessWidget {
             child: showBack
                 ? IconButton(
                     onPressed: onBack,
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.arrow_back_ios_new_rounded,
-                      color: Colors.white,
+                      color: colors.text,
                       size: 18,
                     ),
                   )
@@ -402,8 +546,8 @@ class _FlowHeader extends StatelessWidget {
             child: Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: colors.text,
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
               ),
@@ -417,12 +561,20 @@ class _FlowHeader extends StatelessWidget {
 }
 
 class _MiniWalletCard extends StatelessWidget {
-  const _MiniWalletCard({required this.balance});
+  const _MiniWalletCard({
+    required this.balance,
+    required this.hidden,
+    required this.onToggleVisibility,
+  });
 
   final double balance;
+  final bool hidden;
+  final VoidCallback onToggleVisibility;
 
   @override
   Widget build(BuildContext context) {
+    return WalletBalanceCard(balance: balance);
+/*
     return Container(
       width: double.infinity,
       height: 126,
@@ -469,13 +621,30 @@ class _MiniWalletCard extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
-                Text(
-                  '\u20A6${balance.toStringAsFixed(2)}',
-                  style: const TextStyle(
-                    color: Colors.black,
-                    fontSize: 27,
-                    fontWeight: FontWeight.w800,
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        hidden ? '\u20A6••••••' : '\u20A6${balance.toStringAsFixed(2)}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.black,
+                          fontSize: 27,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: onToggleVisibility,
+                      icon: Icon(
+                        hidden
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -483,6 +652,7 @@ class _MiniWalletCard extends StatelessWidget {
         ],
       ),
     );
+*/
   }
 }
 
@@ -499,44 +669,36 @@ class _AccountTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.citiRideColors;
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(9),
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: selected ? const Color(0xFF23230F) : const Color(0xFF181818),
+          color: selected
+              ? CitiRideTheme.primaryYellow.withValues(alpha: 0.14)
+              : colors.surface,
           borderRadius: BorderRadius.circular(9),
           border: Border.all(
             color: selected
                 ? CitiRideTheme.primaryYellow
-                : const Color(0xFF303030),
+                : colors.border,
           ),
         ),
         child: Row(
           children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: CitiRideTheme.primaryYellow.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: const Icon(
-                Icons.account_balance_rounded,
-                color: CitiRideTheme.primaryYellow,
-                size: 21,
-              ),
-            ),
+            BankLogo(bank: account.bank),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    account.bank,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    account.bank.name,
+                    style: TextStyle(
+                      color: colors.text,
                       fontSize: 13,
                       fontWeight: FontWeight.w800,
                     ),
@@ -546,8 +708,8 @@ class _AccountTile extends StatelessWidget {
                     '${account.number} - ${account.name}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Color(0xFF9B9B9B),
+                    style: TextStyle(
+                      color: colors.mutedText,
                       fontSize: 11,
                     ),
                   ),
@@ -577,34 +739,36 @@ class _AddAccountTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.citiRideColors;
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(9),
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: const Color(0xFF181818),
+          color: colors.surface,
           borderRadius: BorderRadius.circular(9),
-          border: Border.all(color: const Color(0xFF303030)),
+          border: Border.all(color: colors.border),
         ),
-        child: const Row(
+        child: Row(
           children: [
-            Icon(
+            const Icon(
               Icons.add_circle_outline_rounded,
               color: CitiRideTheme.primaryYellow,
             ),
-            SizedBox(width: 12),
+            const SizedBox(width: 12),
             Expanded(
               child: Text(
                 'Add another bank account',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: colors.text,
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
                 ),
               ),
             ),
-            Icon(
+            const Icon(
               Icons.chevron_right_rounded,
               color: CitiRideTheme.primaryYellow,
             ),
@@ -628,6 +792,8 @@ class _QuickAmountChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.citiRideColors;
+
     return Expanded(
       child: InkWell(
         onTap: onTap,
@@ -638,18 +804,18 @@ class _QuickAmountChip extends StatelessWidget {
           decoration: BoxDecoration(
             color: selected
                 ? CitiRideTheme.primaryYellow
-                : _WalletWithdrawalFlowState._panel,
+                : colors.surface,
             borderRadius: BorderRadius.circular(99),
             border: Border.all(
               color: selected
                   ? CitiRideTheme.primaryYellow
-                  : const Color(0xFF303030),
+                  : colors.border,
             ),
           ),
           child: Text(
             '\u20A6$amount',
             style: TextStyle(
-              color: selected ? Colors.black : Colors.white,
+              color: selected ? Colors.black : colors.text,
               fontSize: 11,
               fontWeight: FontWeight.w800,
             ),
@@ -668,13 +834,15 @@ class _Breakdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.citiRideColors;
     final receive = (amount - fee).clamp(0, double.infinity);
 
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: _WalletWithdrawalFlowState._panelAlt,
+        color: colors.surfaceAlt,
         borderRadius: BorderRadius.circular(9),
+        border: Border.all(color: colors.border),
       ),
       child: Column(
         children: [
@@ -698,15 +866,17 @@ class _DetailRow extends StatelessWidget {
   const _DetailRow({
     required this.label,
     required this.value,
-    this.valueColor = Colors.white,
+    this.valueColor,
   });
 
   final String label;
   final String value;
-  final Color valueColor;
+  final Color? valueColor;
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.citiRideColors;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 7),
       child: Row(
@@ -714,8 +884,8 @@ class _DetailRow extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: const TextStyle(
-                color: Color(0xFF9B9B9B),
+              style: TextStyle(
+                color: colors.mutedText,
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
               ),
@@ -726,7 +896,7 @@ class _DetailRow extends StatelessWidget {
               value,
               textAlign: TextAlign.right,
               style: TextStyle(
-                color: valueColor,
+                color: valueColor ?? colors.text,
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
               ),
@@ -799,7 +969,237 @@ class _WithdrawalAccount {
     required this.name,
   });
 
-  final String bank;
+  final NigerianBank bank;
   final String number;
   final String name;
+}
+
+/*
+class _BankLogo extends StatelessWidget {
+  const _BankLogo(this.name, {this.asset});
+
+  final String name;
+  final String? asset;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 42,
+      height: 42,
+      decoration: BoxDecoration(
+        color: _brandColor(name),
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white, width: 2),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: asset == null
+          ? Center(
+              child: Text(
+                name.characters.first.toUpperCase(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 20,
+                ),
+              ),
+            )
+          : Padding(
+              padding: const EdgeInsets.all(4),
+              child: Image.asset(asset!, fit: BoxFit.contain),
+            ),
+    );
+  }
+
+  Color _brandColor(String bankName) {
+    final name = bankName.toLowerCase();
+    if (name.contains('first')) return const Color(0xFF0C3C7C);
+    if (name.contains('uba')) return const Color(0xFFE21A12);
+    if (name.contains('gtbank')) return const Color(0xFFE66D11);
+    if (name.contains('zenith')) return const Color(0xFFB71620);
+    if (name.contains('access')) return const Color(0xFFEE6A23);
+    if (name.contains('monie')) return const Color(0xFF0F6BEF);
+    return const Color(0xFF202D46);
+  }
+}
+
+class _NigerianBank {
+  const _NigerianBank(this.name, {this.logoAsset});
+
+  final String name;
+  final String? logoAsset;
+}
+
+const List<_NigerianBank> _nigerianBanks = [
+  _NigerianBank('Moniepoint', logoAsset: 'images/moniepoint.png'),
+  _NigerianBank('First Bank'),
+  _NigerianBank('UBA'),
+  _NigerianBank('Access Bank'),
+  _NigerianBank('GTBank'),
+  _NigerianBank('Zenith Bank'),
+  _NigerianBank('Fidelity Bank'),
+  _NigerianBank('Sterling Bank'),
+  _NigerianBank('Stanbic IBTC'),
+  _NigerianBank('Wema Bank'),
+  _NigerianBank('Union Bank'),
+  _NigerianBank('Opay'),
+  _NigerianBank('Kuda Bank'),
+  _NigerianBank('PalmPay'),
+];
+
+*/
+class _BankPickerSheet extends StatefulWidget {
+  const _BankPickerSheet({required this.onSelected});
+
+  final ValueChanged<NigerianBank> onSelected;
+
+  @override
+  State<_BankPickerSheet> createState() => _BankPickerSheetState();
+}
+
+class _BankPickerSheetState extends State<_BankPickerSheet> {
+  late final Future<List<NigerianBank>> _banksFuture =
+      NigerianBanksService().fetchBanks();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.citiRideColors;
+
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.sizeOf(context).height * 0.68,
+      ),
+      margin: const EdgeInsets.fromLTRB(14, 0, 14, 18),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
+      decoration: BoxDecoration(
+        color: colors.surfaceAlt,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: colors.border),
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 54,
+            height: 5,
+            decoration: BoxDecoration(
+              color: Colors.white70,
+              borderRadius: BorderRadius.circular(99),
+            ),
+          ),
+          const SizedBox(height: 18),
+          Row(
+            children: [
+              Icon(Icons.account_balance_rounded, color: colors.text),
+              const SizedBox(width: 10),
+              Text(
+                'Select Bank',
+                style: TextStyle(
+                  color: colors.text,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Expanded(
+            child: FutureBuilder<List<NigerianBank>>(
+              future: _banksFuture,
+              builder: (context, snapshot) {
+                final banks =
+                    snapshot.data ?? NigerianBanksService.offlineBanks;
+
+                if (snapshot.connectionState == ConnectionState.waiting &&
+                    snapshot.data == null) {
+                  return const Center(
+                    child: CircularProgressIndicator(
+                      color: CitiRideTheme.primaryYellow,
+                    ),
+                  );
+                }
+
+                return ListView.separated(
+                  itemBuilder: (context, index) {
+                    final bank = banks[index];
+                    return ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: BankLogo(bank: bank),
+                      title: Text(
+                        bank.name,
+                        style: TextStyle(
+                          color: colors.text,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      subtitle: Text(
+                        bank.code.isEmpty ? 'Nigeria' : 'Code ${bank.code}',
+                        style: TextStyle(
+                          color: colors.mutedText,
+                          fontSize: 11,
+                        ),
+                      ),
+                      onTap: () => widget.onSelected(bank),
+                    );
+                  },
+                  separatorBuilder: (_, _) => const SizedBox(height: 6),
+                  itemCount: banks.length,
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SheetInput extends StatelessWidget {
+  const _SheetInput({
+    required this.controller,
+    required this.label,
+    required this.hint,
+    this.keyboardType,
+    this.readOnly = false,
+  });
+
+  final TextEditingController controller;
+  final String label;
+  final String hint;
+  final TextInputType? keyboardType;
+  final bool readOnly;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.citiRideColors;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(color: colors.text, fontSize: 15),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: controller,
+          readOnly: readOnly,
+          keyboardType: keyboardType,
+          style: TextStyle(color: colors.text, fontSize: 16),
+          decoration: InputDecoration(
+            hintText: hint,
+            filled: true,
+            fillColor: colors.inputFill,
+            hintStyle: TextStyle(color: colors.mutedText),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(999),
+              borderSide: BorderSide.none,
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 20,
+              vertical: 16,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }

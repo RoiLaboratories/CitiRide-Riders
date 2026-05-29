@@ -576,6 +576,7 @@ class _RouteScreenState extends State<RouteScreen> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final colors = context.citiRideColors;
     final editingPickup = _activeField == _RouteInputField.pickup;
     final editingDestination = _activeField == _RouteInputField.destination;
     final showingSuggestions =
@@ -583,19 +584,19 @@ class _RouteScreenState extends State<RouteScreen> {
         (editingDestination && _destinationController.text.trim().isNotEmpty);
 
     return Scaffold(
-      backgroundColor: _bg,
+      backgroundColor: colors.background,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: Icon(Icons.close_rounded, size: 22, color: Colors.white),
+          icon: Icon(Icons.close_rounded, size: 22, color: colors.text),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Your Route',
           style: TextStyle(
-            color: Colors.white,
+            color: colors.text,
             fontSize: 16,
             fontWeight: FontWeight.w700,
           ),
@@ -664,6 +665,8 @@ class _RouteScreenState extends State<RouteScreen> {
   }
 
   Widget _pickupRow() {
+    final colors = context.citiRideColors;
+
     return InkWell(
       onTap: () {
         setState(() => _activeField = _RouteInputField.pickup);
@@ -674,9 +677,9 @@ class _RouteScreenState extends State<RouteScreen> {
         height: 56,
         padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
-          color: _surface,
+          color: colors.surfaceAlt,
           borderRadius: BorderRadius.circular(28),
-          border: Border.all(color: _border),
+          border: Border.all(color: colors.border),
         ),
         child: Row(
           children: [
@@ -706,17 +709,17 @@ class _RouteScreenState extends State<RouteScreen> {
                 decoration: InputDecoration(
                   isDense: true,
                   hintText: _loadingPickup ? 'Detecting location...' : 'Pickup',
-                  hintStyle: const TextStyle(color: _muted, fontSize: 16),
+                  hintStyle: TextStyle(color: colors.mutedText, fontSize: 16),
                   border: InputBorder.none,
                   enabledBorder: InputBorder.none,
                   focusedBorder: InputBorder.none,
                   filled: false,
                   fillColor: Colors.transparent,
                 ),
-                cursorColor: Colors.white,
-                style: const TextStyle(
+                cursorColor: colors.text,
+                style: TextStyle(
                   fontSize: 16,
-                  color: Colors.white,
+                  color: colors.text,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -726,10 +729,10 @@ class _RouteScreenState extends State<RouteScreen> {
                 setState(() => _activeField = _RouteInputField.pickup);
                 _pickupFocus.requestFocus();
               },
-              customBorder: const CircleBorder(),
-              child: const Padding(
+              customBorder: CircleBorder(),
+              child: Padding(
                 padding: EdgeInsets.all(4),
-                child: Icon(Icons.add_rounded, size: 34, color: Colors.white),
+                child: Icon(Icons.add_rounded, size: 34, color: colors.text),
               ),
             ),
           ],
@@ -739,6 +742,8 @@ class _RouteScreenState extends State<RouteScreen> {
   }
 
   Widget _destinationRow() {
+    final colors = context.citiRideColors;
+
     return Row(
       children: [
         Expanded(
@@ -746,7 +751,7 @@ class _RouteScreenState extends State<RouteScreen> {
             height: 56,
             padding: const EdgeInsets.symmetric(horizontal: 12),
             decoration: BoxDecoration(
-              color: _surface,
+              color: colors.surfaceAlt,
               borderRadius: BorderRadius.circular(28),
               border: Border.all(
                 color: Theme.of(context).colorScheme.primary,
@@ -755,9 +760,9 @@ class _RouteScreenState extends State<RouteScreen> {
             ),
             child: Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.search_rounded,
-                  color: Color(0xFFBDBDBD),
+                  color: colors.mutedText,
                   size: 26,
                 ),
                 const SizedBox(width: 8),
@@ -767,11 +772,11 @@ class _RouteScreenState extends State<RouteScreen> {
                     focusNode: _destinationFocus,
                     textInputAction: TextInputAction.search,
                     onSubmitted: (_) => _bookRideFromButton(),
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       isDense: true,
                       hintText: 'Your Destination',
                       hintStyle: TextStyle(
-                        color: Color(0xFF9D9FA5),
+                        color: colors.mutedText,
                         fontSize: 16,
                       ),
                       border: InputBorder.none,
@@ -780,9 +785,9 @@ class _RouteScreenState extends State<RouteScreen> {
                       filled: false,
                       fillColor: Colors.transparent,
                     ),
-                    cursorColor: Colors.white,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    cursorColor: colors.text,
+                    style: TextStyle(
+                      color: colors.text,
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
                     ),
@@ -818,9 +823,9 @@ class _RouteScreenState extends State<RouteScreen> {
         InkWell(
           onTap: _swapLocations,
           borderRadius: BorderRadius.circular(20),
-          child: const Padding(
-            padding: EdgeInsets.all(2),
-            child: Icon(Icons.swap_vert_rounded, size: 30, color: Colors.white),
+          child: Padding(
+            padding: const EdgeInsets.all(2),
+            child: Icon(Icons.swap_vert_rounded, size: 30, color: colors.text),
           ),
         ),
       ],
@@ -828,6 +833,8 @@ class _RouteScreenState extends State<RouteScreen> {
   }
 
   Widget _suggestionsCard() {
+    final colors = context.citiRideColors;
+
     if (_loadingSuggestions) {
       return const Align(
         alignment: Alignment.topCenter,
@@ -853,14 +860,14 @@ class _RouteScreenState extends State<RouteScreen> {
           margin: const EdgeInsets.only(top: 6),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
-            color: _surfaceAlt,
+            color: colors.surfaceAlt,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: _border),
+            border: Border.all(color: colors.border),
           ),
-          child: const Text(
+          child: Text(
             'No matching places found. Try another search term.',
             style: TextStyle(
-              color: _muted,
+              color: colors.mutedText,
               fontSize: 13,
               fontWeight: FontWeight.w500,
             ),
@@ -877,9 +884,9 @@ class _RouteScreenState extends State<RouteScreen> {
           width: double.infinity,
           margin: const EdgeInsets.only(top: 6),
           decoration: BoxDecoration(
-            color: _surfaceAlt,
+            color: colors.surfaceAlt,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: _border),
+            border: Border.all(color: colors.border),
           ),
           child: ListView.separated(
             padding: EdgeInsets.zero,
@@ -918,8 +925,8 @@ class _RouteScreenState extends State<RouteScreen> {
                           children: [
                             Text(
                               suggestion['name'] ?? '',
-                              style: const TextStyle(
-                                color: Colors.white,
+                              style: TextStyle(
+                                color: colors.text,
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -929,8 +936,8 @@ class _RouteScreenState extends State<RouteScreen> {
                                 suggestion['subtitle'] ?? '',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  color: _muted,
+                                style: TextStyle(
+                                  color: colors.mutedText,
                                   fontSize: 12,
                                 ),
                               ),
@@ -938,10 +945,10 @@ class _RouteScreenState extends State<RouteScreen> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      const Icon(
+                      Icon(
                         Icons.north_west_rounded,
                         size: 16,
-                        color: _muted,
+                        color: colors.mutedText,
                       ),
                     ],
                   ),
@@ -961,6 +968,8 @@ class _RouteScreenState extends State<RouteScreen> {
     required IconData icon,
     required VoidCallback onTap,
   }) {
+    final colors = context.citiRideColors;
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -970,9 +979,9 @@ class _RouteScreenState extends State<RouteScreen> {
           margin: const EdgeInsets.only(bottom: 10),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
-            color: _surface,
+            color: colors.surface,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: _border),
+            border: Border.all(color: colors.border),
           ),
           child: Row(
             children: [
@@ -992,8 +1001,8 @@ class _RouteScreenState extends State<RouteScreen> {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: colors.text,
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
                       ),
@@ -1001,7 +1010,7 @@ class _RouteScreenState extends State<RouteScreen> {
                     const SizedBox(height: 2),
                     Text(
                       subtitle,
-                      style: const TextStyle(color: _muted, fontSize: 11),
+                      style: TextStyle(color: colors.mutedText, fontSize: 11),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -1011,8 +1020,8 @@ class _RouteScreenState extends State<RouteScreen> {
               const SizedBox(width: 10),
               Text(
                 distance,
-                style: const TextStyle(
-                  color: _muted,
+                style: TextStyle(
+                  color: colors.mutedText,
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
                 ),
@@ -1025,6 +1034,8 @@ class _RouteScreenState extends State<RouteScreen> {
   }
 
   Widget _savedAndRecentLocationsContent() {
+    final colors = context.citiRideColors;
+
     if (_loadingRecents) {
       return Center(
         child: SizedBox(
@@ -1042,12 +1053,12 @@ class _RouteScreenState extends State<RouteScreen> {
       padding: EdgeInsets.zero,
       children: [
         if (_savedLocations.isNotEmpty) ...[
-          const Text(
+          Text(
             'Saved Locations',
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
-              color: Colors.white,
+              color: colors.text,
               letterSpacing: -0.1,
             ),
           ),
@@ -1064,12 +1075,12 @@ class _RouteScreenState extends State<RouteScreen> {
           ),
           const SizedBox(height: 10),
         ],
-        const Text(
+        Text(
           'Recent locations',
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w700,
-            color: Colors.white,
+            color: colors.text,
             letterSpacing: -0.1,
           ),
         ),

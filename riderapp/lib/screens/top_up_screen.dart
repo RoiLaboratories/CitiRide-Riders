@@ -11,9 +11,7 @@ class TopUpScreen extends StatefulWidget {
 }
 
 class _TopUpScreenState extends State<TopUpScreen> {
-  static const Color _bg = Color(0xFF101010);
   static const Color _panel = Color(0xFF181818);
-  static const Color _panelAlt = Color(0xFF242424);
   static const Color _yellow = CitiRideTheme.primaryYellow;
   static const Color _muted = Color(0xFF9B9B9B);
 
@@ -53,8 +51,10 @@ class _TopUpScreenState extends State<TopUpScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.citiRideColors;
+
     return Scaffold(
-      backgroundColor: _bg,
+      backgroundColor: colors.background,
       body: SafeArea(
         child: Column(
           children: [
@@ -159,6 +159,8 @@ class _FlowHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.citiRideColors;
+
     return SizedBox(
       height: 58,
       child: Row(
@@ -167,9 +169,9 @@ class _FlowHeader extends StatelessWidget {
             width: 56,
             child: IconButton(
               onPressed: onBack,
-              icon: const Icon(
+              icon: Icon(
                 Icons.arrow_back_ios_new_rounded,
-                color: Colors.white,
+                color: colors.text,
                 size: 18,
               ),
             ),
@@ -178,8 +180,8 @@ class _FlowHeader extends StatelessWidget {
             child: Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: colors.text,
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
               ),
@@ -197,12 +199,14 @@ class _DebitCardTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.citiRideColors;
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: _TopUpScreenState._panelAlt,
+        color: colors.surfaceAlt,
         borderRadius: BorderRadius.circular(9),
-        border: Border.all(color: const Color(0xFF333333)),
+        border: Border.all(color: colors.border),
       ),
       child: Row(
         children: [
@@ -220,22 +224,22 @@ class _DebitCardTile extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'Moniepoint',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: colors.text,
                     fontSize: 14,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
-                SizedBox(height: 3),
+                const SizedBox(height: 3),
                 Text(
                   '5064 8393 **** 4051',
-                  style: TextStyle(color: Color(0xFF9B9B9B), fontSize: 11),
+                  style: TextStyle(color: colors.mutedText, fontSize: 11),
                 ),
               ],
             ),
@@ -332,6 +336,9 @@ class _QuickAmountChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.citiRideColors;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Expanded(
       child: InkWell(
         onTap: onTap,
@@ -342,18 +349,18 @@ class _QuickAmountChip extends StatelessWidget {
           decoration: BoxDecoration(
             color: selected
                 ? _TopUpScreenState._yellow
-                : _TopUpScreenState._panel,
+                : (isDark ? _TopUpScreenState._panel : colors.surfaceAlt),
             borderRadius: BorderRadius.circular(999),
             border: Border.all(
               color: selected
                   ? _TopUpScreenState._yellow
-                  : const Color(0xFF333333),
+                  : colors.border,
             ),
           ),
           child: Text(
             '\u20A6$amount',
             style: TextStyle(
-              color: selected ? Colors.black : Colors.white,
+              color: selected ? Colors.black : colors.text,
               fontSize: 11,
               fontWeight: FontWeight.w800,
             ),

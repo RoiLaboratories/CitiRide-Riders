@@ -136,7 +136,9 @@ class _CreateWalletPinScreenState extends State<CreateWalletPinScreen> {
         _onBackPressed();
       },
       child: Scaffold(
-        backgroundColor: Theme.of(context).extension<CitiRideThemeColors>()?.surface ?? const Color(0xFFF2F2F4),
+        backgroundColor:
+            Theme.of(context).extension<CitiRideThemeColors>()?.surface ??
+            const Color(0xFFF2F2F4),
         body: SafeArea(
           child: LayoutBuilder(
             builder: (context, constraints) {

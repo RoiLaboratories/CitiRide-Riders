@@ -24,16 +24,18 @@ class HomeModalSheet extends ConsumerWidget {
               'address': 'Oba Market Road, Benin City 300102',
             },
           ];
+    final colors = context.citiRideColors;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: const Color(0xF2111111),
+        color: isDark ? const Color(0xF2111111) : Colors.white,
         borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: const Color(0xFF2E2E2E)),
+        border: Border.all(color: colors.border),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(130),
+            color: Colors.black.withAlpha(isDark ? 130 : 28),
             blurRadius: 26,
             offset: const Offset(0, -4),
           ),
@@ -55,6 +57,7 @@ class HomeModalSheet extends ConsumerWidget {
             return _locationTile(
               name: location['name'] ?? '',
               address: location['address'] ?? '',
+              colors: colors,
             );
           }),
         ],
@@ -67,6 +70,8 @@ class HomeModalSheet extends ConsumerWidget {
   Widget _searchInput(BuildContext context) {
     final screenWidth = MediaQuery.sizeOf(context).width;
     final compact = screenWidth < 360;
+    final colors = context.citiRideColors;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return GestureDetector(
       onTap: () {
@@ -76,9 +81,9 @@ class HomeModalSheet extends ConsumerWidget {
         height: 56,
         padding: EdgeInsets.symmetric(horizontal: compact ? 16 : 20),
         decoration: BoxDecoration(
-          color: const Color(0xFF171717),
+          color: isDark ? const Color(0xFF171717) : colors.surfaceAlt,
           borderRadius: BorderRadius.circular(30),
-          border: Border.all(color: const Color(0xFF5A5A5A)),
+          border: Border.all(color: colors.border),
         ),
         child: Row(
           children: [
@@ -86,14 +91,14 @@ class HomeModalSheet extends ConsumerWidget {
               'images/search_icon.png',
               width: compact ? 24 : 26,
               height: compact ? 24 : 26,
-              color: const Color(0xFFBDBDBD),
+              color: colors.mutedText,
             ),
             SizedBox(width: compact ? 12 : 18),
             Expanded(
               child: Text(
                 'Where are we going today?',
                 style: TextStyle(
-                  color: const Color(0xFFBDBDBD),
+                  color: colors.mutedText,
                   fontSize: compact ? 15.5 : 17,
                   fontWeight: FontWeight.w600,
                 ),
@@ -110,7 +115,11 @@ class HomeModalSheet extends ConsumerWidget {
 
   // ================= LOCATION TILE =================
 
-  Widget _locationTile({required String name, required String address}) {
+  Widget _locationTile({
+    required String name,
+    required String address,
+    required CitiRideThemeColors colors,
+  }) {
     final icon = _locationIcon(name);
 
     return Padding(
@@ -134,10 +143,10 @@ class HomeModalSheet extends ConsumerWidget {
               children: [
                 Text(
                   name,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.w800,
                     fontSize: 14,
-                    color: Colors.white,
+                    color: colors.text,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -145,10 +154,10 @@ class HomeModalSheet extends ConsumerWidget {
                 const SizedBox(height: 3),
                 Text(
                   address,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
-                    color: Color(0xFF9B9B9B),
+                    color: colors.mutedText,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,

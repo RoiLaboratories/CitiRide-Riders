@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/google_maps_places_service.dart';
+import '../theme/app_theme.dart';
 
 class HomeTopBar extends StatefulWidget {
   const HomeTopBar({
@@ -77,11 +78,14 @@ class _HomeTopBarState extends State<HomeTopBar> {
 
   Widget _buildAvatarImage() {
     Widget defaultAvatar() {
-      return Image.asset(
-        'images/profile.png',
-        fit: BoxFit.cover,
-        errorBuilder: (_, _, _) =>
-            const Icon(Icons.person, color: Colors.white, size: 24),
+      return Transform.scale(
+        scale: 1.72,
+        child: Image.asset(
+          'images/profile.png',
+          fit: BoxFit.cover,
+          errorBuilder: (_, _, _) =>
+              const Icon(Icons.person, color: Colors.white, size: 24),
+        ),
       );
     }
 
@@ -198,6 +202,8 @@ class _HomeTopBarState extends State<HomeTopBar> {
     final visibleAddress = _currentAddress.trim().isEmpty
         ? _locationText
         : _currentAddress;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colors = context.citiRideColors;
 
     return Row(
       children: [
@@ -231,7 +237,7 @@ class _HomeTopBarState extends State<HomeTopBar> {
                 color: Theme.of(context).colorScheme.primary,
                 border: Border.all(
                   color: Theme.of(context).colorScheme.primary,
-                  width: 3,
+                  width: 2,
                 ),
               ),
               child: ClipOval(child: _buildAvatarImage()),
@@ -248,12 +254,12 @@ class _HomeTopBarState extends State<HomeTopBar> {
                 height: 48,
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
-                  color: const Color(0xE6171717),
+                  color: isDark ? const Color(0xE6171717) : Colors.white,
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: const Color(0xFF5E5E5E)),
+                  border: Border.all(color: colors.border),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withAlpha(80),
+                      color: Colors.black.withAlpha(isDark ? 80 : 24),
                       blurRadius: 14,
                       offset: const Offset(0, 5),
                     ),
@@ -298,7 +304,7 @@ class _HomeTopBarState extends State<HomeTopBar> {
                                   style: GoogleFonts.poppins(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w600,
-                                    color: Colors.white,
+                                    color: colors.text,
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -334,12 +340,13 @@ class _HomeTopBarState extends State<HomeTopBar> {
             ),
             child: CircleAvatar(
               radius: 22,
-              backgroundColor: Colors.white,
+              backgroundColor: isDark ? const Color(0xFF171717) : Colors.white,
               child: Center(
-                child: Icon(
-                  Icons.navigation_rounded,
-                  color: const Color(0xFFE93A3A),
-                  size: 21,
+                child: Image.asset(
+                  isDark ? 'images/bell1.png' : 'images/bell.png',
+                  width: 24,
+                  height: 24,
+                  fit: BoxFit.contain,
                 ),
               ),
             ),

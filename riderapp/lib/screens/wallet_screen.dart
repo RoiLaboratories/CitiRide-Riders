@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../components/profile_avatar.dart';
+import '../components/wallet_balance_card.dart';
 import '../models/wallet_balance.dart';
 import '../theme/app_theme.dart';
 import 'transaction_screen.dart';
@@ -18,55 +20,13 @@ class _WalletScreenState extends State<WalletScreen> {
 
   double balance = WalletBalance.balance;
 
-  final List<_WalletTransaction> _transactions = const [
-    _WalletTransaction(
-      title: 'Payment to Ahmed',
-      subtitle: '2:30 PM - Fri, 21 Jun 2025',
-      amount: '-\u20A6435.54',
-      amountColor: Color(0xFFFF4343),
-      icon: Icons.person_rounded,
-      avatarColor: Color(0xFFF3C2CD),
-    ),
-    _WalletTransaction(
-      title: 'Wallet Top Up',
-      subtitle: '2:30 PM - Fri, 21 Jun 2025',
-      amount: '+\u20A6435.54',
-      amountColor: Color(0xFF24D05A),
-      icon: Icons.arrow_downward_rounded,
-      avatarColor: Color(0xFFD9F5DD),
-      isCredit: true,
-      accountNumber: '3748594032',
-      bank: 'UBA',
-    ),
-    _WalletTransaction(
-      title: 'Transfer to Osi',
-      subtitle: '2:30 PM - Fri, 21 Jun 2025',
-      amount: '-\u20A6435.54',
-      amountColor: Color(0xFFFF4343),
-      icon: Icons.arrow_upward_rounded,
-      avatarColor: Color(0xFFF3C2CD),
-    ),
-  ];
-
   Future<void> _refreshBalance() async {
     setState(() {
       balance = WalletBalance.balance;
     });
   }
 
-  void _copyWalletDetails() {
-    Clipboard.setData(const ClipboardData(text: 'Paystack-Titan 98291029281'));
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Wallet details copied'),
-        behavior: SnackBarBehavior.floating,
-        duration: Duration(seconds: 2),
-      ),
-    );
-  }
-
-  void _openTransactionDetails(_WalletTransaction transaction) {
+  void _openTransactionDetails(WalletTransaction transaction) {
     Navigator.pushNamed(
       context,
       '/transaction-details',
@@ -102,11 +62,11 @@ class _WalletScreenState extends State<WalletScreen> {
         final colors = sheetContext.citiRideColors;
 
         return Container(
-          margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-          padding: EdgeInsets.fromLTRB(18, 10, 18, bottomInset + 18),
+          margin: const EdgeInsets.fromLTRB(14, 0, 14, 18),
+          padding: EdgeInsets.fromLTRB(20, 12, 20, bottomInset + 20),
           decoration: BoxDecoration(
             color: colors.surfaceAlt,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(24),
             border: Border.all(color: colors.border),
           ),
           child: Column(
@@ -124,39 +84,49 @@ class _WalletScreenState extends State<WalletScreen> {
                   ),
                 ),
               ),
-              Text(
-                'Add money',
-                style: TextStyle(
-                  color: colors.text,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
+              Center(
+                child: ProfileAvatar(
+                  size: 56,
+                  borderColor: colors.border,
+                  borderWidth: 1,
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                'Choose how you want to fund your CitiRide wallet.',
-                style: TextStyle(color: colors.mutedText, fontSize: 12),
+              const SizedBox(height: 14),
+              Center(
+                child: Text(
+                  'Ahmed Singer',
+                  style: TextStyle(
+                    color: colors.text,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 22),
+              _WalletDetailCopyRow(
+                label: "Recipient's account name",
+                value: 'CitiRide - Umoru Osigbemhe',
+                copyValue: 'CitiRide - Umoru Osigbemhe',
+              ),
+              _WalletDetailCopyRow(
+                label: 'Account number',
+                value: '98291029281',
+                copyValue: '98291029281',
+              ),
+              _WalletDetailCopyRow(
+                label: 'Bank',
+                value: 'Paystack-Titan',
+                copyValue: 'Paystack-Titan',
+                showDivider: false,
               ),
               const SizedBox(height: 18),
               _FundingMethodTile(
                 icon: Icons.credit_card_rounded,
-                title: 'Debit card',
-                subtitle: 'Fund instantly with a saved card',
+                title: 'Fund with debit card',
+                subtitle: 'Use a saved card instead',
                 onTap: () async {
                   Navigator.pop(sheetContext);
                   await Navigator.pushNamed(context, '/top-up');
-                  if (!mounted) return;
-                  await _refreshBalance();
-                },
-              ),
-              const SizedBox(height: 10),
-              _FundingMethodTile(
-                icon: Icons.account_balance_rounded,
-                title: 'Bank transfer',
-                subtitle: 'Send money to your wallet account',
-                onTap: () async {
-                  Navigator.pop(sheetContext);
-                  await Navigator.pushNamed(context, '/transfer');
                   if (!mounted) return;
                   await _refreshBalance();
                 },
@@ -190,39 +160,41 @@ class _WalletScreenState extends State<WalletScreen> {
                 padding: const EdgeInsets.fromLTRB(18, 8, 18, 120),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
-                    _WalletBalanceCard(
-                      balance: balance,
-                      onCopy: _copyWalletDetails,
-                    ),
+                    _WalletBalanceCard(balance: balance),
                     const SizedBox(height: 18),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         _WalletAction(
-                          icon: Icons.add_rounded,
+                          imageAsset: 'images/add_money.png',
                           label: 'Add money',
                           onTap: _showAddMoneySheet,
                         ),
                         const SizedBox(width: 34),
                         _WalletAction(
-                          icon: Icons.arrow_upward_rounded,
+                          imageAsset: 'images/withdraw.png',
                           label: 'Withdraw',
                           onTap: _openWithdrawalFlow,
                         ),
                       ],
                     ),
                     const SizedBox(height: 18),
-                    _TransactionsPanel(
-                      transactions: _transactions,
-                      onViewAll: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const TransactionScreen(),
-                          ),
+                    ValueListenableBuilder<List<WalletTransaction>>(
+                      valueListenable: WalletBalance.transactions,
+                      builder: (context, transactions, _) {
+                        return _TransactionsPanel(
+                          transactions: transactions,
+                          onViewAll: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const TransactionScreen(),
+                              ),
+                            );
+                          },
+                          onTapTransaction: _openTransactionDetails,
                         );
                       },
-                      onTapTransaction: _openTransactionDetails,
                     ),
                   ]),
                 ),
@@ -276,13 +248,8 @@ class _WalletHeader extends StatelessWidget {
             ),
             SizedBox(
               width: 48,
-              child: IconButton(
-                onPressed: () => Navigator.pushNamed(context, '/notifications'),
-                icon: Icon(
-                  Icons.notifications_none_rounded,
-                  color: colors.text,
-                  size: 22,
-                ),
+              child: WalletNotificationButton(
+                onTap: () => Navigator.pushNamed(context, '/notifications'),
               ),
             ),
           ],
@@ -293,145 +260,174 @@ class _WalletHeader extends StatelessWidget {
 }
 
 class _WalletBalanceCard extends StatelessWidget {
-  const _WalletBalanceCard({required this.balance, required this.onCopy});
+  const _WalletBalanceCard({required this.balance});
 
   final double balance;
-  final VoidCallback onCopy;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 174,
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(18)),
-      clipBehavior: Clip.antiAlias,
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: Image.asset('images/modal 1.png', fit: BoxFit.fill),
-          ),
-          const Positioned(
-            top: 19,
-            left: 0,
-            right: 0,
-            child: Text(
-              'Username',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.black,
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ),
-          Positioned(
-            left: 22,
-            right: 22,
-            top: 76,
-            bottom: 18,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return WalletBalanceCard(balance: balance);
+  }
+}
+
+/*
+class _UnusedWalletBalanceCardStateShim {
+  const _UnusedWalletBalanceCardStateShim();
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(18),
+      child: AspectRatio(
+        aspectRatio: 333 / 169,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final width = constraints.maxWidth;
+            final height = constraints.maxHeight;
+            final horizontal = width * 0.07;
+
+            return Stack(
               children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 16,
-                      height: 16,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFF5332F),
-                        shape: BoxShape.circle,
-                      ),
+                Positioned.fill(
+                  child: Image.asset('images/modal 1.png', fit: BoxFit.fill),
+                ),
+                Positioned(
+                  top: height * 0.12,
+                  left: horizontal,
+                  right: horizontal,
+                  child: const Text(
+                    'Elliot Accra',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
                     ),
-                    Transform.translate(
-                      offset: const Offset(-5, 0),
-                      child: Container(
-                        width: 16,
-                        height: 16,
+                  ),
+                ),
+                Positioned(
+                  left: horizontal,
+                  top: height * 0.45,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 15,
+                        height: 15,
                         decoration: const BoxDecoration(
-                          color: Color(0xFFFFA929),
+                          color: Color(0xFFF5332F),
                           shape: BoxShape.circle,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                const Spacer(),
-                const Text(
-                  'Total Balance',
-                  style: TextStyle(
-                    color: Color(0xFF9C9CA3),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
+                      Transform.translate(
+                        offset: const Offset(-5, 0),
+                        child: Container(
+                          width: 15,
+                          height: 15,
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFFFA929),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        '\u20A6${balance.toStringAsFixed(2)}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 28,
-                          height: 1,
+                Positioned(
+                  left: horizontal,
+                  top: height * 0.62,
+                  child: const Text(
+                    'Total Balance',
+                    style: TextStyle(
+                      color: Color(0xFF9C9CA3),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                Positioned(
+                  left: horizontal,
+                  right: horizontal + 34,
+                  top: height * 0.72,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      _hidden
+                          ? '\u20A6••••••'
+                          : '\u20A6${widget.balance.toStringAsFixed(2)}',
+                      maxLines: 1,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 27,
+                        height: 1,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  right: horizontal,
+                  top: height * 0.69,
+                  child: InkWell(
+                    onTap: () => setState(() => _hidden = !_hidden),
+                    customBorder: const CircleBorder(),
+                    child: Padding(
+                      padding: const EdgeInsets.all(6),
+                      child: Icon(
+                        _hidden
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
+                        color: Color(0xFFD5D5D8),
+                        size: 18,
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  left: horizontal,
+                  right: horizontal,
+                  bottom: height * 0.08,
+                  child: const Row(
+                    children: [
+                      Text(
+                        '**2345',
+                        style: TextStyle(
+                          color: Color(0xFF8B8B91),
+                          fontSize: 11,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                    ),
-                    InkWell(
-                      onTap: onCopy,
-                      customBorder: const CircleBorder(),
-                      child: const Padding(
-                        padding: EdgeInsets.all(6),
-                        child: Icon(
-                          Icons.visibility_outlined,
-                          color: Color(0xFFD5D5D8),
-                          size: 18,
+                      Spacer(),
+                      Text(
+                        '****4342',
+                        style: TextStyle(
+                          color: Color(0xFF8B8B91),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                const Row(
-                  children: [
-                    Text(
-                      '**2345',
-                      style: TextStyle(
-                        color: Color(0xFF8B8B91),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    Spacer(),
-                    Text(
-                      '****4342',
-                      style: TextStyle(
-                        color: Color(0xFF8B8B91),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
-            ),
-          ),
-        ],
+            );
+          },
+        ),
       ),
     );
   }
 }
 
+*/
 class _WalletAction extends StatelessWidget {
   const _WalletAction({
-    required this.icon,
+    required this.imageAsset,
     required this.label,
     required this.onTap,
   });
 
-  final IconData icon;
+  final String imageAsset;
   final String label;
   final VoidCallback onTap;
 
@@ -454,7 +450,8 @@ class _WalletAction extends StatelessWidget {
                 shape: BoxShape.circle,
                 border: Border.all(color: colors.border),
               ),
-              child: Icon(icon, color: colors.text, size: 23),
+              clipBehavior: Clip.antiAlias,
+              child: Image.asset(imageAsset, fit: BoxFit.cover),
             ),
             const SizedBox(height: 7),
             Text(
@@ -479,9 +476,9 @@ class _TransactionsPanel extends StatelessWidget {
     required this.onTapTransaction,
   });
 
-  final List<_WalletTransaction> transactions;
+  final List<WalletTransaction> transactions;
   final VoidCallback onViewAll;
-  final ValueChanged<_WalletTransaction> onTapTransaction;
+  final ValueChanged<WalletTransaction> onTapTransaction;
 
   @override
   Widget build(BuildContext context) {
@@ -589,7 +586,7 @@ class _WalletTransactionTile extends StatelessWidget {
     required this.onTap,
   });
 
-  final _WalletTransaction transaction;
+  final WalletTransaction transaction;
   final VoidCallback onTap;
 
   @override
@@ -729,26 +726,69 @@ class _FundingMethodTile extends StatelessWidget {
   }
 }
 
-class _WalletTransaction {
-  const _WalletTransaction({
-    required this.title,
-    required this.subtitle,
-    required this.amount,
-    required this.amountColor,
-    required this.icon,
-    required this.avatarColor,
-    this.isCredit = false,
-    this.accountNumber,
-    this.bank,
+class _WalletDetailCopyRow extends StatelessWidget {
+  const _WalletDetailCopyRow({
+    required this.label,
+    required this.value,
+    required this.copyValue,
+    this.showDivider = true,
   });
 
-  final String title;
-  final String subtitle;
-  final String amount;
-  final Color amountColor;
-  final IconData icon;
-  final Color avatarColor;
-  final bool isCredit;
-  final String? accountNumber;
-  final String? bank;
+  final String label;
+  final String value;
+  final String copyValue;
+  final bool showDivider;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.citiRideColors;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      decoration: BoxDecoration(
+        border: showDivider
+            ? Border(bottom: BorderSide(color: colors.border))
+            : null,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(color: colors.mutedText, fontSize: 12),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: TextStyle(
+                    color: colors.text,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: copyValue));
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Copied'),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
+            icon: const Icon(
+              Icons.copy_rounded,
+              color: CitiRideTheme.primaryYellow,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

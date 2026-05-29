@@ -203,14 +203,12 @@ class _ChangeWalletPinScreenState extends State<ChangeWalletPinScreen> {
                         width: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                        color: Color(0xFFFFFFFF),
-                      ),
-                    )
+                          color: Color(0xFFFFFFFF),
+                        ),
+                      )
                     : Text(
                         'Update wallet PIN',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: TextStyle(fontWeight: FontWeight.w600),
                       ),
               ),
             ),

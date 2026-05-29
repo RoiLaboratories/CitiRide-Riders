@@ -283,7 +283,9 @@ class _OTPScreenState extends ConsumerState<OTPScreen> {
                           Text(
                             'Resend code 0:${_resendTimer.toString().padLeft(2, '0')}',
                             style: GoogleFonts.poppins(
-                              color: Theme.of(context).brightness == Brightness.dark
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
                                   ? Colors.grey[400]
                                   : Colors.grey[600],
                             ),

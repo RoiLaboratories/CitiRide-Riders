@@ -119,6 +119,9 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
       await prefs.setString('wallet_account_number', '98291029281');
       await prefs.setString('wallet_phone', '+234${_phoneController.text}');
       await prefs.setString('wallet_email', _emailController.text.trim());
+      if ((prefs.getString('profile_email') ?? '').trim().isEmpty) {
+        await prefs.setString('profile_email', _emailController.text.trim());
+      }
       await prefs.setString('wallet_pin', _pin);
       await prefs.setString(
         'wallet_pin_last_updated',
