@@ -20,12 +20,6 @@ class RouteScreen extends StatefulWidget {
 }
 
 class _RouteScreenState extends State<RouteScreen> {
-  static const Color _bg = Color(0xFF101010);
-  static const Color _surface = Color(0xFF171717);
-  static const Color _surfaceAlt = Color(0xFF242424);
-  static const Color _border = Color(0xFF3A3A3A);
-  static const Color _muted = Color(0xFF9B9B9B);
-
   final TextEditingController _pickupController = TextEditingController();
   final TextEditingController _destinationController = TextEditingController();
   final FocusNode _pickupFocus = FocusNode();
@@ -637,20 +631,20 @@ class _RouteScreenState extends State<RouteScreen> {
                       ),
                     ),
                     child: _isBooking
-                        ? const SizedBox(
+                        ? SizedBox(
                             width: 22,
                             height: 22,
                             child: CircularProgressIndicator(
                               strokeWidth: 2.4,
                               valueColor: AlwaysStoppedAnimation<Color>(
-                                Color(0xFF101010),
+                                colorScheme.onPrimary,
                               ),
                             ),
                           )
-                        : const Text(
+                        : Text(
                             'Book Ride',
                             style: TextStyle(
-                              color: Colors.black,
+                              color: colorScheme.onPrimary,
                               fontSize: 15,
                               fontWeight: FontWeight.w800,
                             ),
@@ -760,11 +754,7 @@ class _RouteScreenState extends State<RouteScreen> {
             ),
             child: Row(
               children: [
-                Icon(
-                  Icons.search_rounded,
-                  color: colors.mutedText,
-                  size: 26,
-                ),
+                Icon(Icons.search_rounded, color: colors.mutedText, size: 26),
                 const SizedBox(width: 8),
                 Expanded(
                   child: TextField(
@@ -989,10 +979,10 @@ class _RouteScreenState extends State<RouteScreen> {
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE6E6E6),
+                  color: colors.inputFill,
                   borderRadius: BorderRadius.circular(18),
                 ),
-                child: Icon(icon, color: const Color(0xFF101010), size: 18),
+                child: Icon(icon, color: colors.text, size: 18),
               ),
               const SizedBox(width: 10),
               Expanded(

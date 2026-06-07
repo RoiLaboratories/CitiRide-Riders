@@ -16,20 +16,15 @@ class WalletWithdrawalFlow extends StatefulWidget {
 }
 
 class _WalletWithdrawalFlowState extends State<WalletWithdrawalFlow> {
-  static const Color _bg = Color(0xFF101010);
-  static const Color _panel = Color(0xFF181818);
-  static const Color _panelAlt = Color(0xFF242424);
-  static const Color _muted = Color(0xFF9B9B9B);
-
   final TextEditingController _amountController = TextEditingController();
   final TextEditingController _newAccountNumberController =
       TextEditingController();
-  final TextEditingController _newAccountNameController =
-      TextEditingController(text: 'Umoru Osigbemhe');
+  final TextEditingController _newAccountNameController = TextEditingController(
+    text: 'Umoru Osigbemhe',
+  );
   int _step = 0;
   int _selectedAccount = 0;
   bool _processing = false;
-  bool _hideBalance = false;
 
   static NigerianBank _bankByName(String name) {
     return NigerianBanksService.offlineBanks.firstWhere(
@@ -189,29 +184,26 @@ class _WalletWithdrawalFlowState extends State<WalletWithdrawalFlow> {
   }
 
   Widget _buildAccountStep() {
+    final colors = context.citiRideColors;
+
     return _page(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _MiniWalletCard(
-            balance: WalletBalance.balance,
-            hidden: _hideBalance,
-            onToggleVisibility: () =>
-                setState(() => _hideBalance = !_hideBalance),
-          ),
+          _MiniWalletCard(balance: WalletBalance.balance),
           const SizedBox(height: 22),
-          const Text(
+          Text(
             'Select bank account',
             style: TextStyle(
-              color: Colors.white,
+              color: colors.text,
               fontSize: 16,
               fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             'Choose where your withdrawal should be sent.',
-            style: TextStyle(color: _muted, fontSize: 12),
+            style: TextStyle(color: colors.mutedText, fontSize: 12),
           ),
           const SizedBox(height: 16),
           ...List.generate(_accounts.length, (index) {
@@ -241,17 +233,12 @@ class _WalletWithdrawalFlowState extends State<WalletWithdrawalFlow> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _MiniWalletCard(
-            balance: WalletBalance.balance,
-            hidden: _hideBalance,
-            onToggleVisibility: () =>
-                setState(() => _hideBalance = !_hideBalance),
-          ),
+          _MiniWalletCard(balance: WalletBalance.balance),
           const SizedBox(height: 22),
-          const Text(
+          Text(
             'Amount to withdraw',
             style: TextStyle(
-              color: Colors.white,
+              color: colors.text,
               fontSize: 16,
               fontWeight: FontWeight.w700,
             ),
@@ -341,6 +328,7 @@ class _WalletWithdrawalFlowState extends State<WalletWithdrawalFlow> {
 
   Widget _buildSuccessStep() {
     final account = _accounts[_selectedAccount];
+    final colors = context.citiRideColors;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(22, 18, 22, 24),
@@ -351,8 +339,9 @@ class _WalletWithdrawalFlowState extends State<WalletWithdrawalFlow> {
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(18, 24, 18, 22),
             decoration: BoxDecoration(
-              color: _panelAlt,
+              color: colors.surfaceAlt,
               borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: colors.border),
             ),
             child: Column(
               children: [
@@ -370,10 +359,10 @@ class _WalletWithdrawalFlowState extends State<WalletWithdrawalFlow> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Text(
+                Text(
                   'Transaction successful',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: colors.text,
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                   ),
@@ -436,13 +425,15 @@ class _WalletWithdrawalFlowState extends State<WalletWithdrawalFlow> {
       backgroundColor: Colors.transparent,
       builder: (sheetContext) {
         final inset = MediaQuery.viewInsetsOf(sheetContext).bottom;
+        final colors = sheetContext.citiRideColors;
 
         return Container(
           margin: EdgeInsets.fromLTRB(14, 0, 14, 18 + inset),
           padding: const EdgeInsets.fromLTRB(18, 12, 18, 18),
           decoration: BoxDecoration(
-            color: _panelAlt,
+            color: colors.surfaceAlt,
             borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: colors.border),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -461,8 +452,8 @@ class _WalletWithdrawalFlowState extends State<WalletWithdrawalFlow> {
               const SizedBox(height: 18),
               Text(
                 bank.name,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: colors.text,
                   fontSize: 18,
                   fontWeight: FontWeight.w800,
                 ),
@@ -561,20 +552,14 @@ class _FlowHeader extends StatelessWidget {
 }
 
 class _MiniWalletCard extends StatelessWidget {
-  const _MiniWalletCard({
-    required this.balance,
-    required this.hidden,
-    required this.onToggleVisibility,
-  });
+  const _MiniWalletCard({required this.balance});
 
   final double balance;
-  final bool hidden;
-  final VoidCallback onToggleVisibility;
 
   @override
   Widget build(BuildContext context) {
     return WalletBalanceCard(balance: balance);
-/*
+    /*
     return Container(
       width: double.infinity,
       height: 126,
@@ -682,9 +667,7 @@ class _AccountTile extends StatelessWidget {
               : colors.surface,
           borderRadius: BorderRadius.circular(9),
           border: Border.all(
-            color: selected
-                ? CitiRideTheme.primaryYellow
-                : colors.border,
+            color: selected ? CitiRideTheme.primaryYellow : colors.border,
           ),
         ),
         child: Row(
@@ -708,10 +691,7 @@ class _AccountTile extends StatelessWidget {
                     '${account.number} - ${account.name}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: colors.mutedText,
-                      fontSize: 11,
-                    ),
+                    style: TextStyle(color: colors.mutedText, fontSize: 11),
                   ),
                 ],
               ),
@@ -802,14 +782,10 @@ class _QuickAmountChip extends StatelessWidget {
           height: 30,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: selected
-                ? CitiRideTheme.primaryYellow
-                : colors.surface,
+            color: selected ? CitiRideTheme.primaryYellow : colors.surface,
             borderRadius: BorderRadius.circular(99),
             border: Border.all(
-              color: selected
-                  ? CitiRideTheme.primaryYellow
-                  : colors.border,
+              color: selected ? CitiRideTheme.primaryYellow : colors.border,
             ),
           ),
           child: Text(
@@ -863,11 +839,7 @@ class _Breakdown extends StatelessWidget {
 }
 
 class _DetailRow extends StatelessWidget {
-  const _DetailRow({
-    required this.label,
-    required this.value,
-    this.valueColor,
-  });
+  const _DetailRow({required this.label, required this.value, this.valueColor});
 
   final String label;
   final String value;
@@ -974,79 +946,6 @@ class _WithdrawalAccount {
   final String name;
 }
 
-/*
-class _BankLogo extends StatelessWidget {
-  const _BankLogo(this.name, {this.asset});
-
-  final String name;
-  final String? asset;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 42,
-      height: 42,
-      decoration: BoxDecoration(
-        color: _brandColor(name),
-        shape: BoxShape.circle,
-        border: Border.all(color: Colors.white, width: 2),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: asset == null
-          ? Center(
-              child: Text(
-                name.characters.first.toUpperCase(),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 20,
-                ),
-              ),
-            )
-          : Padding(
-              padding: const EdgeInsets.all(4),
-              child: Image.asset(asset!, fit: BoxFit.contain),
-            ),
-    );
-  }
-
-  Color _brandColor(String bankName) {
-    final name = bankName.toLowerCase();
-    if (name.contains('first')) return const Color(0xFF0C3C7C);
-    if (name.contains('uba')) return const Color(0xFFE21A12);
-    if (name.contains('gtbank')) return const Color(0xFFE66D11);
-    if (name.contains('zenith')) return const Color(0xFFB71620);
-    if (name.contains('access')) return const Color(0xFFEE6A23);
-    if (name.contains('monie')) return const Color(0xFF0F6BEF);
-    return const Color(0xFF202D46);
-  }
-}
-
-class _NigerianBank {
-  const _NigerianBank(this.name, {this.logoAsset});
-
-  final String name;
-  final String? logoAsset;
-}
-
-const List<_NigerianBank> _nigerianBanks = [
-  _NigerianBank('Moniepoint', logoAsset: 'images/moniepoint.png'),
-  _NigerianBank('First Bank'),
-  _NigerianBank('UBA'),
-  _NigerianBank('Access Bank'),
-  _NigerianBank('GTBank'),
-  _NigerianBank('Zenith Bank'),
-  _NigerianBank('Fidelity Bank'),
-  _NigerianBank('Sterling Bank'),
-  _NigerianBank('Stanbic IBTC'),
-  _NigerianBank('Wema Bank'),
-  _NigerianBank('Union Bank'),
-  _NigerianBank('Opay'),
-  _NigerianBank('Kuda Bank'),
-  _NigerianBank('PalmPay'),
-];
-
-*/
 class _BankPickerSheet extends StatefulWidget {
   const _BankPickerSheet({required this.onSelected});
 
@@ -1057,8 +956,8 @@ class _BankPickerSheet extends StatefulWidget {
 }
 
 class _BankPickerSheetState extends State<_BankPickerSheet> {
-  late final Future<List<NigerianBank>> _banksFuture =
-      NigerianBanksService().fetchBanks();
+  late final Future<List<NigerianBank>> _banksFuture = NigerianBanksService()
+      .fetchBanks();
 
   @override
   Widget build(BuildContext context) {
@@ -1132,10 +1031,7 @@ class _BankPickerSheetState extends State<_BankPickerSheet> {
                       ),
                       subtitle: Text(
                         bank.code.isEmpty ? 'Nigeria' : 'Code ${bank.code}',
-                        style: TextStyle(
-                          color: colors.mutedText,
-                          fontSize: 11,
-                        ),
+                        style: TextStyle(color: colors.mutedText, fontSize: 11),
                       ),
                       onTap: () => widget.onSelected(bank),
                     );
@@ -1174,10 +1070,7 @@ class _SheetInput extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: TextStyle(color: colors.text, fontSize: 15),
-        ),
+        Text(label, style: TextStyle(color: colors.text, fontSize: 15)),
         const SizedBox(height: 8),
         TextField(
           controller: controller,

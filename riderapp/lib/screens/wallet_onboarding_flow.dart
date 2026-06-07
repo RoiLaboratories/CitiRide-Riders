@@ -22,22 +22,34 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
   );
   final TextEditingController _phoneOtpController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _ninController = TextEditingController();
+  final TextEditingController _transactionPinController =
+      TextEditingController();
+  final TextEditingController _confirmTransactionPinController =
+      TextEditingController();
 
   int _step = 0;
   String _pin = '';
   String _confirmPin = '';
-  bool _ageConsent = false;
+  String _transactionPin = '';
+  String _confirmTransactionPin = '';
   bool _termsConsent = false;
   bool _privacyConsent = false;
+  bool _marketingConsent = false;
   bool _isConfirmingPin = false;
   bool _isSaving = false;
   String? _pinError;
+  String? _ninError;
+  String? _transactionPinError;
 
   @override
   void dispose() {
     _phoneController.dispose();
     _phoneOtpController.dispose();
     _emailController.dispose();
+    _ninController.dispose();
+    _transactionPinController.dispose();
+    _confirmTransactionPinController.dispose();
     super.dispose();
   }
 
@@ -57,6 +69,12 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
         return 0.78;
       case 6:
         return 0.90;
+      case 7:
+        return 0.92;
+      case 8:
+        return 0.95;
+      case 9:
+        return 0.98;
       default:
         return 1;
     }
@@ -78,6 +96,12 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
         return 'Wallet';
       case 6:
         return _isConfirmingPin ? 'Confirm passcode' : 'Create passcode';
+      case 7:
+        return 'Wallet';
+      case 8:
+        return 'Wallet';
+      case 9:
+        return 'Wallet';
       default:
         return '';
     }
@@ -90,7 +114,7 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
       case 2:
         return _phoneController.text.replaceAll(RegExp(r'\D'), '').length >= 8;
       case 3:
-        return _ageConsent && _termsConsent && _privacyConsent;
+        return _termsConsent && _privacyConsent;
       case 4:
         return _phoneOtpController.text.length == 6;
       case 5:
@@ -99,6 +123,13 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
         ).hasMatch(_emailController.text.trim());
       case 6:
         return (_isConfirmingPin ? _confirmPin : _pin).length == 6;
+      case 7:
+        return true;
+      case 8:
+        return _ninController.text.trim().isNotEmpty;
+      case 9:
+        return _transactionPin.length == 6 &&
+            _confirmTransactionPin.length == 6;
       default:
         return true;
     }
@@ -123,6 +154,9 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
         await prefs.setString('profile_email', _emailController.text.trim());
       }
       await prefs.setString('wallet_pin', _pin);
+      await prefs.setString('wallet_transaction_pin', _transactionPin);
+      await prefs.setString('wallet_nin', _ninController.text.trim());
+      await prefs.setBool('wallet_marketing_consent', _marketingConsent);
       await prefs.setString(
         'wallet_pin_last_updated',
         DateTime.now().toIso8601String(),
@@ -166,20 +200,34 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
       return;
     }
 
+    if (_step == 8 && _ninController.text.trim().isEmpty) {
+      setState(() => _ninError = 'NIN is required');
+      return;
+    }
+
+    if (_step == 9) {
+      if (_transactionPin != _confirmTransactionPin) {
+        setState(() => _transactionPinError = 'Retry code');
+        return;
+      }
+      setState(() => _step = 10);
+      return;
+    }
+
     setState(() {
       _step += 1;
     });
   }
 
-  void _skipIdentity() {
+  void _skipEmail() {
     setState(() {
+      _emailController.clear();
       _step = 6;
-      _pinError = null;
     });
   }
 
   void _back() {
-    if (_step == 7) return;
+    if (_step == 10) return;
 
     if (_step == 6 && _isConfirmingPin) {
       setState(() {
@@ -228,21 +276,6 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
     });
   }
 
-  void _onOtpDigit(String digit) {
-    if (_phoneOtpController.text.length >= 6) return;
-    setState(() {
-      _phoneOtpController.text += digit;
-    });
-  }
-
-  void _onOtpDelete() {
-    final value = _phoneOtpController.text;
-    if (value.isEmpty) return;
-    setState(() {
-      _phoneOtpController.text = value.substring(0, value.length - 1);
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -257,13 +290,13 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
           child: Column(
             children: [
               _FlowHeader(
-                title: _title,
-                canBack: _step != 7,
-                showSkip: false,
+                title: _step <= 2 ? _title : '',
+                canBack: _step != 10,
+                showNeedHelp: _step >= 3 && _step <= 8,
+                showPhoneChip: _step == 6,
                 onBack: _back,
-                onSkip: _skipIdentity,
               ),
-              if (_step != 7)
+              if (_step < 6)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(24, 2, 24, 0),
                   child: _ProgressStrip(progress: _progress),
@@ -302,6 +335,12 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
         return _buildEmailStep();
       case 6:
         return _buildPinStep();
+      case 7:
+        return _buildIdentityOptionStep();
+      case 8:
+        return _buildNinStep();
+      case 9:
+        return _buildTransactionPinStep();
       default:
         return _buildSuccessStep();
     }
@@ -514,35 +553,60 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 8),
+          const SizedBox(height: 54),
           const Text(
             'CitiRide needs your consent to continue',
             style: TextStyle(
               color: Colors.white,
-              fontSize: 18,
+              fontSize: 22,
               fontWeight: FontWeight.w700,
+              height: 1.25,
             ),
           ),
-          const SizedBox(height: 18),
-          _ConsentTile(
-            selected: _ageConsent,
-            title: 'I am 18 years old and above',
-            subtitle: 'Your wallet account requires age confirmation.',
-            onTap: () => setState(() => _ageConsent = !_ageConsent),
-          ),
-          const SizedBox(height: 12),
-          _ConsentTile(
+          const SizedBox(height: 76),
+          _ConsentCheckboxLine(
             selected: _termsConsent,
-            title: 'I have read and agree to the Terms',
-            subtitle: 'This covers wallet access, transfers and fees.',
             onTap: () => setState(() => _termsConsent = !_termsConsent),
+            spans: const [
+              TextSpan(text: 'I have read and agree to the '),
+              TextSpan(
+                text: 'Terms and\nConditions',
+                style: TextStyle(color: Color(0xFF0B7CFF)),
+              ),
+              TextSpan(text: ' and '),
+              TextSpan(
+                text: 'Data privacy statement',
+                style: TextStyle(color: Color(0xFF0B7CFF)),
+              ),
+            ],
           ),
-          const SizedBox(height: 12),
-          _ConsentTile(
+          const SizedBox(height: 36),
+          _ConsentCheckboxLine(
             selected: _privacyConsent,
-            title: 'I consent to wallet verification checks',
-            subtitle: 'CitiRide may verify submitted details securely.',
             onTap: () => setState(() => _privacyConsent = !_privacyConsent),
+            spans: const [
+              TextSpan(text: 'I have read and agree to the '),
+              TextSpan(
+                text: 'Data\nprocessing consent',
+                style: TextStyle(color: Color(0xFF0B7CFF)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 36),
+          _ConsentCheckboxLine(
+            selected: _marketingConsent,
+            onTap: () => setState(() => _marketingConsent = !_marketingConsent),
+            spans: const [
+              TextSpan(
+                text:
+                    'I would like to receive marketing and\n'
+                    'promotional information ',
+              ),
+              TextSpan(
+                text: '(optional)',
+                style: TextStyle(color: Color(0xFF9B9B9B)),
+              ),
+            ],
           ),
           const Spacer(),
           _PrimaryWalletButton(
@@ -555,36 +619,59 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
   }
 
   Widget _buildPhoneVerificationStep() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+    return _screenPadding(
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 10),
+          const SizedBox(height: 54),
           const Text(
-            'Enter the 6-digit code sent to your phone number',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: _muted, fontSize: 13, height: 1.5),
-          ),
-          const SizedBox(height: 24),
-          _CodeBoxes(value: _phoneOtpController.text),
-          const SizedBox(height: 12),
-          TextButton(
-            onPressed: () {},
-            child: const Text(
-              "Didn't get the code?",
-              style: TextStyle(
-                color: _yellow,
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-              ),
+            'Verify Your Phone Number',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
             ),
           ),
-          const Spacer(),
-          _WalletKeypad(
-            onDigitPressed: _onOtpDigit,
-            onDeletePressed: _onOtpDelete,
+          const SizedBox(height: 16),
+          const Text(
+            "We've sent a 6 digit code to *** 2057. Check your SMS\n"
+            'and enter it here.',
+            style: TextStyle(color: _muted, fontSize: 14, height: 1.45),
           ),
-          const SizedBox(height: 22),
+          const SizedBox(height: 82),
+          _EditableCodeBoxes(
+            controller: _phoneOtpController,
+            value: _phoneOtpController.text,
+            onChanged: (_) => setState(() {}),
+          ),
+          const SizedBox(height: 36),
+          Row(
+            children: [
+              const Icon(Icons.info_outline_rounded, color: _yellow, size: 23),
+              const SizedBox(width: 16),
+              const Text(
+                "Didn't get the code?",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const Spacer(),
+              TextButton(
+                onPressed: () {},
+                child: const Text(
+                  'Resend',
+                  style: TextStyle(
+                    color: _yellow,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const Spacer(),
           _PrimaryWalletButton(
             label: 'Next',
             onPressed: _canContinue ? _next : null,
@@ -599,67 +686,92 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 8),
+          const SizedBox(height: 54),
           const Text(
-            "What's your email address",
+            "What's Your Email Address",
             style: TextStyle(
               color: Colors.white,
-              fontSize: 18,
+              fontSize: 22,
               fontWeight: FontWeight.w700,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 16),
           const Text(
-            'Enter the email address that should receive wallet updates.',
-            style: TextStyle(color: _muted, fontSize: 13, height: 1.5),
+            'Enter the email you want associated with this account',
+            style: TextStyle(color: _muted, fontSize: 14, height: 1.45),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 108),
           Container(
-            height: 54,
+            height: 58,
             decoration: BoxDecoration(
               color: _panelAlt,
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(
-                color: _emailController.text.trim().isEmpty
-                    ? const Color(0xFF2D2D2D)
-                    : _yellow,
-              ),
+              borderRadius: BorderRadius.circular(9),
+              border: Border.all(color: const Color(0xFF303030)),
             ),
-            child: TextField(
-              controller: _emailController,
-              keyboardType: TextInputType.emailAddress,
-              inputFormatters: [
-                FilteringTextInputFormatter.deny(RegExp(r'\s')),
-              ],
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-              ),
-              cursorColor: _yellow,
-              onChanged: (_) => setState(() {}),
-              decoration: InputDecoration(
-                hintText: 'Email address',
-                hintStyle: const TextStyle(color: _muted, fontSize: 13),
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 15,
+            child: Row(
+              children: [
+                const SizedBox(width: 28),
+                const Icon(Icons.email_rounded, color: _muted, size: 23),
+                const SizedBox(width: 28),
+                Expanded(
+                  child: TextField(
+                    controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.deny(RegExp(r'\s')),
+                    ],
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    cursorColor: _yellow,
+                    onChanged: (_) => setState(() {}),
+                    decoration: const InputDecoration(
+                      hintText: 'Email Address',
+                      hintStyle: TextStyle(
+                        color: _muted,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      border: InputBorder.none,
+                      isDense: true,
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(width: 18),
+              ],
             ),
           ),
-          const SizedBox(height: 12),
-          const _WalletNotice(
-            icon: Icons.mark_email_read_outlined,
-            title: 'Email alerts',
-            subtitle:
-                'Statements, transfer updates and security alerts can be sent here.',
+          const SizedBox(height: 56),
+          const Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.info_outline_rounded, color: _yellow, size: 23),
+              SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  "A verification link will be sent to this email, make sure it's\n"
+                  'correct before you continue',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    height: 1.4,
+                  ),
+                ),
+              ),
+            ],
           ),
           const Spacer(),
           _PrimaryWalletButton(
             label: 'Next',
             onPressed: _canContinue ? _next : null,
+          ),
+          const SizedBox(height: 16),
+          _SecondaryWalletButton(
+            label: "I don't have an email",
+            onPressed: _skipEmail,
           ),
         ],
       ),
@@ -668,21 +780,30 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
 
   Widget _buildPinStep() {
     final value = _isConfirmingPin ? _confirmPin : _pin;
-    final subtitle = _isConfirmingPin
-        ? 'Re-enter your 6-digit passcode'
-        : 'Set a 6-digit passcode for wallet transactions';
+    final title = _isConfirmingPin
+        ? 'Confirm passcode'
+        : 'Set up your passcode';
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+      padding: const EdgeInsets.fromLTRB(24, 34, 24, 24),
       child: Column(
         children: [
-          const SizedBox(height: 10),
           Text(
-            subtitle,
+            title,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            'Enter a 6 digit passcode',
             textAlign: TextAlign.center,
             style: const TextStyle(color: _muted, fontSize: 13, height: 1.5),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 72),
           _PasscodeBoxes(value: value, error: _pinError != null),
           if (_pinError != null) ...[
             const SizedBox(height: 10),
@@ -700,13 +821,261 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
           _WalletKeypad(
             onDigitPressed: _onPinDigit,
             onDeletePressed: _onPinDelete,
+            onSubmit: _next,
+            submitEnabled: _canContinue,
           ),
-          const SizedBox(height: 22),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildIdentityOptionStep() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 10),
+          const Text(
+            'Select an option',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            'Select the type of ID to validate',
+            style: TextStyle(color: _muted, fontSize: 13),
+          ),
+          const SizedBox(height: 34),
+          _IdentityOptionTile(
+            icon: Icons.description_outlined,
+            title: 'National Identification Number (NIN)',
+            subtitle: "Don't have NIN? Dial *346# on your registered number.",
+            onTap: () => setState(() => _step = 8),
+          ),
+          const SizedBox(height: 30),
+          _IdentityOptionTile(
+            icon: Icons.account_balance_outlined,
+            title: 'Bank Verification Number (BVN)',
+            subtitle: "Don't have BVN? Dial *565*0# on your registered number.",
+            onTap: () => setState(() => _step = 8),
+          ),
+          const SizedBox(height: 26),
+          const Row(
+            children: [
+              Icon(
+                Icons.info_outline_rounded,
+                color: CitiRideTheme.primaryYellow,
+                size: 22,
+              ),
+              SizedBox(width: 10),
+              Text(
+                'You can proceed with either one',
+                style: TextStyle(color: Colors.white, fontSize: 12),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNinStep() {
+    return _screenPadding(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 8),
+          const Text(
+            'Verify your NIN',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            'Select the type of ID to validate',
+            style: TextStyle(color: _muted, fontSize: 13),
+          ),
+          const SizedBox(height: 38),
+          TextField(
+            controller: _ninController,
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            onChanged: (_) => setState(() => _ninError = null),
+            style: const TextStyle(color: Colors.white, fontSize: 14),
+            decoration: InputDecoration(
+              hintText: 'National Identification Number',
+              hintStyle: const TextStyle(color: _muted, fontSize: 13),
+              filled: true,
+              fillColor: _panelAlt,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 14,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(7),
+                borderSide: BorderSide(
+                  color: _ninError == null
+                      ? const Color(0xFF303030)
+                      : const Color(0xFFFF3434),
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(7),
+                borderSide: BorderSide(
+                  color: _ninError == null
+                      ? const Color(0xFF303030)
+                      : const Color(0xFFFF3434),
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(7),
+                borderSide: BorderSide(
+                  color: _ninError == null
+                      ? CitiRideTheme.primaryYellow
+                      : const Color(0xFFFF3434),
+                ),
+              ),
+            ),
+          ),
+          if (_ninError != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              _ninError!,
+              style: const TextStyle(
+                color: Color(0xFFFF3434),
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+          const SizedBox(height: 18),
+          const Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                Icons.info_outline_rounded,
+                color: CitiRideTheme.primaryYellow,
+                size: 22,
+              ),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text.rich(
+                  TextSpan(
+                    text: 'Dial ',
+                    children: [
+                      TextSpan(
+                        text: '*346#',
+                        style: TextStyle(color: Color(0xFF0B7CFF)),
+                      ),
+                      TextSpan(
+                        text:
+                            ' on your registered phone number to get your NIN. Service costs ₦20. Or visit ',
+                      ),
+                      TextSpan(
+                        text: 'nimc.gov.ng/sms-service',
+                        style: TextStyle(color: Color(0xFF0B7CFF)),
+                      ),
+                    ],
+                  ),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    height: 1.45,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const Spacer(),
           _PrimaryWalletButton(
-            label: _isConfirmingPin ? 'Create wallet' : 'Next',
-            loading: _isSaving,
-            onPressed: _canContinue ? _next : null,
+            label: 'Next',
+            onPressed: _canContinue
+                ? _next
+                : () {
+                    setState(() => _ninError = 'NIN is required');
+                  },
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTransactionPinStep() {
+    final hasError = _transactionPinError != null;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 8),
+          const Text(
+            'Set Up Your Transaction Pin',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 21,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            'Choose your transaction pin',
+            style: TextStyle(color: _muted, fontSize: 13),
+          ),
+          const SizedBox(height: 52),
+          const Text(
+            'Enter transaction pin',
+            style: TextStyle(color: _muted, fontSize: 13),
+          ),
+          const SizedBox(height: 14),
+          _EditablePasscodeBoxes(
+            controller: _transactionPinController,
+            value: _transactionPin,
+            error: false,
+            onChanged: (value) {
+              setState(() {
+                _transactionPin = value;
+                _transactionPinError = null;
+              });
+            },
+          ),
+          const SizedBox(height: 28),
+          const Text(
+            'Confirm transaction pin',
+            style: TextStyle(color: _muted, fontSize: 13),
+          ),
+          const SizedBox(height: 14),
+          _EditablePasscodeBoxes(
+            controller: _confirmTransactionPinController,
+            value: _confirmTransactionPin,
+            error: hasError,
+            onChanged: (value) {
+              setState(() {
+                _confirmTransactionPin = value;
+                _transactionPinError = null;
+              });
+            },
+          ),
+          if (hasError) ...[
+            const SizedBox(height: 14),
+            Text(
+              _transactionPinError!,
+              style: const TextStyle(
+                color: Color(0xFFFF3434),
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+          const Spacer(),
+          _PrimaryWalletButton(label: 'Create Pin', onPressed: _next),
         ],
       ),
     );
@@ -759,27 +1128,93 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
   }
 }
 
+class _IdentityOptionTile extends StatelessWidget {
+  const _IdentityOptionTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.white, width: 2),
+            ),
+            child: Icon(icon, color: Colors.white, size: 24),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    color: Color(0xFF8E8E8E),
+                    fontSize: 11,
+                    height: 1.25,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          const Icon(
+            Icons.chevron_right_rounded,
+            color: CitiRideTheme.primaryYellow,
+            size: 26,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _FlowHeader extends StatelessWidget {
   const _FlowHeader({
     required this.title,
     required this.canBack,
-    required this.showSkip,
+    required this.showNeedHelp,
+    required this.showPhoneChip,
     required this.onBack,
-    required this.onSkip,
   });
 
   final String title;
   final bool canBack;
-  final bool showSkip;
+  final bool showNeedHelp;
+  final bool showPhoneChip;
   final VoidCallback onBack;
-  final VoidCallback onSkip;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 56,
+      height: 66,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         child: Row(
           children: [
             SizedBox(
@@ -809,23 +1244,143 @@ class _FlowHeader extends StatelessWidget {
               ),
             ),
             SizedBox(
-              width: 64,
-              child: showSkip
-                  ? TextButton(
-                      onPressed: onSkip,
-                      child: const Text(
-                        'Skip',
-                        style: TextStyle(
-                          color: CitiRideTheme.primaryYellow,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
+              width: 104,
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: showPhoneChip
+                    ? Container(
+                        height: 28,
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF2F2E0D),
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                      ),
-                    )
-                  : const SizedBox.shrink(),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.phone_rounded,
+                              color: CitiRideTheme.primaryYellow,
+                              size: 14,
+                            ),
+                            SizedBox(width: 4),
+                            Text(
+                              '***2057',
+                              style: TextStyle(
+                                color: CitiRideTheme.primaryYellow,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : showNeedHelp
+                    ? TextButton(
+                        onPressed: () {},
+                        child: const Text(
+                          'Need Help?',
+                          maxLines: 1,
+                          style: TextStyle(
+                            color: CitiRideTheme.primaryYellow,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      )
+                    : const SizedBox.shrink(),
+              ),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _SecondaryWalletButton extends StatelessWidget {
+  const _SecondaryWalletButton({required this.label, required this.onPressed});
+
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: 48,
+      child: OutlinedButton(
+        onPressed: onPressed,
+        style: OutlinedButton.styleFrom(
+          foregroundColor: CitiRideTheme.primaryYellow,
+          side: const BorderSide(
+            color: CitiRideTheme.primaryYellow,
+            width: 1.6,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(999),
+          ),
+        ),
+        child: Text(
+          label,
+          style: const TextStyle(
+            color: CitiRideTheme.primaryYellow,
+            fontSize: 17,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ConsentCheckboxLine extends StatelessWidget {
+  const _ConsentCheckboxLine({
+    required this.selected,
+    required this.onTap,
+    required this.spans,
+  });
+
+  final bool selected;
+  final VoidCallback onTap;
+  final List<InlineSpan> spans;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 22,
+            height: 22,
+            margin: const EdgeInsets.only(top: 2),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: Colors.white, width: 1.4),
+              color: selected
+                  ? CitiRideTheme.primaryYellow
+                  : Colors.transparent,
+            ),
+            child: selected
+                ? const Icon(Icons.check_rounded, color: Colors.black, size: 16)
+                : null,
+          ),
+          const SizedBox(width: 18),
+          Expanded(
+            child: Text.rich(
+              TextSpan(children: spans),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                height: 1.35,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -860,8 +1415,11 @@ class _WalletHeroGraphic extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: double.infinity,
-      height: 182,
-      child: Image.asset('images/modal.png', fit: BoxFit.contain),
+      height: 250,
+      child: Transform.scale(
+        scale: 1.08,
+        child: Image.asset('images/modal.png', fit: BoxFit.contain),
+      ),
     );
   }
 }
@@ -927,95 +1485,6 @@ class _RequirementTile extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _ConsentTile extends StatelessWidget {
-  const _ConsentTile({
-    required this.title,
-    required this.subtitle,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String title;
-  final String subtitle;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(7),
-      child: Container(
-        constraints: const BoxConstraints(minHeight: 64),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: selected ? const Color(0xFF22220F) : const Color(0xFF181818),
-          borderRadius: BorderRadius.circular(7),
-          border: Border.all(
-            color: selected
-                ? CitiRideTheme.primaryYellow
-                : const Color(0xFF2D2D2D),
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 20,
-              height: 20,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: selected
-                      ? CitiRideTheme.primaryYellow
-                      : const Color(0xFF646464),
-                  width: 2,
-                ),
-              ),
-              child: selected
-                  ? Center(
-                      child: Container(
-                        width: 8,
-                        height: 8,
-                        decoration: const BoxDecoration(
-                          color: CitiRideTheme.primaryYellow,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    )
-                  : null,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(
-                      color: Color(0xFF9B9B9B),
-                      fontSize: 11,
-                      height: 1.3,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -1091,8 +1560,8 @@ class _CodeBoxes extends StatelessWidget {
 
         return AnimatedContainer(
           duration: const Duration(milliseconds: 160),
-          width: 42,
-          height: 42,
+          width: 48,
+          height: 48,
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: const Color(0xFF232323),
@@ -1117,6 +1586,46 @@ class _CodeBoxes extends StatelessWidget {
   }
 }
 
+class _EditableCodeBoxes extends StatelessWidget {
+  const _EditableCodeBoxes({
+    required this.controller,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final TextEditingController controller;
+  final String value;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        _CodeBoxes(value: value),
+        Positioned.fill(
+          child: Opacity(
+            opacity: 0.01,
+            child: TextField(
+              controller: controller,
+              autofocus: true,
+              keyboardType: TextInputType.number,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(6),
+              ],
+              onChanged: onChanged,
+              decoration: const InputDecoration(
+                border: InputBorder.none,
+                counterText: '',
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _PasscodeBoxes extends StatelessWidget {
   const _PasscodeBoxes({required this.value, required this.error});
 
@@ -1133,8 +1642,8 @@ class _PasscodeBoxes extends StatelessWidget {
 
         return AnimatedContainer(
           duration: const Duration(milliseconds: 160),
-          width: 42,
-          height: 42,
+          width: 48,
+          height: 48,
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: const Color(0xFF232323),
@@ -1163,14 +1672,59 @@ class _PasscodeBoxes extends StatelessWidget {
   }
 }
 
+class _EditablePasscodeBoxes extends StatelessWidget {
+  const _EditablePasscodeBoxes({
+    required this.controller,
+    required this.value,
+    required this.error,
+    required this.onChanged,
+  });
+
+  final TextEditingController controller;
+  final String value;
+  final bool error;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        _PasscodeBoxes(value: value, error: error),
+        Positioned.fill(
+          child: Opacity(
+            opacity: 0.01,
+            child: TextField(
+              controller: controller,
+              keyboardType: TextInputType.number,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(6),
+              ],
+              onChanged: onChanged,
+              decoration: const InputDecoration(
+                border: InputBorder.none,
+                counterText: '',
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _WalletKeypad extends StatelessWidget {
   const _WalletKeypad({
     required this.onDigitPressed,
     required this.onDeletePressed,
+    required this.onSubmit,
+    required this.submitEnabled,
   });
 
   final ValueChanged<String> onDigitPressed;
   final VoidCallback onDeletePressed;
+  final VoidCallback onSubmit;
+  final bool submitEnabled;
 
   @override
   Widget build(BuildContext context) {
@@ -1186,17 +1740,44 @@ class _WalletKeypad extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            const SizedBox(width: 66, height: 44),
-            _KeypadButton(label: '0', onTap: () => onDigitPressed('0')),
             SizedBox(
               width: 66,
-              height: 44,
+              height: 52,
               child: IconButton(
                 onPressed: onDeletePressed,
                 icon: const Icon(
-                  Icons.backspace_outlined,
+                  Icons.backspace_rounded,
                   color: Color(0xFFBDBDBD),
-                  size: 19,
+                  size: 24,
+                ),
+              ),
+            ),
+            _KeypadButton(label: '0', onTap: () => onDigitPressed('0')),
+            SizedBox(
+              width: 66,
+              height: 52,
+              child: Center(
+                child: InkResponse(
+                  onTap: submitEnabled ? onSubmit : null,
+                  radius: 36,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 160),
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: submitEnabled
+                          ? CitiRideTheme.primaryYellow
+                          : Colors.transparent,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.arrow_forward_rounded,
+                      color: submitEnabled
+                          ? Colors.black
+                          : const Color(0xFF9B9B9B),
+                      size: 28,
+                    ),
+                  ),
                 ),
               ),
             ),
