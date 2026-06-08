@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../theme/app_theme.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
@@ -7,10 +8,12 @@ class WelcomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
+    final colorScheme = Theme.of(context).colorScheme;
+    final colors = context.citiRideColors;
 
     return SafeArea(
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: colors.background,
         body: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
@@ -24,7 +27,7 @@ class WelcomeScreen extends StatelessWidget {
                   style: GoogleFonts.poppins(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black,
+                    color: colors.text,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -33,7 +36,7 @@ class WelcomeScreen extends StatelessWidget {
                   style: GoogleFonts.poppins(
                     fontSize: 20,
                     fontWeight: FontWeight.normal,
-                    color: Colors.grey.shade700,
+                    color: colors.mutedText,
                   ),
                 ),
       
@@ -47,7 +50,7 @@ class WelcomeScreen extends StatelessWidget {
                       shape: const CircleBorder(),
                       clipBehavior: Clip.antiAlias,
                       child: CircleAvatar(
-                        radius: screenHeight * 0.3, // 🔥 BIG
+                        radius: screenHeight * 0.3,
                         backgroundImage: const AssetImage(
                           'images/welcome.png',
                         ),
@@ -68,7 +71,8 @@ class WelcomeScreen extends StatelessWidget {
                       Navigator.pushNamed(context, '/signup');
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue, 
+                      backgroundColor: colorScheme.primary,
+                      foregroundColor: colorScheme.onPrimary,
                       elevation: 6,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(25),
@@ -78,8 +82,8 @@ class WelcomeScreen extends StatelessWidget {
                       "Sign Up",
                       style: GoogleFonts.poppins(
                         fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        fontWeight: FontWeight.normal,
+                        color: colorScheme.onPrimary,
                       ),
                     ),
                   ),
@@ -96,18 +100,18 @@ class WelcomeScreen extends StatelessWidget {
                       Navigator.pushNamed(context, '/login');
                     },
                     style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: Colors.blue, width: 2),
+                      side: BorderSide(color: colorScheme.primary, width: 2),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(25),
                       ),
-                      backgroundColor: Colors.white,
+                      backgroundColor: colors.background,
                     ),
                     child: Text(
                       "Log In",
                       style: GoogleFonts.poppins(
                         fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blue,
+                        fontWeight: FontWeight.normal,
+                        color: colorScheme.primary,
                       ),
                     ),
                   ),

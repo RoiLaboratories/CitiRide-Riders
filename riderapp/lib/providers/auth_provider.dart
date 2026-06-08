@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_auth_platform_interface/firebase_auth_platform_interface.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 final authProvider = ChangeNotifierProvider<AuthProvider>((ref) {
@@ -40,11 +42,31 @@ class AuthProvider extends ChangeNotifier {
     isLoading = true;
     notifyListeners();
 
-    try {
-      if (kIsWeb) {
+      try {
+        if (kIsWeb) {
+        final webAuthPlatform = FirebaseAuthPlatform.instanceFor(
+          app: Firebase.app(),
+          pluginConstants: <dynamic, dynamic>{},
+        );
+
+        final recaptchaVerifier = RecaptchaVerifier(
+          auth: webAuthPlatform,
+          container: 'recaptcha-container',
+          onError: (FirebaseAuthException e) {
+            isLoading = false;
+            notifyListeners();
+            onFailed(e);
+          },
+          onExpired: () {
+            isLoading = false;
+            notifyListeners();
+          },
+        );
+
         final confirmationResult =
           await FirebaseAuth.instance.signInWithPhoneNumber(
-            phoneNumber
+            phoneNumber,
+            recaptchaVerifier,
           );
         _webConfirmationResult = confirmationResult;
 

@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/google_maps_places_service.dart';
+import '../theme/app_theme.dart';
 
 class HomeTopBar extends StatefulWidget {
   const HomeTopBar({
@@ -69,20 +70,21 @@ class _HomeTopBarState extends State<HomeTopBar> {
 
     setState(() {
       _profileAvatarAsset = prefs.getString('profile_avatar_asset');
-      final avatarBase64 = (prefs.getString('profile_avatar_base64') ?? '').trim();
+      final avatarBase64 = (prefs.getString('profile_avatar_base64') ?? '')
+          .trim();
       _profileAvatarBytes = _decodeAvatarBase64(avatarBase64);
     });
   }
 
   Widget _buildAvatarImage() {
     Widget defaultAvatar() {
-      return Image.asset(
-        'images/profile.png',
-        fit: BoxFit.fill,
-        errorBuilder: (_, _, _) => const Icon(
-          Icons.person,
-          color: Colors.white,
-          size: 24,
+      return Transform.scale(
+        scale: 1.72,
+        child: Image.asset(
+          'images/profile.png',
+          fit: BoxFit.cover,
+          errorBuilder: (_, _, _) =>
+              const Icon(Icons.person, color: Colors.white, size: 24),
         ),
       );
     }
@@ -105,7 +107,6 @@ class _HomeTopBarState extends State<HomeTopBar> {
 
     return defaultAvatar();
   }
-
 
   Future<void> _getCurrentLocation() async {
     try {
@@ -145,7 +146,9 @@ class _HomeTopBarState extends State<HomeTopBar> {
         final place = placemarks.first;
         setState(() {
           _locationText =
-              place.locality ?? place.subAdministrativeArea ?? 'Current Location';
+              place.locality ??
+              place.subAdministrativeArea ??
+              'Current Location';
           _currentAddress = [
             if (place.street != null && place.street!.isNotEmpty) place.street,
             if (place.subLocality != null && place.subLocality!.isNotEmpty)
@@ -183,7 +186,9 @@ class _HomeTopBarState extends State<HomeTopBar> {
           lower.contains('permission') || lower.contains('denied');
 
       setState(() {
-        _locationText = permissionError ? 'Permission Required' : 'Location Error';
+        _locationText = permissionError
+            ? 'Permission Required'
+            : 'Location Error';
         _currentAddress = permissionError
             ? 'Allow location in browser settings'
             : 'Unable to get location';
@@ -192,12 +197,13 @@ class _HomeTopBarState extends State<HomeTopBar> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     final visibleAddress = _currentAddress.trim().isEmpty
         ? _locationText
         : _currentAddress;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colors = context.citiRideColors;
 
     return Row(
       children: [
@@ -226,14 +232,15 @@ class _HomeTopBarState extends State<HomeTopBar> {
             child: Container(
               width: 48,
               height: 48,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Color(0xFFF7CFE2),
+                color: Theme.of(context).colorScheme.primary,
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.primary,
+                  width: 2,
+                ),
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(3),
-                child: ClipOval(child: _buildAvatarImage()),
-              ),
+              child: ClipOval(child: _buildAvatarImage()),
             ),
           ),
         ),
@@ -247,11 +254,12 @@ class _HomeTopBarState extends State<HomeTopBar> {
                 height: 48,
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: isDark ? const Color(0xE6171717) : Colors.white,
                   borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: colors.border),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withAlpha(30),
+                      color: Colors.black.withAlpha(isDark ? 80 : 24),
                       blurRadius: 14,
                       offset: const Offset(0, 5),
                     ),
@@ -268,12 +276,12 @@ class _HomeTopBarState extends State<HomeTopBar> {
                     const SizedBox(width: 7),
                     Expanded(
                       child: _isLoading
-                          ? const SizedBox(
+                          ? SizedBox(
                               width: 16,
                               height: 16,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                color: Color(0xFF1890F4),
+                                color: Theme.of(context).colorScheme.primary,
                               ),
                             )
                           : Column(
@@ -284,7 +292,9 @@ class _HomeTopBarState extends State<HomeTopBar> {
                                   'Your Location',
                                   style: GoogleFonts.poppins(
                                     fontSize: 11,
-                                    color: const Color(0xFFB0B2B8),
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -294,7 +304,7 @@ class _HomeTopBarState extends State<HomeTopBar> {
                                   style: GoogleFonts.poppins(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w600,
-                                    color: const Color(0xFF2E313B),
+                                    color: colors.text,
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -330,29 +340,14 @@ class _HomeTopBarState extends State<HomeTopBar> {
             ),
             child: CircleAvatar(
               radius: 22,
-              backgroundColor: Colors.white,
-              child: Stack(
-                clipBehavior: Clip.hardEdge,
-                children: [
-                  Center(
-                    child: Image.asset(
-                      'images/bell.png',
-                      width: 18,
-                      height: 18,
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-                  Positioned(
-                    right: 13,
-                    top: 9,
-                    child: Image.asset(
-                      'images/dot.png',
-                      width: 9,
-                      height: 9,
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-                ],
+              backgroundColor: isDark ? const Color(0xFF171717) : Colors.white,
+              child: Center(
+                child: Image.asset(
+                  isDark ? 'images/bell1.png' : 'images/bell.png',
+                  width: 24,
+                  height: 24,
+                  fit: BoxFit.contain,
+                ),
               ),
             ),
           ),

@@ -5,6 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart' as fm;
 import 'package:geolocator/geolocator.dart';
+
+import 'wallet_onboarding_flow.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
 import 'package:latlong2/latlong.dart' as osm;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -13,15 +15,14 @@ import '../components/home_top_bar.dart';
 import '../components/home_modal_sheet.dart';
 import '../components/bottom_nav_bar.dart';
 import '../components/location_permission_modal.dart';
+import '../components/profile_avatar.dart';
+import '../theme/app_theme.dart';
 import '../screens/ride_screen.dart';
 import '../screens/wallet_screen.dart';
 import '../utils/google_map_style.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({
-    super.key,
-    this.initialTabIndex = 0,
-  });
+  const HomeScreen({super.key, this.initialTabIndex = 0});
 
   final int initialTabIndex;
 
@@ -38,6 +39,7 @@ class _HomeScreenState extends State<HomeScreen> {
   late int _currentIndex;
   bool _locationLoading = false;
   bool _isCheckingWalletPin = false;
+  bool _isLocationModalOpen = false;
   String _drawerName = 'Rider';
   String _drawerUsername = '@user';
   String _drawerPhone = _defaultNigerianPhone;
@@ -46,10 +48,8 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isDrawerOpen = false;
 
   gmaps.LatLng _currentLocation = const gmaps.LatLng(6.5244, 3.3792);
-  gmaps.BitmapDescriptor _userLocationMarkerIcon =
-      gmaps.BitmapDescriptor.defaultMarkerWithHue(
-        gmaps.BitmapDescriptor.hueAzure,
-      );
+  gmaps.BitmapDescriptor _userLocationMarkerIcon = gmaps
+      .BitmapDescriptor.defaultMarkerWithHue(gmaps.BitmapDescriptor.hueAzure);
 
   // ---------------- INIT ----------------
 
@@ -177,10 +177,14 @@ class _HomeScreenState extends State<HomeScreen> {
     required String title,
     required String subtitle,
     required VoidCallback onTap,
-    Color titleColor = const Color(0xFF2D2F3A),
-    Color iconColor = const Color(0xFF2D2F3A),
-    Color iconBg = const Color(0xFFE3E4E6),
+    Color titleColor = Colors.white,
+    Color iconColor = const Color(0xFF101010),
+    Color iconBg = const Color(0xFFE6E6E6),
   }) {
+    final colors = context.citiRideColors;
+    final resolvedTitleColor = titleColor == Colors.white
+        ? colors.text
+        : titleColor;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
@@ -202,16 +206,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     title,
                     style: TextStyle(
                       fontSize: 15,
-                      color: titleColor,
+                      color: resolvedTitleColor,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
-                      color: Color(0xFF80838A),
+                      color: colors.mutedText,
                     ),
                   ),
                 ],
@@ -224,14 +228,17 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildProfileDrawer() {
+    final colors = context.citiRideColors;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return SizedBox(
       width: MediaQuery.of(context).size.width * 0.64,
       child: Drawer(
         elevation: 0,
-        backgroundColor: const Color(0xFFF2F2F4),
+        backgroundColor: colors.surface,
         surfaceTintColor: Colors.transparent,
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.horizontal(right: Radius.circular(44)),
+          borderRadius: BorderRadius.horizontal(right: Radius.circular(28)),
         ),
         child: SafeArea(
           child: Padding(
@@ -241,10 +248,11 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Row(
                   children: [
-                    CircleAvatar(
-                      radius: 32,
-                      backgroundColor: const Color(0xFFF6DCE8),
-                      backgroundImage: const AssetImage('images/profile.png'),
+                    ProfileAvatar(
+                      size: 64,
+                      refreshSeed: _profileRefreshSeed,
+                      borderColor: CitiRideTheme.primaryYellow,
+                      borderWidth: 2,
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -253,25 +261,25 @@ class _HomeScreenState extends State<HomeScreen> {
                         children: [
                           Text(
                             _drawerName,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF2D2F3A),
+                              color: colors.text,
                             ),
                           ),
                           Text(
                             _drawerUsername,
                             style: const TextStyle(
                               fontSize: 14,
-                              color: Color(0xFF0A84FF),
+                              color: CitiRideTheme.primaryYellow,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                           Text(
                             _drawerPhone,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
-                              color: Color(0xFF7D8088),
+                              color: colors.mutedText,
                             ),
                           ),
                         ],
@@ -307,6 +315,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   subtitle: 'Log out from your account',
                   titleColor: const Color(0xFFFF3B3B),
                   iconColor: const Color(0xFFFF3B3B),
+                  iconBg: const Color(0xFF2A1717),
                   onTap: _signOutFromDrawer,
                 ),
                 const Spacer(),
@@ -317,12 +326,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     vertical: 14,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFCEE6FA),
-                    borderRadius: BorderRadius.circular(26),
+                    color: isDark ? const Color(0xFF242424) : Colors.white,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: colors.border),
                   ),
                   child: Row(
                     children: [
-                      const Expanded(
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -330,7 +340,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               'Want to earn as a driver?',
                               style: TextStyle(
                                 fontSize: 14,
-                                color: Color(0xFF1082E4),
+                                color: CitiRideTheme.primaryYellow,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -339,7 +349,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               'Go to driver app',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Color(0xFF1082E4),
+                                color: colors.mutedText,
                               ),
                             ),
                           ],
@@ -347,7 +357,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       const Icon(
                         Icons.arrow_forward_ios,
-                        color: Color(0xFF1082E4),
+                        color: CitiRideTheme.primaryYellow,
                         size: 20,
                       ),
                     ],
@@ -363,8 +373,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // ---------------- LOCATION MODAL ----------------
 
-  void _showLocationPermissionModal() {
-    showGeneralDialog<void>(
+  Future<void> _showLocationPermissionModal() async {
+    if (_isLocationModalOpen) return;
+    _isLocationModalOpen = true;
+
+    await showGeneralDialog<void>(
       context: context,
       barrierDismissible: true,
       barrierLabel: 'Location Permission',
@@ -377,7 +390,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Positioned.fill(
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                  child: Container(color: const Color(0x261E88E5)),
+                  child: Container(color: Colors.black.withAlpha(82)),
                 ),
               ),
               Align(
@@ -416,6 +429,8 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       },
     );
+
+    _isLocationModalOpen = false;
   }
 
   Future<void> _requestLocationPermission() async {
@@ -424,6 +439,11 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() => _locationLoading = true);
 
     try {
+      if (_isLocationModalOpen && mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+        _isLocationModalOpen = false;
+      }
+
       LocationPermission permission = await Geolocator.checkPermission();
 
       if (permission == LocationPermission.denied) {
@@ -454,7 +474,10 @@ class _HomeScreenState extends State<HomeScreen> {
       await _refreshCurrentLocationForMap(requestIfDenied: false);
       if (!mounted) return;
 
-      Navigator.of(context, rootNavigator: true).pop();
+      await Future<void>.delayed(const Duration(milliseconds: 500));
+      if (!mounted) return;
+
+      await _openWalletOnboarding(showWalletAfter: true);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -470,6 +493,36 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<bool> _openWalletOnboarding({required bool showWalletAfter}) async {
+    final prefs = await SharedPreferences.getInstance();
+    final onboardingComplete =
+        prefs.getBool('wallet_onboarding_complete') ?? false;
+
+    if (onboardingComplete) {
+      if (showWalletAfter && mounted) {
+        setState(() => _currentIndex = 2);
+        _pageController.jumpToPage(2);
+      }
+      return true;
+    }
+
+    if (!mounted) return false;
+
+    final completed = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (context) => const WalletOnboardingFlow()),
+    );
+
+    if (!mounted) return completed == true;
+
+    if (completed == true && showWalletAfter) {
+      setState(() => _currentIndex = 2);
+      _pageController.jumpToPage(2);
+    }
+
+    return completed == true;
+  }
+
   // ---------------- TAB HANDLING ----------------
 
   Future<void> _onTabChanged(int index) async {
@@ -483,21 +536,8 @@ class _HomeScreenState extends State<HomeScreen> {
     _isCheckingWalletPin = true;
 
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final pin = prefs.getString('wallet_pin') ?? '';
-
-      if (!mounted) return;
-
-      if (pin.isEmpty) {
-        final result = await Navigator.pushNamed(context, '/create-wallet-pin');
-        if (!mounted) return;
-
-        if (result == true) {
-          setState(() => _currentIndex = index);
-          _pageController.jumpToPage(index);
-        }
-        return;
-      }
+      final ready = await _openWalletOnboarding(showWalletAfter: false);
+      if (!mounted || !ready) return;
 
       setState(() => _currentIndex = index);
       _pageController.jumpToPage(index);
@@ -514,8 +554,22 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
     final topInset = MediaQuery.of(context).padding.top;
     final bottomInset = MediaQuery.of(context).padding.bottom;
+    final isCompactHeight = size.height < 700;
+    final horizontalInset = size.width < 360 ? 14.0 : 16.0;
+    final topBarOffset = topInset + (isCompactHeight ? 12.0 : 18.0);
+    final sheetTop = topInset + (isCompactHeight ? 74.0 : 82.0);
+    final navBottom = bottomInset + (bottomInset > 0 ? 10.0 : 16.0);
+    final sheetNavGap = isCompactHeight ? 20.0 : 26.0;
+    final sheetBottom = navBottom + BottomNavBar.barHeight + sheetNavGap;
+    final sheetAvailableHeight = size.height - sheetTop - sheetBottom;
+    final collapsedSheetHeight = isCompactHeight ? 94.0 : 96.0;
+    final collapsedSheetSize = (collapsedSheetHeight / sheetAvailableHeight)
+        .clamp(0.16, 0.32)
+        .toDouble();
+    final expandedSnapSize = collapsedSheetSize < 0.60 ? 0.60 : 0.72;
 
     return Scaffold(
       key: _scaffoldKey,
@@ -539,9 +593,9 @@ class _HomeScreenState extends State<HomeScreen> {
           /// TOP BAR
           if (_currentIndex != 2 && _currentIndex != 1) // hide in Wallet
             Positioned(
-              top: topInset + 18,
-              left: 16,
-              right: 16,
+              top: topBarOffset,
+              left: horizontalInset,
+              right: horizontalInset,
               child: Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(28),
@@ -564,16 +618,16 @@ class _HomeScreenState extends State<HomeScreen> {
           /// HOME DRAGGABLE SHEET (ONLY HOME TAB)
           if (_currentIndex == 0)
             Positioned(
-              left: 16,
-              right: 16,
-              bottom: 86 + bottomInset,
-              top: topInset + 82,
+              left: horizontalInset,
+              right: horizontalInset,
+              bottom: sheetBottom,
+              top: sheetTop,
               child: DraggableScrollableSheet(
-                initialChildSize: 0.16,
-                minChildSize: 0.16,
+                initialChildSize: collapsedSheetSize,
+                minChildSize: collapsedSheetSize,
                 maxChildSize: 0.82,
                 snap: true,
-                snapSizes: const [0.16, 0.60],
+                snapSizes: [collapsedSheetSize, expandedSnapSize],
                 builder: (context, scrollController) {
                   return HomeModalSheet(scrollController: scrollController);
                 },
@@ -584,7 +638,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Positioned(
             left: 0,
             right: 0,
-            bottom: bottomInset > 0 ? 10 : 16,
+            bottom: navBottom,
             child: BottomNavBar(
               currentIndex: _currentIndex,
               onTabChanged: _onTabChanged,
@@ -596,7 +650,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: IgnorePointer(
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                  child: Container(color: const Color(0x331E88E5)),
+                  child: Container(color: Colors.black.withAlpha(82)),
                 ),
               ),
             ),
@@ -608,10 +662,12 @@ class _HomeScreenState extends State<HomeScreen> {
   // ---------------- MAP ----------------
 
   Widget _buildHomeMap() {
+    final isDarkMap = Theme.of(context).brightness == Brightness.dark;
+
     if (kIsWeb) {
       return fm.FlutterMap(
         key: ValueKey(
-          'home_map_web_${_currentLocation.latitude}_${_currentLocation.longitude}',
+          'home_map_web_${isDarkMap ? 'dark' : 'light'}_${_currentLocation.latitude}_${_currentLocation.longitude}',
         ),
         options: fm.MapOptions(
           initialCenter: osm.LatLng(
@@ -623,7 +679,7 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           fm.TileLayer(
             urlTemplate:
-                'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+                'https://{s}.basemaps.cartocdn.com/${isDarkMap ? 'dark_all' : 'light_all'}/{z}/{x}/{y}{r}.png',
             subdomains: const ['a', 'b', 'c', 'd'],
             userAgentPackageName: 'com.example.citiride',
           ),
@@ -649,7 +705,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return gmaps.GoogleMap(
       key: ValueKey(
-        'home_map_mobile_${_currentLocation.latitude}_${_currentLocation.longitude}',
+        'home_map_mobile_${isDarkMap ? 'dark' : 'light'}_${_currentLocation.latitude}_${_currentLocation.longitude}',
       ),
       initialCameraPosition: gmaps.CameraPosition(
         target: _currentLocation,
@@ -661,7 +717,7 @@ class _HomeScreenState extends State<HomeScreen> {
       mapToolbarEnabled: false,
       myLocationButtonEnabled: false,
       myLocationEnabled: false,
-      style: kGoogleMapGrayscaleStyle,
+      style: isDarkMap ? kGoogleMapGrayscaleStyle : null,
       markers: {
         gmaps.Marker(
           markerId: const gmaps.MarkerId('current_location'),

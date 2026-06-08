@@ -38,10 +38,10 @@ class DriverFoundSheet extends StatelessWidget {
 
             ClipRRect(
               borderRadius: BorderRadius.circular(10),
-              child: const LinearProgressIndicator(
+              child: LinearProgressIndicator(
                 minHeight: 4,
-                backgroundColor: Color(0xFFE6F0FF),
-                valueColor: AlwaysStoppedAnimation(kPrimaryBlue),
+                backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+                valueColor: AlwaysStoppedAnimation(Theme.of(context).colorScheme.primary),
               ),
             ),
 

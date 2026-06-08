@@ -21,28 +21,22 @@ class WalletActionButton extends StatelessWidget {
       borderRadius: BorderRadius.circular(30),
       child: Container(
         width: MediaQuery.of(context).size.width * 0.42,
-        padding: const EdgeInsets.symmetric(
-          vertical: 18,
-        ),
+        padding: const EdgeInsets.symmetric(vertical: 18),
         decoration: BoxDecoration(
           color: color,
           borderRadius: BorderRadius.circular(30),
           boxShadow: [
             BoxShadow(
-              color: color.withValues(alpha: 102),
-              blurRadius: 10,
-              offset: const Offset(0, 8),
+              color: Colors.black.withAlpha(24),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Image.asset(
-              arrowAsset,
-              width: 20,
-              height: 20,
-            ),
+            Image.asset(arrowAsset, width: 20, height: 20),
             const SizedBox(width: 10),
             Text(
               title,

@@ -6,6 +6,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
 
 import '../models/saved_place_type.dart';
 import '../services/google_maps_places_service.dart';
+import '../theme/app_theme.dart';
 import 'saved_place_map_confirm_screen.dart';
 
 class SavedPlaceSearchScreen extends StatefulWidget {
@@ -38,7 +39,7 @@ class _SavedPlaceSearchScreenState extends State<SavedPlaceSearchScreen> {
 
   @override
   void dispose() {
-    _debounce?.cancel();
+    _cancelPendingSuggestionWork();
     _searchController.removeListener(_onQueryChanged);
     _searchController.dispose();
     _searchFocus.dispose();
@@ -47,7 +48,7 @@ class _SavedPlaceSearchScreenState extends State<SavedPlaceSearchScreen> {
 
   void _onQueryChanged() {
     final query = _searchController.text.trim();
-    _debounce?.cancel();
+    _cancelPendingSuggestionWork();
 
     if (query.isEmpty) {
       if (!mounted) return;
@@ -63,8 +64,21 @@ class _SavedPlaceSearchScreenState extends State<SavedPlaceSearchScreen> {
     });
   }
 
+  void _cancelPendingSuggestionWork() {
+    _debounce?.cancel();
+    _debounce = null;
+    _latestRequestId++;
+  }
+
+  void _setSearchValue(String value) {
+    _searchController.value = TextEditingValue(
+      text: value,
+      selection: TextSelection.collapsed(offset: value.length),
+    );
+  }
+
   Future<void> _fetchSuggestions(String query) async {
-    final requestId = ++_latestRequestId;
+    final requestId = _latestRequestId;
     if (!mounted) return;
     setState(() => _loadingSuggestions = true);
 
@@ -73,6 +87,7 @@ class _SavedPlaceSearchScreenState extends State<SavedPlaceSearchScreen> {
     );
 
     if (!mounted || requestId != _latestRequestId) return;
+    if (!_searchFocus.hasFocus) return;
     setState(() {
       _loadingSuggestions = false;
       _suggestions = results;
@@ -83,6 +98,16 @@ class _SavedPlaceSearchScreenState extends State<SavedPlaceSearchScreen> {
     final selectedAddress =
         (suggestion['value'] ?? suggestion['name'] ?? '').trim();
     if (selectedAddress.isEmpty) return;
+
+    _cancelPendingSuggestionWork();
+    _searchFocus.unfocus();
+    _setSearchValue(selectedAddress);
+    if (mounted) {
+      setState(() {
+        _loadingSuggestions = false;
+        _suggestions = [];
+      });
+    }
 
     gmaps.LatLng target = const gmaps.LatLng(6.5244, 3.3792);
     try {
@@ -109,7 +134,7 @@ class _SavedPlaceSearchScreenState extends State<SavedPlaceSearchScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F4),
+      backgroundColor: Theme.of(context).extension<CitiRideThemeColors>()?.surface ?? const Color(0xFFF2F2F4),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -139,9 +164,9 @@ class _SavedPlaceSearchScreenState extends State<SavedPlaceSearchScreen> {
               height: 56,
               padding: const EdgeInsets.symmetric(horizontal: 12),
               decoration: BoxDecoration(
-                color: const Color(0xFFF2F2F4),
+                color: Theme.of(context).extension<CitiRideThemeColors>()?.surface ?? const Color(0xFFF2F2F4),
                 borderRadius: BorderRadius.circular(28),
-                border: Border.all(color: const Color(0xFF1690F0), width: 1.8),
+                border: Border.all(color: Theme.of(context).colorScheme.primary, width: 1.8),
               ),
               child: Row(
                 children: [
@@ -198,7 +223,7 @@ class _SavedPlaceSearchScreenState extends State<SavedPlaceSearchScreen> {
                         height: 24,
                         child: CircularProgressIndicator(
                           strokeWidth: 2.4,
-                          color: Color(0xFF1690F0),
+                          color: Color(0xFF2F323D),
                         ),
                       ),
                     )

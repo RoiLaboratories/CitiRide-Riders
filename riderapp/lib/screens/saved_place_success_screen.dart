@@ -57,7 +57,7 @@ class SavedPlaceSuccessScreen extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: () => _backToHome(context),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1690F0),
+                    backgroundColor: Theme.of(context).colorScheme.primary,
                     foregroundColor: Colors.white,
                     elevation: 0,
                     shape: RoundedRectangleBorder(

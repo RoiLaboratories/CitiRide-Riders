@@ -3,11 +3,7 @@ import 'package:flutter/material.dart';
 import '../constants/ride_sheet_constants.dart';
 
 class ChatSheet extends StatefulWidget {
-  const ChatSheet({
-    super.key,
-    required this.scrollController,
-    this.onClose,
-  });
+  const ChatSheet({super.key, required this.scrollController, this.onClose});
 
   final ScrollController scrollController;
   final VoidCallback? onClose;
@@ -180,14 +176,20 @@ class _ChatSheetState extends State<ChatSheet> {
                           height: compact ? 50 : 56,
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFE1E1E3),
+                            color: Colors.black,
                             borderRadius: BorderRadius.circular(30),
+                            border: Border.all(
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
                           ),
                           child: Row(
                             children: [
-                              const Icon(
-                                Icons.chat_bubble_outline,
-                                color: Color(0xFF888A8F),
+                              Image.asset(
+                                'images/chat.png',
+                                width: 20,
+                                height: 20,
+                                color: const Color(0xFF888A8F),
+                                colorBlendMode: BlendMode.srcIn,
                               ),
                               const SizedBox(width: 10),
                               Expanded(
@@ -202,11 +204,15 @@ class _ChatSheetState extends State<ChatSheet> {
                                       fontSize: 17,
                                     ),
                                     border: InputBorder.none,
+                                    enabledBorder: InputBorder.none,
+                                    focusedBorder: InputBorder.none,
+                                    filled: false,
                                   ),
                                   style: const TextStyle(
-                                    color: Color(0xFF2E313B),
+                                    color: Colors.white,
                                     fontSize: 16,
                                   ),
+                                  cursorColor: Colors.white,
                                 ),
                               ),
                             ],
@@ -241,7 +247,9 @@ class _ChatSheetState extends State<ChatSheet> {
   Widget _chatBubble(_ChatMessage message) {
     final isUser = message.isUser;
     final alignment = isUser ? Alignment.centerRight : Alignment.centerLeft;
-    final bubbleColor = isUser ? const Color(0xFF1690F0) : const Color(0xFFB03AE6);
+    final bubbleColor = isUser
+        ? Theme.of(context).colorScheme.primary
+        : const Color(0xFFB03AE6);
 
     return Align(
       alignment: alignment,
@@ -267,10 +275,7 @@ class _ChatSheetState extends State<ChatSheet> {
 }
 
 class _QuickReplyChip extends StatelessWidget {
-  const _QuickReplyChip({
-    required this.label,
-    required this.onTap,
-  });
+  const _QuickReplyChip({required this.label, required this.onTap});
 
   final String label;
   final VoidCallback onTap;
@@ -303,10 +308,7 @@ class _QuickReplyChip extends StatelessWidget {
 }
 
 class _ChatMessage {
-  const _ChatMessage({
-    required this.text,
-    required this.isUser,
-  });
+  const _ChatMessage({required this.text, required this.isUser});
 
   final String text;
   final bool isUser;

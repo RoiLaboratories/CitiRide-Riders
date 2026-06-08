@@ -9,6 +9,7 @@ import 'screens/home_screen.dart';
 import 'screens/route_screen.dart';
 import 'screens/ride_screen.dart';
 import 'screens/book_ride_screen.dart';
+import 'screens/wallet_onboarding_flow.dart';
 import 'screens/wallet_screen.dart';
 import 'screens/add_card_screen.dart';
 import 'screens/top_up_screen.dart';
@@ -27,6 +28,8 @@ import 'screens/transaction_details_screen.dart';
 import 'screens/saved_places_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'providers/theme_provider.dart';
+import 'theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,13 +37,18 @@ void main() async {
   runApp(const ProviderScope(child: MyApp()));
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(appThemeControllerProvider).themeMode;
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: "CitiRide",
+      theme: CitiRideTheme.light,
+      darkTheme: CitiRideTheme.dark,
+      themeMode: themeMode,
       initialRoute: '/splash',
       routes: {
         '/splash': (context) => const SplashScreen(),
@@ -49,11 +57,12 @@ class MyApp extends StatelessWidget {
         '/signup': (context) => SignUpScreen(),
         '/login': (context) => LoginScreen(),
         '/otp': (context) =>
-          const OTPScreen(phoneNumber: '', verificationId: ''),
+            const OTPScreen(phoneNumber: '', verificationId: ''),
         '/home': (context) => const HomeScreen(),
         '/route': (context) => const RouteScreen(),
         '/ride': (context) => RideScreen(),
         '/bookride': (context) => BookRideScreen(),
+        '/wallet-onboarding': (context) => const WalletOnboardingFlow(),
         '/wallet': (context) => WalletScreen(),
         '/add-card': (context) => const AddCardScreen(),
         '/top-up': (context) => TopUpScreen(),
@@ -69,7 +78,7 @@ class MyApp extends StatelessWidget {
         '/change-wallet-pin': (context) => const ChangeWalletPinScreen(),
         '/create-wallet-pin': (context) => const CreateWalletPinScreen(),
         '/reset-wallet-pin': (context) =>
-          const CreateWalletPinScreen(isResetFlow: true),
+            const CreateWalletPinScreen(isResetFlow: true),
         '/saved-places': (context) => const SavedPlacesScreen(),
       },
       home: const SplashScreen(),

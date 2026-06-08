@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../components/button.dart';
+import '../../components/auth_components.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -17,6 +17,7 @@ class LoginScreenState extends State<LoginScreen> {
   String _selectedCountryFlag = '🇳🇬';
   bool _isPhoneValid = false;
   String _phoneError = '';
+  bool _isPhoneInputFocused = false;
   bool _isCheckingUser = false;
   final List<String> _enteredDigits = [];
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -81,6 +82,7 @@ class LoginScreenState extends State<LoginScreen> {
   void _onDigitPressed(String digit) {
     if (_enteredDigits.length < 10) {
       setState(() {
+        _isPhoneInputFocused = true;
         _enteredDigits.add(digit);
         _phoneController.text = _formatPhoneNumber(_enteredDigits);
       });
@@ -91,11 +93,21 @@ class LoginScreenState extends State<LoginScreen> {
   void _onClearPressed() {
     if (_enteredDigits.isNotEmpty) {
       setState(() {
+        _isPhoneInputFocused = true;
         _enteredDigits.removeLast();
         _phoneController.text = _formatPhoneNumber(_enteredDigits);
       });
       _validatePhoneNumber();
     }
+  }
+
+  void _clearPhoneNumber() {
+    setState(() {
+      _isPhoneInputFocused = true;
+      _enteredDigits.clear();
+      _phoneController.clear();
+    });
+    _validatePhoneNumber();
   }
 
   void _onCountryChanged(Map<String, String> country) {
@@ -113,7 +125,7 @@ class LoginScreenState extends State<LoginScreen> {
           .where('phoneNumber', isEqualTo: phoneNumber)
           .limit(1)
           .get();
-      
+
       return querySnapshot.docs.isNotEmpty;
     } catch (e) {
       debugPrint('Error checking user: $e');
@@ -147,10 +159,7 @@ class LoginScreenState extends State<LoginScreen> {
             child: Center(
               child: Text(
                 message,
-                style: GoogleFonts.poppins(
-                  color: Colors.white,
-                  fontSize: 16,
-                ),
+                style: GoogleFonts.poppins(color: Colors.white, fontSize: 16),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -160,7 +169,7 @@ class LoginScreenState extends State<LoginScreen> {
     );
 
     overlay.insert(overlayEntry);
-    
+
     // Remove snackbar after 3 seconds
     Future.delayed(const Duration(seconds: 3), () {
       overlayEntry.remove();
@@ -168,7 +177,8 @@ class LoginScreenState extends State<LoginScreen> {
   }
 
   void _handleLogin() async {
-    final String fullPhoneNumber = '$_selectedCountryCode${_enteredDigits.join()}';
+    final String fullPhoneNumber =
+        '$_selectedCountryCode${_enteredDigits.join()}';
 
     setState(() {
       _isCheckingUser = true;
@@ -178,31 +188,27 @@ class LoginScreenState extends State<LoginScreen> {
       // Check if user exists
       final userExists = await _checkUserExists(fullPhoneNumber);
       if (!mounted) return;
-      
+
       if (userExists) {
         // User exists - navigate directly to home screen
         setState(() {
           _isCheckingUser = false;
         });
-        
+
         // Show success message
         _showCustomSnackbar('Welcome back!', isError: false);
-        
+
         // Navigate to home screen
         Future.delayed(const Duration(milliseconds: 500), () {
           if (!mounted) return;
-          Navigator.pushNamedAndRemoveUntil(
-            context,
-            '/home',
-            (route) => false,
-          );
+          Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
         });
       } else {
         // User doesn't exist - show error message
         setState(() {
           _isCheckingUser = false;
         });
-        
+
         // Show error message
         _showCustomSnackbar('No user found with this phone number');
       }
@@ -217,250 +223,123 @@ class LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new_rounded, 
-            size: 28
-          ),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 28),
           onPressed: () => Navigator.pop(context),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        foregroundColor: Colors.black,
+        foregroundColor: Theme.of(context).brightness == Brightness.dark
+            ? Colors.white
+            : Colors.black,
         centerTitle: true,
-        title:
-            Text(
-              "Login",
-              style: GoogleFonts.poppins(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
-            ),
-          ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [ 
-               Center(
-                 child: Text(
-                  'Enter your phone number to login',
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ),
-             const SizedBox(height: 30),
-
-              // Phone input row with error alignment
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      // Country dropdown
-                      Container(
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<Map<String, String>>(
-                            value: _countries.firstWhere(
-                              (country) => country['code'] == _selectedCountryCode,
-                            ),
-                            items: _countries.map((country) {
-                              return DropdownMenuItem<Map<String, String>>(
-                                value: country,
-                                child: Row(
-                                  children: [Text(country['flag']!)],
-                                ),
-                              );
-                            }).toList(),
-                            onChanged: (value) => _onCountryChanged(value!),
-                            icon: const Icon(Icons.arrow_drop_down),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(width: 12),
-
-                      // Phone number input
-                      Expanded(
-                        child: Container(
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: Colors.grey[200],
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: _phoneError.isNotEmpty
-                                  ? Colors.red
-                                  : _enteredDigits.isNotEmpty
-                                      ? Colors.blue
-                                      : Colors.transparent,
-                              width: 2,
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 16),
-                                child: Text(
-                                  _selectedCountryCode,
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                              Container(width: 1, height: 24, color: Colors.grey[400]),
-                              Expanded(
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                                  child: Text(
-                                    _phoneController.text,
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.normal,
-                                      letterSpacing: 1,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  // Error message aligned with phone input start
-                  if (_phoneError.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(
-                        top: 8.0,
-                        left: 12 + 48 + 12 + 16,
-                      ),
-                      child: Text(
-                        _phoneError,
-                        style: GoogleFonts.poppins(fontSize: 12, color: Colors.red),
-                      ),
-                    ),
-                ],
-              ),
-
-              const SizedBox(height: 32),
-
-               // Custom numeric keypad
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Row 1: 1, 2, 3
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        Button(digit: '1', onPressed: () => _onDigitPressed('1')),
-                        Button(digit: '2', onPressed: () => _onDigitPressed('2')),
-                        Button(digit: '3', onPressed: () => _onDigitPressed('3')),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    
-                    // Row 2: 4, 5, 6
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        Button(digit: '4', onPressed: () => _onDigitPressed('4')),
-                        Button(digit: '5', onPressed: () => _onDigitPressed('5')),
-                        Button(digit: '6', onPressed: () => _onDigitPressed('6')),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    
-                    // Row 3: 7, 8, 9
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        Button(digit: '7', onPressed: () => _onDigitPressed('7')),
-                        Button(digit: '8', onPressed: () => _onDigitPressed('8')),
-                        Button(digit: '9', onPressed: () => _onDigitPressed('9')),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    
-                    // Row 4: 0 and clear button
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        const SizedBox(width: 80, height: 80),
-                        Button(digit: '0', onPressed: () => _onDigitPressed('0')),
-                        SizedBox(
-                          width: 80,
-                          height: 80,
-                          child: IconButton(
-                            onPressed: _onClearPressed,
-                            icon: const Icon(Icons.backspace_outlined, size: 28),
-                            style: IconButton.styleFrom(
-                              shape: const CircleBorder(),
-                              backgroundColor: Colors.grey[200],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-
-              // Login button
-              Padding(
-                padding: const EdgeInsets.only(bottom: 32.0),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: ElevatedButton(
-                    onPressed: (_isPhoneValid && !_isCheckingUser) ? _handleLogin : null,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: (_isPhoneValid && !_isCheckingUser) ? Colors.blue : Colors.grey[300],
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: _isCheckingUser
-                        ? SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.white),
-                            ),
-                          )
-                        : Text(
-                            'Login',
-                            style: GoogleFonts.poppins(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                  ),
-                ),
-              ),
-            ],
+        title: Text(
+          "Login",
+          style: GoogleFonts.poppins(
+            fontSize: 28,
+            fontWeight: FontWeight.bold,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.white
+                : Colors.black,
           ),
         ),
       ),
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: IntrinsicHeight(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Center(
+                        child: Text(
+                          'Enter your phone number to login',
+                          style: GoogleFonts.poppins(
+                            fontSize: 16,
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? Colors.white
+                                : Colors.black,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 30),
+                      AuthPhoneInput(
+                        countries: _countries,
+                        selectedCountryCode: _selectedCountryCode,
+                        phoneText: _phoneController.text,
+                        errorText: _phoneError,
+                        isFocused: _isPhoneInputFocused,
+                        onCountryChanged: _onCountryChanged,
+                        onTap: () {
+                          setState(() => _isPhoneInputFocused = true);
+                        },
+                        onClear: _clearPhoneNumber,
+                      ),
+                      const SizedBox(height: 28),
+                      Expanded(
+                        child: Center(
+                          child: AuthNumericKeypad(
+                            onDigitPressed: _onDigitPressed,
+                            onClearPressed: _onClearPressed,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 56,
+                        child: ElevatedButton(
+                          onPressed: (_isPhoneValid && !_isCheckingUser)
+                              ? _handleLogin
+                              : null,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: (_isPhoneValid && !_isCheckingUser)
+                                ? colorScheme.primary
+                                : Colors.grey[300],
+                            foregroundColor: colorScheme.onPrimary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(28),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: _isCheckingUser
+                              ? const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Color(0xFFFFFFFF),
+                                    ),
+                                  ),
+                                )
+                              : Text(
+                                  'Login',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.normal,
+                                  ),
+                                ),
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
     );
-      
   }
 }

@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../providers/auth_provider.dart';
+import '../theme/app_theme.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -95,7 +96,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   String _buildPhoneNumberForSave() {
     final digits = _phoneController.text.replaceAll(RegExp(r'\D'), '');
-    return digits.isEmpty ? _selectedCountryCode : '$_selectedCountryCode$digits';
+    return digits.isEmpty
+        ? _selectedCountryCode
+        : '$_selectedCountryCode$digits';
   }
 
   Future<void> _loadProfile() async {
@@ -114,10 +117,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final userPhoto = _safeText(userData?['photoURL']);
     final profileAvatarAsset =
         storedAvatarAsset != null && storedAvatarAsset.isNotEmpty
-            ? storedAvatarAsset
-            : (userPhoto.startsWith('images/')
-                ? userPhoto
-                : _selectedAvatarAsset);
+        ? storedAvatarAsset
+        : (userPhoto.startsWith('images/') ? userPhoto : _selectedAvatarAsset);
 
     final userDisplayName = _safeText(userData?['displayName']);
     final userUsername = _safeText(userData?['username']);
@@ -127,16 +128,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final resolvedPhone = userPhone.isNotEmpty
         ? userPhone
         : (authPhone.isNotEmpty
-            ? authPhone
-            : (localPhone.isNotEmpty ? localPhone : _defaultNigerianPhone));
+              ? authPhone
+              : (localPhone.isNotEmpty ? localPhone : _defaultNigerianPhone));
 
     _applyPhoneInputState(resolvedPhone);
 
     setState(() {
-      _nameController.text =
-          userDisplayName.isNotEmpty ? userDisplayName : localName;
-      _usernameController.text =
-          userUsername.isNotEmpty ? userUsername : localUsername;
+      _nameController.text = userDisplayName.isNotEmpty
+          ? userDisplayName
+          : localName;
+      _usernameController.text = userUsername.isNotEmpty
+          ? userUsername
+          : localUsername;
       _emailController.text = userEmail.isNotEmpty ? userEmail : localEmail;
       _phoneNumber = resolvedPhone;
       _selectedAvatarAsset = profileAvatarAsset;
@@ -153,15 +156,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       barrierColor: Colors.transparent,
       transitionDuration: const Duration(milliseconds: 220),
       pageBuilder: (dialogContext, animation, secondaryAnimation) {
+        final colors = dialogContext.citiRideColors;
         return SafeArea(
           child: Stack(
             children: [
               Positioned.fill(
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                  child: Container(
-                    color: const Color(0x331E88E5),
-                  ),
+                  child: Container(color: Colors.black.withAlpha(82)),
                 ),
               ),
               Align(
@@ -174,8 +176,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     18 + MediaQuery.of(dialogContext).viewInsets.bottom,
                   ),
                   child: Material(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(28),
+                    color: colors.surface,
+                    borderRadius: BorderRadius.circular(22),
                     elevation: 0,
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
@@ -189,20 +191,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               height: 6,
                               child: DecoratedBox(
                                 decoration: BoxDecoration(
-                                  color: Color(0xFFD0D3D8),
-                                  borderRadius:
-                                      BorderRadius.all(Radius.circular(10)),
+                                  color: CitiRideTheme.primaryYellow,
+                                  borderRadius: BorderRadius.all(
+                                    Radius.circular(10),
+                                  ),
                                 ),
                               ),
                             ),
                           ),
                           const SizedBox(height: 16),
-                          const Text(
+                          Text(
                             'Upload photo',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF2D2F3A),
+                              color: colors.text,
                             ),
                           ),
                           const SizedBox(height: 10),
@@ -213,8 +216,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             contentPadding: const EdgeInsets.symmetric(
                               horizontal: 10,
                             ),
-                            leading: const Icon(Icons.photo_library_outlined),
-                            title: const Text('Choose from gallery'),
+                            leading: const Icon(
+                              Icons.photo_library_outlined,
+                              color: CitiRideTheme.primaryYellow,
+                            ),
+                            title: Text(
+                              'Choose from gallery',
+                              style: TextStyle(color: colors.text),
+                            ),
                             onTap: () async {
                               Navigator.of(dialogContext).pop();
                               await _pickAvatar(ImageSource.gallery);
@@ -228,8 +237,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             contentPadding: const EdgeInsets.symmetric(
                               horizontal: 10,
                             ),
-                            leading: const Icon(Icons.photo_camera_outlined),
-                            title: const Text('Take a picture'),
+                            leading: const Icon(
+                              Icons.photo_camera_outlined,
+                              color: CitiRideTheme.primaryYellow,
+                            ),
+                            title: Text(
+                              'Take a picture',
+                              style: TextStyle(color: colors.text),
+                            ),
                             onTap: () async {
                               Navigator.of(dialogContext).pop();
                               await _pickAvatar(ImageSource.camera);
@@ -245,8 +260,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
         );
       },
-      transitionBuilder:
-          (dialogContext, animation, secondaryAnimation, child) {
+      transitionBuilder: (dialogContext, animation, secondaryAnimation, child) {
         final curved = CurvedAnimation(
           parent: animation,
           curve: Curves.easeOutCubic,
@@ -293,6 +307,22 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       return MemoryImage(_selectedAvatarBytes!);
     }
     return AssetImage(_selectedAvatarAsset);
+  }
+
+  Widget _avatarPreview() {
+    final image = Image(
+      image: _avatarImageProvider(),
+      fit: BoxFit.cover,
+      width: 88,
+      height: 88,
+    );
+
+    return ClipOval(
+      child: _selectedAvatarBytes == null &&
+              _selectedAvatarAsset == 'images/profile.png'
+          ? Transform.scale(scale: 1.72, child: image)
+          : image,
+    );
   }
 
   Future<void> _saveProfile() async {
@@ -361,12 +391,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Widget _label(String text) {
+    final colors = context.citiRideColors;
+
     return Text(
       text,
-      style: const TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.w500,
-        color: Color(0xFF2F323D),
+      style: TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: colors.text,
       ),
     );
   }
@@ -377,31 +409,34 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     TextInputType keyboardType = TextInputType.text,
     String? Function(String?)? validator,
   }) {
+    final colors = context.citiRideColors;
+
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
       validator: validator,
-      style: const TextStyle(
-        fontSize: 18,
-        color: Color(0xFF2F323D),
-      ),
+      style: TextStyle(fontSize: 15, color: colors.text),
       decoration: InputDecoration(
         hintText: hint,
         filled: true,
-        fillColor: const Color(0xFFEDEDEF),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 26, vertical: 18),
+        fillColor: colors.inputFill,
+        hintStyle: TextStyle(color: colors.mutedText),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 18,
+          vertical: 16,
+        ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(28),
+          borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(28),
-          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: colors.border),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(28),
-          borderSide: const BorderSide(
-            color: Color(0xFF1690F0),
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(
+            color: Theme.of(context).colorScheme.primary,
             width: 1.2,
           ),
         ),
@@ -410,6 +445,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Widget _phoneField() {
+    final colors = context.citiRideColors;
     final selectedCountry = _countries.firstWhere(
       (country) =>
           country['code'] == _selectedCountryCode &&
@@ -420,24 +456,26 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFFEDEDEF),
-        borderRadius: BorderRadius.circular(28),
+        color: colors.inputFill,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: colors.border),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(18),
-              color: Colors.white,
+              borderRadius: BorderRadius.circular(6),
+              color: colors.surface,
             ),
             child: DropdownButtonHideUnderline(
               child: DropdownButton<Map<String, String>>(
                 value: selectedCountry,
                 borderRadius: BorderRadius.circular(16),
+                dropdownColor: colors.surface,
                 icon: const Icon(
                   Icons.keyboard_arrow_down,
-                  color: Color(0xFFA5A9B0),
+                  color: Color(0xFFBDBDBD),
                   size: 22,
                 ),
                 items: _countries.map((country) {
@@ -450,9 +488,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         const SizedBox(width: 6),
                         Text(
                           country['code'] ?? '',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 14,
-                            color: Color(0xFF2F323D),
+                            color: colors.text,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -477,19 +515,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               controller: _phoneController,
               keyboardType: TextInputType.phone,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              style: const TextStyle(
-                fontSize: 18,
-                color: Color(0xFF2F323D),
-              ),
+              style: TextStyle(fontSize: 15, color: colors.text),
               validator: (value) {
                 final digits = (value ?? '').replaceAll(RegExp(r'\D'), '');
                 if (digits.isEmpty) return 'Phone number is required';
                 if (digits.length < 7) return 'Enter a valid phone number';
                 return null;
               },
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText: 'Phone number',
-                hintStyle: TextStyle(color: Color(0xFFA0A4AA), fontSize: 17),
+                hintStyle: TextStyle(
+                  color: colors.mutedText,
+                  fontSize: 15,
+                ),
                 border: InputBorder.none,
                 isDense: true,
               ),
@@ -502,33 +540,37 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.citiRideColors;
+
     if (_isLoading) {
-      return const Scaffold(
-        backgroundColor: Color(0xFFF2F2F4),
-        body: Center(child: CircularProgressIndicator()),
+      return Scaffold(
+        backgroundColor: colors.background,
+        body: const Center(
+          child: CircularProgressIndicator(color: CitiRideTheme.primaryYellow),
+        ),
       );
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F4),
+      backgroundColor: colors.background,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(
+          icon: Icon(
             Icons.arrow_back_ios_new_rounded,
-            size: 30,
-            color: Color(0xFF2D2F3A),
+            size: 22,
+            color: colors.text,
           ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Personal info',
           style: TextStyle(
-            color: Color(0xFF2D2F3A),
-            fontSize: 24,
-            fontWeight: FontWeight.w600,
+            color: colors.text,
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ),
@@ -548,22 +590,29 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       Container(
                         width: double.infinity,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFECECEE),
-                          borderRadius: BorderRadius.circular(34),
+                          color: colors.surface,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: colors.border),
                         ),
                         padding: const EdgeInsets.symmetric(vertical: 28),
                         child: Column(
                           children: [
-                            CircleAvatar(
-                              radius: 44,
-                              backgroundColor: const Color(0xFFF7E1EA),
-                              backgroundImage: _avatarImageProvider(),
+                            Container(
+                              width: 88,
+                              height: 88,
+                              clipBehavior: Clip.antiAlias,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                              ),
+                              child: _avatarPreview(),
                             ),
                             const SizedBox(height: 14),
                             OutlinedButton(
                               onPressed: _chooseAvatar,
                               style: OutlinedButton.styleFrom(
-                                side: const BorderSide(color: Color(0xFF8EC9F5)),
+                                side: const BorderSide(
+                                  color: CitiRideTheme.primaryYellow,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(28),
                                 ),
@@ -572,11 +621,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                   vertical: 10,
                                 ),
                               ),
-                              child: const Text(
+                              child: Text(
                                 'Upload photo',
                                 style: TextStyle(
-                                  color: Color(0xFF1690F0),
-                                  fontSize: 16,
+                                  color: Theme.of(context).colorScheme.primary,
+                                  fontSize: 14,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -606,7 +655,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         validator: (value) {
                           final username = value?.trim() ?? '';
                           if (username.isEmpty) return 'Username is required';
-                          if (username.length < 3) return 'At least 3 characters';
+                          if (username.length < 3) {
+                            return 'At least 3 characters';
+                          }
                           return null;
                         },
                       ),
@@ -620,7 +671,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         validator: (value) {
                           final text = value?.trim() ?? '';
                           if (text.isEmpty) return null;
-                          final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+                          final emailRegex = RegExp(
+                            r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
+                          );
                           return emailRegex.hasMatch(text)
                               ? null
                               : 'Enter a valid email';
@@ -644,8 +697,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 child: ElevatedButton(
                   onPressed: _isSaving ? null : _saveProfile,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1690F0),
-                    disabledBackgroundColor: const Color(0xFF8BC8F6),
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    disabledBackgroundColor: Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.5),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(32),
                     ),
@@ -657,15 +712,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           height: 24,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: Colors.white,
+                            color: Colors.black,
                           ),
                         )
                       : const Text(
                           'Save changes',
                           style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w500,
+                            color: Colors.black,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                 ),

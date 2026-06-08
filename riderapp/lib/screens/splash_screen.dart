@@ -35,21 +35,15 @@ class _SplashScreenState extends State<SplashScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color.fromARGB(255, 31, 152, 252),
-              Color.fromARGB(255, 135, 213, 250),
+              Color(0xFF1a1a1a),
+              Color(0xFF2d2d2d),
             ],
           ),
         ),
         child: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 40),
-            child: SizedBox(
-              width: 300, 
-              child: Image.asset(
-                'images/citiride.png',
-                fit: BoxFit.contain,
-              ),
-            ),
+          child: Image.asset(
+            'images/citiride.png',
+            fit: BoxFit.contain,
           ),
         ),
       ),

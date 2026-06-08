@@ -1,82 +1,162 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-class WalletDetailsScreen extends StatelessWidget {
-  const WalletDetailsScreen({super.key, required int amount,});
+import '../theme/app_theme.dart';
 
-  void _copyToClipboard(BuildContext context, String text) {
-    Clipboard.setData(ClipboardData(text: text));
-    ScaffoldMessenger.of(context)
-        .showSnackBar(const SnackBar(content: Text('Copied to clipboard')));
+class WalletDetailsScreen extends StatelessWidget {
+  const WalletDetailsScreen({super.key, required int amount});
+
+  static const Color _bg = Color(0xFF101010);
+  static const Color _panel = Color(0xFF242424);
+  static const Color _muted = Color(0xFF9B9B9B);
+
+  double _readAmount(BuildContext context) {
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args is num) return args.toDouble();
+    if (args is Map<String, dynamic> && args['amount'] is num) {
+      return (args['amount'] as num).toDouble();
+    }
+    return 0;
+  }
+
+  void _copyToClipboard(BuildContext context, String value) {
+    Clipboard.setData(ClipboardData(text: value));
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Copied to clipboard'),
+        behavior: SnackBarBehavior.floating,
+        duration: Duration(seconds: 2),
+      ),
+    );
   }
 
   void _paid(BuildContext context, double amount) {
-  Navigator.pushNamed(
-    context,
-    '/verify-transfer',
-    arguments: amount,
-  );
-}
+    Navigator.pushNamed(
+      context,
+      '/verify-transfer',
+      arguments: {'amount': amount, 'topUp': true},
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final double amount =
-      ModalRoute.of(context)!.settings.arguments as double;
+    final amount = _readAmount(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          "Wallet details",
-          style: TextStyle(fontWeight: FontWeight.w600),
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        foregroundColor: Colors.black,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
+      backgroundColor: _bg,
+      body: SafeArea(
         child: Column(
           children: [
-            Container(
-              padding: const EdgeInsets.all(15),
-              width: double.infinity,
-              decoration: BoxDecoration(
-                  color: Colors.blue[100],
-                  borderRadius: BorderRadius.circular(15)),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text("Amount", style: TextStyle(fontSize: 12)),
-                  const SizedBox(height: 5),
-                  Text("₦${amount.toStringAsFixed(0)}",
-                      style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blue)),
-                ],
-              ),
+            _FlowHeader(
+              title: 'Wallet details',
+              onBack: () => Navigator.pop(context),
             ),
-            const SizedBox(height: 40),
-            _buildInfoRow(context, "Recipient's account name",
-              "CitiRide - Umoru Osigbemhe"),
-            const Divider(),
-            _buildInfoRow(context, "Account number", "98291029281"),
-            const Divider(),
-            _buildInfoRow(context, "Bank", "Paystack-titan"),
-            const Spacer(),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: () => _paid(context, amount),
-                style: ElevatedButton.styleFrom(
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(25)),
-                  backgroundColor: Colors.blue,
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(22, 18, 22, 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: CitiRideTheme.primaryYellow,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Amount',
+                            style: TextStyle(
+                              color: Colors.black54,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '\u20A6${amount.toStringAsFixed(0)}',
+                            style: const TextStyle(
+                              color: Colors.black,
+                              fontSize: 28,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 22),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: _panel,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Column(
+                        children: [
+                          _InfoRow(
+                            title: "Recipient's account name",
+                            value: 'CitiRide - Umoru Osigbemhe',
+                            onCopy: () => _copyToClipboard(
+                              context,
+                              'CitiRide - Umoru Osigbemhe',
+                            ),
+                          ),
+                          _InfoRow(
+                            title: 'Account number',
+                            value: '98291029281',
+                            onCopy: () =>
+                                _copyToClipboard(context, '98291029281'),
+                          ),
+                          _InfoRow(
+                            title: 'Bank',
+                            value: 'Paystack-Titan',
+                            onCopy: () =>
+                                _copyToClipboard(context, 'Paystack-Titan'),
+                            showDivider: false,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Transfer exactly this amount to the account above, then tap the button below.',
+                      style: TextStyle(
+                        color: _muted,
+                        fontSize: 12,
+                        height: 1.45,
+                      ),
+                    ),
+                    const Spacer(),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton(
+                        onPressed: () => _paid(context, amount),
+                        style: ElevatedButton.styleFrom(
+                          elevation: 0,
+                          backgroundColor: CitiRideTheme.primaryYellow,
+                          foregroundColor: Colors.black,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                        ),
+                        child: const Text(
+                          'I have paid',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                child: const Text("I have paid",
-                    style: TextStyle(color: Colors.white, fontSize: 16)),
               ),
             ),
           ],
@@ -84,22 +164,107 @@ class WalletDetailsScreen extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildInfoRow(BuildContext context, String title, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
+class _FlowHeader extends StatelessWidget {
+  const _FlowHeader({required this.title, required this.onBack});
+
+  final String title;
+  final VoidCallback onBack;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 58,
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [Text(title), Text(value)]),
-          IconButton(
-            onPressed: () => _copyToClipboard(context, value),
-            icon: const Icon(Icons.copy, color: Colors.blue),
-          )
+          SizedBox(
+            width: 56,
+            child: IconButton(
+              onPressed: onBack,
+              icon: const Icon(
+                Icons.arrow_back_ios_new_rounded,
+                color: Colors.white,
+                size: 18,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          const SizedBox(width: 56),
         ],
       ),
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  const _InfoRow({
+    required this.title,
+    required this.value,
+    required this.onCopy,
+    this.showDivider = true,
+  });
+
+  final String title;
+  final String value;
+  final VoidCallback onCopy;
+  final bool showDivider;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        color: Color(0xFF9B9B9B),
+                        fontSize: 11,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      value,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                onPressed: onCopy,
+                icon: const Icon(
+                  Icons.copy_rounded,
+                  color: CitiRideTheme.primaryYellow,
+                  size: 18,
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (showDivider)
+          const Divider(height: 1, thickness: 1, color: Color(0xFF333333)),
+      ],
     );
   }
 }

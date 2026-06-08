@@ -7,6 +7,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/google_maps_places_service.dart';
+import '../theme/app_theme.dart';
 import '../utils/location_manager.dart';
 
 enum _RouteInputField { none, pickup, destination }
@@ -30,6 +31,8 @@ class _RouteScreenState extends State<RouteScreen> {
   bool _showBookRideButton = false;
   bool _isBooking = false;
   bool _appliedRouteArgs = false;
+  bool _isApplyingSuggestion = false;
+  bool _isPressingSuggestion = false;
   _RouteInputField _activeField = _RouteInputField.none;
   _RouteInputField _suggestionsForField = _RouteInputField.none;
 
@@ -40,6 +43,7 @@ class _RouteScreenState extends State<RouteScreen> {
   gmaps.LatLng? _destinationCoordinates;
 
   Timer? _suggestionDebounce;
+  Timer? _focusClearTimer;
   int _latestSuggestionRequestId = 0;
   final GoogleMapsPlacesService _placesService = GoogleMapsPlacesService();
 
@@ -89,7 +93,8 @@ class _RouteScreenState extends State<RouteScreen> {
   @override
   void dispose() {
     LocationManager().removeListener(_onLocationsUpdated);
-    _suggestionDebounce?.cancel();
+    _cancelPendingSuggestionWork();
+    _focusClearTimer?.cancel();
 
     _pickupController.removeListener(_onPickupChanged);
     _destinationController.removeListener(_onDestinationChanged);
@@ -105,33 +110,43 @@ class _RouteScreenState extends State<RouteScreen> {
 
   void _onPickupFocusChanged() {
     if (!mounted) return;
+    if (_pickupFocus.hasFocus) {
+      _focusClearTimer?.cancel();
+    }
+    if (!_pickupFocus.hasFocus && !_destinationFocus.hasFocus) {
+      _scheduleInactiveFieldClear();
+    }
     setState(() {
       if (_pickupFocus.hasFocus) {
         _activeField = _RouteInputField.pickup;
-      } else if (!_destinationFocus.hasFocus) {
-        _activeField = _RouteInputField.none;
       }
     });
   }
 
   void _onDestinationFocusChanged() {
     if (!mounted) return;
+    if (_destinationFocus.hasFocus) {
+      _focusClearTimer?.cancel();
+    }
+    if (!_destinationFocus.hasFocus && !_pickupFocus.hasFocus) {
+      _scheduleInactiveFieldClear();
+    }
     setState(() {
       if (_destinationFocus.hasFocus) {
         _activeField = _RouteInputField.destination;
-      } else if (!_pickupFocus.hasFocus) {
-        _activeField = _RouteInputField.none;
       }
     });
   }
 
   void _onPickupChanged() {
+    if (_isApplyingSuggestion) return;
     final query = _pickupController.text.trim();
     _pickupCoordinates = null;
     _requestSuggestions(query, field: _RouteInputField.pickup);
   }
 
   void _onDestinationChanged() {
+    if (_isApplyingSuggestion) return;
     final query = _destinationController.text.trim();
     _destinationCoordinates = null;
     if (!mounted) return;
@@ -139,13 +154,11 @@ class _RouteScreenState extends State<RouteScreen> {
     _requestSuggestions(query, field: _RouteInputField.destination);
   }
 
-  void _requestSuggestions(
-    String query, {
-    required _RouteInputField field,
-  }) {
-    _suggestionDebounce?.cancel();
+  void _requestSuggestions(String query, {required _RouteInputField field}) {
+    _cancelPendingSuggestionWork();
 
-    final shouldFetch = (field == _RouteInputField.pickup && _pickupFocus.hasFocus) ||
+    final shouldFetch =
+        (field == _RouteInputField.pickup && _pickupFocus.hasFocus) ||
         (field == _RouteInputField.destination && _destinationFocus.hasFocus);
 
     if (!shouldFetch) return;
@@ -165,11 +178,51 @@ class _RouteScreenState extends State<RouteScreen> {
     });
   }
 
+  void _cancelPendingSuggestionWork() {
+    _suggestionDebounce?.cancel();
+    _suggestionDebounce = null;
+    _latestSuggestionRequestId++;
+  }
+
+  void _scheduleInactiveFieldClear() {
+    _focusClearTimer?.cancel();
+    _focusClearTimer = Timer(const Duration(milliseconds: 120), () {
+      if (!mounted ||
+          _isPressingSuggestion ||
+          _pickupFocus.hasFocus ||
+          _destinationFocus.hasFocus) {
+        return;
+      }
+
+      _cancelPendingSuggestionWork();
+      setState(() {
+        _activeField = _RouteInputField.none;
+        _loadingSuggestions = false;
+        _suggestionsForField = _RouteInputField.none;
+        _suggestions = [];
+      });
+    });
+  }
+
+  void _setControllerValue(TextEditingController controller, String value) {
+    controller.value = TextEditingValue(
+      text: value,
+      selection: TextSelection.collapsed(offset: value.length),
+    );
+  }
+
+  void _cancelSuggestionPress() {
+    _isPressingSuggestion = false;
+    if (!mounted || _pickupFocus.hasFocus || _destinationFocus.hasFocus) return;
+
+    _scheduleInactiveFieldClear();
+  }
+
   Future<void> _fetchSuggestions(
     String query, {
     required _RouteInputField field,
   }) async {
-    final requestId = ++_latestSuggestionRequestId;
+    final requestId = _latestSuggestionRequestId;
     if (!mounted) return;
     setState(() {
       _activeField = field;
@@ -177,10 +230,13 @@ class _RouteScreenState extends State<RouteScreen> {
       _suggestionsForField = field;
     });
 
-    final suggestions = await _placesService.autocompletePlaces(
-      query,
-    );
+    final suggestions = await _placesService.autocompletePlaces(query);
     if (!mounted || requestId != _latestSuggestionRequestId) return;
+
+    final fieldStillFocused =
+        (field == _RouteInputField.pickup && _pickupFocus.hasFocus) ||
+        (field == _RouteInputField.destination && _destinationFocus.hasFocus);
+    if (!fieldStillFocused) return;
 
     setState(() {
       _suggestions = suggestions;
@@ -194,34 +250,48 @@ class _RouteScreenState extends State<RouteScreen> {
     required _RouteInputField targetField,
   }) async {
     final value =
-        (suggestion['value'] ?? suggestion['name'] ?? suggestion['subtitle'] ?? '')
+        (suggestion['value'] ??
+                suggestion['name'] ??
+                suggestion['subtitle'] ??
+                '')
             .trim();
-    if (value.isEmpty) return;
+    if (value.isEmpty) {
+      _isPressingSuggestion = false;
+      return;
+    }
 
     final applyToPickup = targetField == _RouteInputField.pickup;
+    _isPressingSuggestion = false;
+    _focusClearTimer?.cancel();
+    _cancelPendingSuggestionWork();
+    _isApplyingSuggestion = true;
 
     if (applyToPickup) {
-      _pickupController.text = value;
-      _pickupController.selection = TextSelection.fromPosition(
-        TextPosition(offset: _pickupController.text.length),
-      );
-      _pickupFocus.unfocus();
+      _setControllerValue(_pickupController, value);
     } else {
-      _destinationController.text = value;
-      _destinationController.selection = TextSelection.fromPosition(
-        TextPosition(offset: _destinationController.text.length),
-      );
-      _destinationFocus.unfocus();
+      _setControllerValue(_destinationController, value);
     }
+
+    _isApplyingSuggestion = false;
 
     setState(() {
       _activeField = _RouteInputField.none;
+      _loadingSuggestions = false;
       _suggestionsForField = _RouteInputField.none;
       _showBookRideButton = _destinationController.text.trim().isNotEmpty;
       _suggestions = [];
     });
 
-    final coordinates = await _resolveSuggestionLatLng(suggestion, fallbackValue: value);
+    if (applyToPickup) {
+      _pickupFocus.unfocus();
+    } else {
+      _destinationFocus.unfocus();
+    }
+
+    final coordinates = await _resolveSuggestionLatLng(
+      suggestion,
+      fallbackValue: value,
+    );
     if (!mounted) return;
 
     final latestValue = applyToPickup
@@ -237,18 +307,6 @@ class _RouteScreenState extends State<RouteScreen> {
           _destinationCoordinates = coordinates;
         }
       });
-    }
-
-    if (!applyToPickup) {
-      final pickupLabel = _pickupController.text.trim();
-      final resolvedPickupCoordinates =
-          _pickupCoordinates ?? await _resolveAddressToLatLng(pickupLabel);
-
-      await _openBookRide(
-        value,
-        pickupCoordinates: resolvedPickupCoordinates,
-        destinationCoordinates: coordinates ?? _destinationCoordinates,
-      );
     }
   }
 
@@ -310,9 +368,10 @@ class _RouteScreenState extends State<RouteScreen> {
 
   Future<void> _loadSavedLocations() async {
     final prefs = await SharedPreferences.getInstance();
-    final homeAddress = (prefs.getString('saved_place_home_address') ?? '').trim();
-    final officeAddress =
-        (prefs.getString('saved_place_office_address') ?? '').trim();
+    final homeAddress = (prefs.getString('saved_place_home_address') ?? '')
+        .trim();
+    final officeAddress = (prefs.getString('saved_place_office_address') ?? '')
+        .trim();
 
     final loaded = <Map<String, dynamic>>[];
     if (homeAddress.isNotEmpty) {
@@ -392,10 +451,15 @@ class _RouteScreenState extends State<RouteScreen> {
 
       if (!mounted) return;
       if (_pickupController.text.trim().isEmpty) {
-        _pickupController.text = bestText.isEmpty ? 'Current location' : bestText;
+        _pickupController.text = bestText.isEmpty
+            ? 'Current location'
+            : bestText;
       }
       setState(() {
-        _pickupCoordinates = gmaps.LatLng(position.latitude, position.longitude);
+        _pickupCoordinates = gmaps.LatLng(
+          position.latitude,
+          position.longitude,
+        );
         _loadingPickup = false;
       });
     } catch (_) {
@@ -447,11 +511,7 @@ class _RouteScreenState extends State<RouteScreen> {
         'destinationLng': destinationCoordinates.longitude,
     };
 
-    await Navigator.pushNamed(
-      context,
-      '/bookride',
-      arguments: args,
-    );
+    await Navigator.pushNamed(context, '/bookride', arguments: args);
 
     if (!mounted || !clearDestinationOnReturn) return;
     _destinationController.clear();
@@ -509,32 +569,30 @@ class _RouteScreenState extends State<RouteScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final colors = context.citiRideColors;
     final editingPickup = _activeField == _RouteInputField.pickup;
     final editingDestination = _activeField == _RouteInputField.destination;
-    final showingSuggestions = (editingPickup &&
-            _pickupController.text.trim().isNotEmpty) ||
+    final showingSuggestions =
+        (editingPickup && _pickupController.text.trim().isNotEmpty) ||
         (editingDestination && _destinationController.text.trim().isNotEmpty);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F4),
+      backgroundColor: colors.background,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(
-            Icons.close_rounded,
-            size: 30,
-            color: Color(0xFF2D2F3A),
-          ),
+          icon: Icon(Icons.close_rounded, size: 22, color: colors.text),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Your Route',
           style: TextStyle(
-            color: Color(0xFF2D2F3A),
-            fontSize: 22,
-            fontWeight: FontWeight.w600,
+            color: colors.text,
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ),
@@ -561,31 +619,34 @@ class _RouteScreenState extends State<RouteScreen> {
                   child: ElevatedButton(
                     onPressed: _isBooking ? null : _bookRideFromButton,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1690F0),
-                      foregroundColor: Colors.white,
-                      disabledBackgroundColor: const Color(0xFF1690F0),
-                      disabledForegroundColor: Colors.white,
+                      backgroundColor: colorScheme.primary,
+                      foregroundColor: colorScheme.onPrimary,
+                      disabledBackgroundColor: colorScheme.primary.withValues(
+                        alpha: 0.45,
+                      ),
+                      disabledForegroundColor: colorScheme.onPrimary,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(26),
                       ),
                     ),
                     child: _isBooking
-                        ? const SizedBox(
+                        ? SizedBox(
                             width: 22,
                             height: 22,
                             child: CircularProgressIndicator(
                               strokeWidth: 2.4,
                               valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white,
+                                colorScheme.onPrimary,
                               ),
                             ),
                           )
-                        : const Text(
+                        : Text(
                             'Book Ride',
                             style: TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.w600,
+                              color: colorScheme.onPrimary,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
                             ),
                           ),
                   ),
@@ -598,6 +659,8 @@ class _RouteScreenState extends State<RouteScreen> {
   }
 
   Widget _pickupRow() {
+    final colors = context.citiRideColors;
+
     return InkWell(
       onTap: () {
         setState(() => _activeField = _RouteInputField.pickup);
@@ -608,8 +671,9 @@ class _RouteScreenState extends State<RouteScreen> {
         height: 56,
         padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
-          color: const Color(0xFFD4D4D6),
+          color: colors.surfaceAlt,
           borderRadius: BorderRadius.circular(28),
+          border: Border.all(color: colors.border),
         ),
         child: Row(
           children: [
@@ -618,12 +682,15 @@ class _RouteScreenState extends State<RouteScreen> {
               height: 26,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xFF1690F0), width: 3),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.primary,
+                  width: 3,
+                ),
               ),
-              child: const Center(
+              child: Center(
                 child: CircleAvatar(
                   radius: 6,
-                  backgroundColor: Color(0xFF1690F0),
+                  backgroundColor: Theme.of(context).colorScheme.primary,
                 ),
               ),
             ),
@@ -636,15 +703,17 @@ class _RouteScreenState extends State<RouteScreen> {
                 decoration: InputDecoration(
                   isDense: true,
                   hintText: _loadingPickup ? 'Detecting location...' : 'Pickup',
-                  hintStyle: const TextStyle(
-                    color: Color(0xFF7F838A),
-                    fontSize: 16,
-                  ),
+                  hintStyle: TextStyle(color: colors.mutedText, fontSize: 16),
                   border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  filled: false,
+                  fillColor: Colors.transparent,
                 ),
-                style: const TextStyle(
+                cursorColor: colors.text,
+                style: TextStyle(
                   fontSize: 16,
-                  color: Color(0xFF2E313B),
+                  color: colors.text,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -654,14 +723,10 @@ class _RouteScreenState extends State<RouteScreen> {
                 setState(() => _activeField = _RouteInputField.pickup);
                 _pickupFocus.requestFocus();
               },
-              customBorder: const CircleBorder(),
-              child: const Padding(
+              customBorder: CircleBorder(),
+              child: Padding(
                 padding: EdgeInsets.all(4),
-                child: Icon(
-                  Icons.add_rounded,
-                  size: 34,
-                  color: Color(0xFF2E313B),
-                ),
+                child: Icon(Icons.add_rounded, size: 34, color: colors.text),
               ),
             ),
           ],
@@ -671,6 +736,8 @@ class _RouteScreenState extends State<RouteScreen> {
   }
 
   Widget _destinationRow() {
+    final colors = context.citiRideColors;
+
     return Row(
       children: [
         Expanded(
@@ -678,17 +745,16 @@ class _RouteScreenState extends State<RouteScreen> {
             height: 56,
             padding: const EdgeInsets.symmetric(horizontal: 12),
             decoration: BoxDecoration(
-              color: const Color(0xFFF2F2F4),
+              color: colors.surfaceAlt,
               borderRadius: BorderRadius.circular(28),
-              border: Border.all(color: const Color(0xFF1690F0), width: 1.8),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.primary,
+                width: 1.8,
+              ),
             ),
             child: Row(
               children: [
-                const Icon(
-                  Icons.search_rounded,
-                  color: Color(0xFF666A73),
-                  size: 26,
-                ),
+                Icon(Icons.search_rounded, color: colors.mutedText, size: 26),
                 const SizedBox(width: 8),
                 Expanded(
                   child: TextField(
@@ -696,17 +762,22 @@ class _RouteScreenState extends State<RouteScreen> {
                     focusNode: _destinationFocus,
                     textInputAction: TextInputAction.search,
                     onSubmitted: (_) => _bookRideFromButton(),
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       isDense: true,
                       hintText: 'Your Destination',
                       hintStyle: TextStyle(
-                        color: Color(0xFF9D9FA5),
+                        color: colors.mutedText,
                         fontSize: 16,
                       ),
                       border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      filled: false,
+                      fillColor: Colors.transparent,
                     ),
-                    style: const TextStyle(
-                      color: Color(0xFF2E313B),
+                    cursorColor: colors.text,
+                    style: TextStyle(
+                      color: colors.text,
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
                     ),
@@ -722,12 +793,14 @@ class _RouteScreenState extends State<RouteScreen> {
                   child: InkWell(
                     customBorder: const CircleBorder(),
                     onTap: () {
-                      setState(() => _activeField = _RouteInputField.destination);
+                      setState(
+                        () => _activeField = _RouteInputField.destination,
+                      );
                       _destinationFocus.requestFocus();
                     },
                     child: const Icon(
                       Icons.location_on,
-                      color: Color(0xFFD21DDB),
+                      color: CitiRideTheme.primaryYellow,
                       size: 22,
                     ),
                   ),
@@ -740,13 +813,9 @@ class _RouteScreenState extends State<RouteScreen> {
         InkWell(
           onTap: _swapLocations,
           borderRadius: BorderRadius.circular(20),
-          child: const Padding(
-            padding: EdgeInsets.all(2),
-            child: Icon(
-              Icons.swap_vert_rounded,
-              size: 30,
-              color: Color(0xFF2E313B),
-            ),
+          child: Padding(
+            padding: const EdgeInsets.all(2),
+            child: Icon(Icons.swap_vert_rounded, size: 30, color: colors.text),
           ),
         ),
       ],
@@ -754,6 +823,8 @@ class _RouteScreenState extends State<RouteScreen> {
   }
 
   Widget _suggestionsCard() {
+    final colors = context.citiRideColors;
+
     if (_loadingSuggestions) {
       return const Align(
         alignment: Alignment.topCenter,
@@ -764,7 +835,7 @@ class _RouteScreenState extends State<RouteScreen> {
             height: 24,
             child: CircularProgressIndicator(
               strokeWidth: 2.4,
-              color: Color(0xFF1690F0),
+              color: CitiRideTheme.primaryYellow,
             ),
           ),
         ),
@@ -779,14 +850,14 @@ class _RouteScreenState extends State<RouteScreen> {
           margin: const EdgeInsets.only(top: 6),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
-            color: const Color(0xFFE8E9EC),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFD7D9DF)),
+            color: colors.surfaceAlt,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: colors.border),
           ),
-          child: const Text(
+          child: Text(
             'No matching places found. Try another search term.',
             style: TextStyle(
-              color: Color(0xFF7A7F88),
+              color: colors.mutedText,
               fontSize: 13,
               fontWeight: FontWeight.w500,
             ),
@@ -803,15 +874,15 @@ class _RouteScreenState extends State<RouteScreen> {
           width: double.infinity,
           margin: const EdgeInsets.only(top: 6),
           decoration: BoxDecoration(
-            color: const Color(0xFFE8E9EC),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFD7D9DF)),
+            color: colors.surfaceAlt,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: colors.border),
           ),
           child: ListView.separated(
             padding: EdgeInsets.zero,
             itemCount: _suggestions.length,
             separatorBuilder: (_, _) =>
-                const Divider(height: 1, color: Color(0xFFD7D9DF)),
+                const Divider(height: 1, color: Color(0xFF333333)),
             itemBuilder: (context, index) {
               final suggestion = _suggestions[index];
               final targetField = _suggestionsForField == _RouteInputField.none
@@ -820,10 +891,10 @@ class _RouteScreenState extends State<RouteScreen> {
                         : _activeField)
                   : _suggestionsForField;
               return InkWell(
-                onTap: () => _applySuggestion(
-                  suggestion,
-                  targetField: targetField,
-                ),
+                onTapDown: (_) => _isPressingSuggestion = true,
+                onTapCancel: _cancelSuggestionPress,
+                onTap: () =>
+                    _applySuggestion(suggestion, targetField: targetField),
                 borderRadius: BorderRadius.circular(12),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
@@ -835,7 +906,7 @@ class _RouteScreenState extends State<RouteScreen> {
                       const Icon(
                         Icons.location_on,
                         size: 18,
-                        color: Color(0xFF5C6068),
+                        color: CitiRideTheme.primaryYellow,
                       ),
                       const SizedBox(width: 10),
                       Expanded(
@@ -844,8 +915,8 @@ class _RouteScreenState extends State<RouteScreen> {
                           children: [
                             Text(
                               suggestion['name'] ?? '',
-                              style: const TextStyle(
-                                color: Color(0xFF2E313B),
+                              style: TextStyle(
+                                color: colors.text,
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -855,8 +926,8 @@ class _RouteScreenState extends State<RouteScreen> {
                                 suggestion['subtitle'] ?? '',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  color: Color(0xFF7F848D),
+                                style: TextStyle(
+                                  color: colors.mutedText,
                                   fontSize: 12,
                                 ),
                               ),
@@ -864,10 +935,10 @@ class _RouteScreenState extends State<RouteScreen> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      const Icon(
+                      Icon(
                         Icons.north_west_rounded,
                         size: 16,
-                        color: Color(0xFF8B909A),
+                        color: colors.mutedText,
                       ),
                     ],
                   ),
@@ -887,6 +958,8 @@ class _RouteScreenState extends State<RouteScreen> {
     required IconData icon,
     required VoidCallback onTap,
   }) {
+    final colors = context.citiRideColors;
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -896,15 +969,9 @@ class _RouteScreenState extends State<RouteScreen> {
           margin: const EdgeInsets.only(bottom: 10),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withAlpha(14),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            color: colors.surface,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: colors.border),
           ),
           child: Row(
             children: [
@@ -912,10 +979,10 @@ class _RouteScreenState extends State<RouteScreen> {
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE9EAEC),
-                  borderRadius: BorderRadius.circular(12),
+                  color: colors.inputFill,
+                  borderRadius: BorderRadius.circular(18),
                 ),
-                child: Icon(icon, color: const Color(0xFF4A4D55), size: 18),
+                child: Icon(icon, color: colors.text, size: 18),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -924,19 +991,16 @@ class _RouteScreenState extends State<RouteScreen> {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
-                        color: Color(0xFF2E313B),
-                        fontSize: 15,
+                      style: TextStyle(
+                        color: colors.text,
+                        fontSize: 13,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       subtitle,
-                      style: const TextStyle(
-                        color: Color(0xFF8C9097),
-                        fontSize: 13,
-                      ),
+                      style: TextStyle(color: colors.mutedText, fontSize: 11),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -946,9 +1010,9 @@ class _RouteScreenState extends State<RouteScreen> {
               const SizedBox(width: 10),
               Text(
                 distance,
-                style: const TextStyle(
-                  color: Color(0xFF8C9097),
-                  fontSize: 13,
+                style: TextStyle(
+                  color: colors.mutedText,
+                  fontSize: 11,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -960,14 +1024,16 @@ class _RouteScreenState extends State<RouteScreen> {
   }
 
   Widget _savedAndRecentLocationsContent() {
+    final colors = context.citiRideColors;
+
     if (_loadingRecents) {
-      return const Center(
+      return Center(
         child: SizedBox(
           width: 24,
           height: 24,
           child: CircularProgressIndicator(
             strokeWidth: 2.4,
-            color: Color(0xFF1690F0),
+            color: Theme.of(context).colorScheme.primary,
           ),
         ),
       );
@@ -977,12 +1043,12 @@ class _RouteScreenState extends State<RouteScreen> {
       padding: EdgeInsets.zero,
       children: [
         if (_savedLocations.isNotEmpty) ...[
-          const Text(
+          Text(
             'Saved Locations',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: 14,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF2E313B),
+              color: colors.text,
               letterSpacing: -0.1,
             ),
           ),
@@ -993,19 +1059,18 @@ class _RouteScreenState extends State<RouteScreen> {
               subtitle: location['subtitle'] as String,
               distance: location['distance'] as String,
               icon: location['icon'] as IconData,
-              onTap: () => _selectLocationFromList(
-                location['subtitle'] as String,
-              ),
+              onTap: () =>
+                  _selectLocationFromList(location['subtitle'] as String),
             ),
           ),
           const SizedBox(height: 10),
         ],
-        const Text(
+        Text(
           'Recent locations',
           style: TextStyle(
-            fontSize: 18,
+            fontSize: 14,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF2E313B),
+            color: colors.text,
             letterSpacing: -0.1,
           ),
         ),
@@ -1028,9 +1093,8 @@ class _RouteScreenState extends State<RouteScreen> {
                   subtitle: address,
                   distance: '<1km',
                   icon: Icons.location_on,
-                  onTap: () => _selectLocationFromList(
-                    address.isEmpty ? name : address,
-                  ),
+                  onTap: () =>
+                      _selectLocationFromList(address.isEmpty ? name : address),
                 );
               }).toList()),
       ],

@@ -9,65 +9,70 @@ class OnboardingPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          /// HERO IMAGE
-          SizedBox(
-            width: 353,
-            child: Image.asset(
-                data.heroImage,
-                fit: BoxFit.cover,
-              ),
-            ),
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
-          const SizedBox(height: 45),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxHeight < 620;
 
-          /// TITLE WITH INLINE IMAGE
-          RichText(
-            textAlign: TextAlign.center,
-            text: TextSpan(
-              children: data.titleParts.map((part) {
-                if (part.text != null) {
-                  return TextSpan(
-                    text: part.text,
-                    style: GoogleFonts.instrumentSerif(
-                      fontSize: 36,
-                      fontWeight: FontWeight.normal,
-                      color: Colors.black,
+        return SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                SizedBox(child: Image.asset(data.heroImage, fit: BoxFit.cover)),
+                SizedBox(height: compact ? 24 : 45),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text.rich(
+                    TextSpan(
+                      children: data.titleParts.map((part) {
+                        if (part.text != null) {
+                          return TextSpan(
+                            text: part.text,
+                            style: GoogleFonts.poppins(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: isDarkMode ? Colors.white : Colors.black,
+                            ),
+                          );
+                        } else {
+                          return WidgetSpan(
+                            alignment: PlaceholderAlignment.middle,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 4,
+                              ),
+                              child: Image.asset(part.image!, height: 28),
+                            ),
+                          );
+                        }
+                      }).toList(),
                     ),
-                  );
-                } else {
-                  return WidgetSpan(
-                    alignment: PlaceholderAlignment.middle,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: Image.asset(
-                        part.image!,
-                        height: 47,
-                      ),
-                    ),
-                  );
-                }
-              }).toList(),
+                    maxLines: 1,
+                    softWrap: false,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  data.subtitle,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.instrumentSans(
+                    fontSize: 20,
+                    fontWeight: FontWeight.normal,
+                    color: isDarkMode ? Colors.grey[400] : Colors.grey.shade600,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
             ),
           ),
-
-          /// SUBTITLE
-          Text(
-            data.subtitle,
-            textAlign: TextAlign.center,
-            style: GoogleFonts.instrumentSans(
-              fontSize: 20,
-              fontWeight: FontWeight.normal,
-              color: Colors.grey.shade600,
-              height: 1.5,
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

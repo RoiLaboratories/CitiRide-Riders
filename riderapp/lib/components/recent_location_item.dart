@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../theme/app_theme.dart';
 
 class RecentLocationItem extends StatelessWidget {
   final String name;
@@ -123,7 +124,7 @@ class RecentLocationItem extends StatelessWidget {
   Color _getIconColor(String locationName) {
     switch (locationName.toLowerCase()) {
       case 'work':
-        return Colors.blue;
+        return CitiRideTheme.primaryYellow;
       case 'home':
         return Colors.green;
       case 'gym':
@@ -131,7 +132,7 @@ class RecentLocationItem extends StatelessWidget {
       case 'mall':
         return Colors.purple;
       default:
-        return Colors.blue;
+        return CitiRideTheme.primaryYellow;
     }
   }
 }

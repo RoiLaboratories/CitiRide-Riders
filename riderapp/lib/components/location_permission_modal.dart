@@ -15,136 +15,175 @@ class LocationPermissionModal extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.fromLTRB(12, 120, 12, 20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(25),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(150),
-            blurRadius: 30,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          /// Close button
-          Positioned(
-            top: 16,
-            right: 16,
-            child: GestureDetector(
-              onTap: onLater,
-              child: Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.close,
-                  size: 18,
-                  color: Colors.black54,
-                ),
+    final defaultTextStyle =
+        Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: Colors.white,
+          decoration: TextDecoration.none,
+        ) ??
+        const TextStyle(color: Colors.white, decoration: TextDecoration.none);
+
+    return Material(
+      type: MaterialType.transparency,
+      child: DefaultTextStyle(
+        style: defaultTextStyle,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final maxHeight = constraints.maxHeight.isFinite
+                ? constraints.maxHeight - 40
+                : MediaQuery.sizeOf(context).height * 0.9;
+
+            return Container(
+              width: double.infinity,
+              constraints: BoxConstraints(
+                maxHeight: maxHeight.clamp(240.0, double.infinity).toDouble(),
               ),
-            ),
-          ),
-
-          /// Main content
-          Padding(
-            padding: const EdgeInsets.fromLTRB(18, 32, 18, 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  "Set your location",
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.poppins(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
+              margin: const EdgeInsets.fromLTRB(12, 16, 12, 20),
+              decoration: BoxDecoration(
+                color: const Color(0xFF171717),
+                borderRadius: BorderRadius.circular(22),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withAlpha(190),
+                    blurRadius: 34,
+                    offset: const Offset(0, 14),
                   ),
-                ),
-
-                const SizedBox(height: 8),
-
-                Text(
-                  'Set your location so we can find nearby drivers and pick '
-                  'you up at the right spot.',
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    color: Colors.grey.shade600,
-                    height: 1.4,
-                  ),
-                ),
-
-                const SizedBox(height: 28),
-
-                /// Buttons (stacked)
-                Column(
-                  children: [
-                    SizedBox(
-                      width: double.infinity,
-                      height: 52,
-                      child: ElevatedButton(
-                        onPressed: loading ? null : onAllow,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
+                ],
+              ),
+              child: Stack(
+                children: [
+                  SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(18, 32, 18, 24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Set your location?',
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.poppins(
+                            color: Colors.white,
+                            decoration: TextDecoration.none,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
                           ),
-                          elevation: 0,
                         ),
-                        child: loading
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor:
-                                      AlwaysStoppedAnimation(Colors.white),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Set your location so we can find nearby drivers and pick '
+                          'you up at the right spot.',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.poppins(
+                            fontSize: 13,
+                            color: const Color(0xFFB7B7B7),
+                            decoration: TextDecoration.none,
+                            height: 1.4,
+                          ),
+                        ),
+                        const SizedBox(height: 28),
+                        Column(
+                          children: [
+                            SizedBox(
+                              width: double.infinity,
+                              height: 52,
+                              child: ElevatedButton(
+                                onPressed: loading ? null : onAllow,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Theme.of(
+                                    context,
+                                  ).colorScheme.primary,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(30),
+                                  ),
+                                  elevation: 0,
                                 ),
-                              )
-                            : Text(
-                                "Set location",
-                                style: GoogleFonts.poppins(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
+                                child: loading
+                                    ? const SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor: AlwaysStoppedAnimation(
+                                            Colors.white,
+                                          ),
+                                        ),
+                                      )
+                                    : FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        child: Text(
+                                          'Set location',
+                                          maxLines: 1,
+                                          style: GoogleFonts.poppins(
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.black,
+                                            decoration: TextDecoration.none,
+                                          ),
+                                        ),
+                                      ),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            SizedBox(
+                              width: double.infinity,
+                              height: 52,
+                              child: ElevatedButton(
+                                onPressed: onLater,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.transparent,
+                                  foregroundColor: Colors.white,
+                                  side: const BorderSide(
+                                    color: Colors.white,
+                                    width: 1,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(30),
+                                  ),
+                                  elevation: 0,
+                                ),
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    'Do it later',
+                                    maxLines: 1,
+                                    style: GoogleFonts.poppins(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                      decoration: TextDecoration.none,
+                                    ),
+                                  ),
                                 ),
                               ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  Positioned(
+                    top: 16,
+                    right: 16,
+                    child: GestureDetector(
+                      onTap: onLater,
+                      child: Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEDEDED),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.close,
+                          size: 18,
+                          color: Colors.black,
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 52,
-                      child: ElevatedButton(
-                        onPressed: onLater,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.grey.shade300,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: Text(
-                          "Do it later",
-                          style: GoogleFonts.poppins(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
       ),
     );
   }

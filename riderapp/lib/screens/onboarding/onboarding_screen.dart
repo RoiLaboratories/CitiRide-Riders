@@ -39,6 +39,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     final currentIndex = ref.watch(onboardingIndexProvider);
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       body: SafeArea(
@@ -60,10 +61,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           duration: const Duration(milliseconds: 300),
                           margin: const EdgeInsets.only(right: 6),
                           height: 8,
-                          width: currentIndex == index ? 10 : 8,
+                          width: currentIndex == index ? 12 : 8,
                           decoration: BoxDecoration(
                             color: currentIndex == index
-                                ? Colors.black
+                                ? (Theme.of(context).brightness == Brightness.dark
+                                    ? Colors.white
+                                    : Colors.black)
                                 : Colors.grey.shade300,
                             borderRadius: BorderRadius.circular(10),
                           ),
@@ -75,14 +78,16 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     if (currentIndex != onboardingPages.length - 1)
                       TextButton(
                         onPressed: _goToLastPage,
-                        child: const Text(
+                        child: Text(
                           "Skip",
                           style: TextStyle(
-                            color: Colors.blue,
                             fontSize: 16,
+                            color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.white
+                              : Colors.black
+                            ),
                           ),
                         ),
-                      ),
                   ],
                 ),
               ),
@@ -110,7 +115,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 child: ElevatedButton(
                   onPressed: () => _next(context, currentIndex),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
+                    backgroundColor: colorScheme.primary,
+                    foregroundColor: colorScheme.onPrimary,
                     elevation: 6,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(25),
@@ -120,10 +126,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     currentIndex == onboardingPages.length - 1
                         ? "Get Started"
                         : "Continue",
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      fontWeight: FontWeight.normal,
+                      color: colorScheme.onPrimary,
                     ),
                   ),
                 ),

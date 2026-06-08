@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../components/auth_components.dart';
+
 class ChangeWalletPinScreen extends StatefulWidget {
   const ChangeWalletPinScreen({super.key});
 
@@ -10,6 +12,8 @@ class ChangeWalletPinScreen extends StatefulWidget {
 }
 
 class _ChangeWalletPinScreenState extends State<ChangeWalletPinScreen> {
+  static const int _pinLength = 6;
+
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _currentPinController = TextEditingController();
   final TextEditingController _newPinController = TextEditingController();
@@ -101,38 +105,19 @@ class _ChangeWalletPinScreenState extends State<ChangeWalletPinScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
+        Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
         const SizedBox(height: 8),
         TextFormField(
           controller: controller,
           keyboardType: TextInputType.number,
           obscureText: true,
-          maxLength: 4,
+          maxLength: _pinLength,
           inputFormatters: [
             FilteringTextInputFormatter.digitsOnly,
-            LengthLimitingTextInputFormatter(4),
+            LengthLimitingTextInputFormatter(_pinLength),
           ],
           validator: validator,
-          decoration: InputDecoration(
-            counterText: '',
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: Colors.grey.shade300),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: Colors.grey.shade300),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(color: Color(0xFF1F7BFF)),
-            ),
-          ),
+          decoration: authPinInputDecoration(context),
         ),
       ],
     );
@@ -140,17 +125,20 @@ class _ChangeWalletPinScreenState extends State<ChangeWalletPinScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
-        title: const Text(
+        title: Text(
           'Change Wallet PIN',
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600),
+          style: TextStyle(
+            color: colorScheme.onSurface,
+            fontWeight: FontWeight.w600,
+          ),
         ),
-        iconTheme: const IconThemeData(color: Colors.black),
+        iconTheme: IconThemeData(color: colorScheme.onSurface),
       ),
       body: Form(
         key: _formKey,
@@ -167,8 +155,9 @@ class _ChangeWalletPinScreenState extends State<ChangeWalletPinScreen> {
                 label: 'Current PIN',
                 controller: _currentPinController,
                 validator: (value) {
-                  if (_hasExistingPin && (value == null || value.length != 4)) {
-                    return 'Enter your current 4-digit PIN';
+                  if (_hasExistingPin &&
+                      (value == null || value.length != _pinLength)) {
+                    return 'Enter your current 6-digit PIN';
                   }
                   return null;
                 },
@@ -179,8 +168,8 @@ class _ChangeWalletPinScreenState extends State<ChangeWalletPinScreen> {
               label: _hasExistingPin ? 'New PIN' : 'Create PIN',
               controller: _newPinController,
               validator: (value) {
-                if (value == null || value.length != 4) {
-                  return 'PIN must be 4 digits';
+                if (value == null || value.length != _pinLength) {
+                  return 'PIN must be 6 digits';
                 }
                 return null;
               },
@@ -202,7 +191,8 @@ class _ChangeWalletPinScreenState extends State<ChangeWalletPinScreen> {
               child: ElevatedButton(
                 onPressed: _isSaving ? null : _savePin,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1F7BFF),
+                  backgroundColor: colorScheme.primary,
+                  foregroundColor: colorScheme.onPrimary,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
@@ -213,15 +203,12 @@ class _ChangeWalletPinScreenState extends State<ChangeWalletPinScreen> {
                         width: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Colors.white,
+                          color: Color(0xFFFFFFFF),
                         ),
                       )
-                    : const Text(
+                    : Text(
                         'Update wallet PIN',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: TextStyle(fontWeight: FontWeight.w600),
                       ),
               ),
             ),

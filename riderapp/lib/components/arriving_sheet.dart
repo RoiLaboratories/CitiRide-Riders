@@ -4,10 +4,7 @@ import '../constants/ride_sheet_constants.dart';
 class ArrivingSheet extends StatelessWidget {
   final VoidCallback onChatTap;
 
-  const ArrivingSheet({
-    super.key,
-    required this.onChatTap,
-  });
+  const ArrivingSheet({super.key, required this.onChatTap});
 
   @override
   Widget build(BuildContext context) {
@@ -50,10 +47,7 @@ class ArrivingSheet extends StatelessWidget {
                         style: TextStyle(color: Colors.green),
                       ),
                       SizedBox(height: 2),
-                      Text(
-                        'BEN931AP',
-                        style: TextStyle(color: kTextGrey),
-                      ),
+                      Text('BEN931AP', style: TextStyle(color: kTextGrey)),
                     ],
                   ),
                 ),
@@ -70,16 +64,25 @@ class ArrivingSheet extends StatelessWidget {
             GestureDetector(
               onTap: onChatTap,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
                 decoration: BoxDecoration(
                   color: kLightGrey,
                   borderRadius: BorderRadius.circular(30),
                 ),
                 child: Row(
-                  children: const [
-                    Icon(Icons.chat_bubble_outline, color: kTextGrey),
-                    SizedBox(width: 8),
-                    Text(
+                  children: [
+                    Image.asset(
+                      'images/chat.png',
+                      width: 20,
+                      height: 20,
+                      color: kTextGrey,
+                      colorBlendMode: BlendMode.srcIn,
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
                       'Any pickup notes?',
                       style: TextStyle(color: kTextGrey),
                     ),
