@@ -104,6 +104,8 @@ class BottomNavBar extends StatelessWidget {
               width: 26,
               color: isSelected ? Colors.white : null,
               colorBlendMode: isSelected ? BlendMode.srcIn : null,
+              filterQuality: FilterQuality.high,
+              isAntiAlias: true,
               errorBuilder: (_, _, _) => Icon(
                 _fallbackIcon(index),
                 size: 24,

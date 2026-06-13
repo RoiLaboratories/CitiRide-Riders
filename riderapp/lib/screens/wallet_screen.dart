@@ -287,7 +287,12 @@ class _UnusedWalletBalanceCardStateShim {
             return Stack(
               children: [
                 Positioned.fill(
-                  child: Image.asset('images/modal 1.png', fit: BoxFit.fill),
+                  child: Image.asset(
+                    'images/modal 1.png',
+                    fit: BoxFit.fill,
+                    filterQuality: FilterQuality.high,
+                    isAntiAlias: true,
+                  ),
                 ),
                 Positioned(
                   top: height * 0.12,
@@ -451,7 +456,12 @@ class _WalletAction extends StatelessWidget {
                 border: Border.all(color: colors.border),
               ),
               clipBehavior: Clip.antiAlias,
-              child: Image.asset(imageAsset, fit: BoxFit.cover),
+              child: Image.asset(
+                imageAsset,
+                fit: BoxFit.cover,
+                filterQuality: FilterQuality.high,
+                isAntiAlias: true,
+              ),
             ),
             const SizedBox(height: 7),
             Text(

@@ -83,6 +83,8 @@ class _HomeTopBarState extends State<HomeTopBar> {
         child: Image.asset(
           'images/profile.png',
           fit: BoxFit.cover,
+          filterQuality: FilterQuality.high,
+          isAntiAlias: true,
           errorBuilder: (_, _, _) =>
               const Icon(Icons.person, color: Colors.white, size: 24),
         ),
@@ -93,6 +95,8 @@ class _HomeTopBarState extends State<HomeTopBar> {
       return Image.memory(
         _profileAvatarBytes!,
         fit: BoxFit.cover,
+        filterQuality: FilterQuality.high,
+        isAntiAlias: true,
         errorBuilder: (_, _, _) => defaultAvatar(),
       );
     }
@@ -101,6 +105,8 @@ class _HomeTopBarState extends State<HomeTopBar> {
       return Image.asset(
         _profileAvatarAsset!,
         fit: BoxFit.cover,
+        filterQuality: FilterQuality.high,
+        isAntiAlias: true,
         errorBuilder: (_, _, _) => defaultAvatar(),
       );
     }
@@ -272,6 +278,8 @@ class _HomeTopBarState extends State<HomeTopBar> {
                       width: 22,
                       height: 22,
                       fit: BoxFit.contain,
+                      filterQuality: FilterQuality.high,
+                      isAntiAlias: true,
                     ),
                     const SizedBox(width: 7),
                     Expanded(
@@ -347,6 +355,8 @@ class _HomeTopBarState extends State<HomeTopBar> {
                   width: 24,
                   height: 24,
                   fit: BoxFit.contain,
+                  filterQuality: FilterQuality.high,
+                  isAntiAlias: true,
                 ),
               ),
             ),

@@ -10,6 +10,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
 import 'package:latlong2/latlong.dart' as osm;
 
 import '../components/floating_action_sheet.dart';
+import '../components/in_app_call_sheet.dart';
 import '../models/chat_message.dart';
 import '../models/ride_choice.dart';
 import '../models/wallet_balance.dart';
@@ -52,6 +53,9 @@ class _BookRideScreenState extends State<BookRideScreen> {
   static const Color _yellow = CitiRideTheme.primaryYellow;
   static const Color _green = Color(0xFF1FD85B);
   static const Color _danger = Color(0xFFFF3B3B);
+  static const String _driverName = 'Andrew Johnson';
+  static const String _driverVehicle = 'Green Toyota Corolla Sedan - BEN931AP';
+  static const String _driverAvatarAsset = 'images/driver.png';
 
   final TextEditingController _messageController = TextEditingController();
   final TextEditingController _reviewController = TextEditingController();
@@ -1334,26 +1338,32 @@ class _BookRideScreenState extends State<BookRideScreen> {
                     size: 20,
                   ),
                 ),
-                const CircleAvatar(
-                  radius: 18,
-                  backgroundImage: AssetImage('images/driver.png'),
+                ClipOval(
+                  child: Image.asset(
+                    _driverAvatarAsset,
+                    width: 36,
+                    height: 36,
+                    fit: BoxFit.cover,
+                    filterQuality: FilterQuality.high,
+                    isAntiAlias: true,
+                  ),
                 ),
                 const SizedBox(width: 10),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Andrew Johnson',
+                      const Text(
+                        _driverName,
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                      SizedBox(height: 2),
-                      Text(
-                        'Toyota Corolla Sedan - BEN931AP',
+                      const SizedBox(height: 2),
+                      const Text(
+                        _driverVehicle,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(color: _muted, fontSize: 11),
@@ -1786,6 +1796,8 @@ class _BookRideScreenState extends State<BookRideScreen> {
               width: 76,
               height: 46,
               fit: BoxFit.contain,
+              filterQuality: FilterQuality.high,
+              isAntiAlias: true,
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -1918,7 +1930,13 @@ class _BookRideScreenState extends State<BookRideScreen> {
         padding: const EdgeInsets.symmetric(vertical: 9),
         child: Row(
           children: [
-            Image.asset(image, width: 26, height: 26),
+            Image.asset(
+              image,
+              width: 26,
+              height: 26,
+              filterQuality: FilterQuality.high,
+              isAntiAlias: true,
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -2197,6 +2215,8 @@ class _BookRideScreenState extends State<BookRideScreen> {
         width: 30,
         height: 42,
         fit: BoxFit.contain,
+        filterQuality: FilterQuality.high,
+        isAntiAlias: true,
       ),
     );
   }
@@ -2330,15 +2350,23 @@ class _BookRideScreenState extends State<BookRideScreen> {
       fit: BoxFit.contain,
       color: color,
       colorBlendMode: color == null ? null : BlendMode.srcIn,
+      filterQuality: FilterQuality.high,
+      isAntiAlias: true,
     );
   }
 
   Widget _driverAvatar() {
     return Column(
       children: [
-        const CircleAvatar(
-          radius: 27,
-          backgroundImage: AssetImage('images/driver.png'),
+        ClipOval(
+          child: Image.asset(
+            _driverAvatarAsset,
+            width: 54,
+            height: 54,
+            fit: BoxFit.cover,
+            filterQuality: FilterQuality.high,
+            isAntiAlias: true,
+          ),
         ),
         const SizedBox(height: 6),
         Container(
@@ -2520,7 +2548,7 @@ class _BookRideScreenState extends State<BookRideScreen> {
 
   Widget _phoneButton({double size = 56}) {
     return InkWell(
-      onTap: () {},
+      onTap: _showRideCall,
       customBorder: const CircleBorder(),
       child: Container(
         width: size,
@@ -2535,6 +2563,15 @@ class _BookRideScreenState extends State<BookRideScreen> {
           size: 25,
         ),
       ),
+    );
+  }
+
+  void _showRideCall() {
+    showRideInAppCall(
+      context,
+      driverName: _driverName,
+      driverSubtitle: _driverVehicle,
+      avatarAsset: _driverAvatarAsset,
     );
   }
 
@@ -2705,7 +2742,13 @@ class _BookRideScreenState extends State<BookRideScreen> {
   Widget _paymentSummaryRow({String price = '₦2,900'}) {
     return Row(
       children: [
-        Image.asset('images/cash.png', width: 24, height: 24),
+        Image.asset(
+          'images/cash.png',
+          width: 24,
+          height: 24,
+          filterQuality: FilterQuality.high,
+          isAntiAlias: true,
+        ),
         const SizedBox(width: 12),
         const Expanded(
           child: Text(
@@ -2816,7 +2859,12 @@ class _BookRideScreenState extends State<BookRideScreen> {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    Image.asset('images/map.png', fit: BoxFit.cover),
+                    Image.asset(
+                      'images/map.png',
+                      fit: BoxFit.cover,
+                      filterQuality: FilterQuality.high,
+                      isAntiAlias: true,
+                    ),
                     Center(child: _mapPill('Tap')),
                   ],
                 ),
@@ -2883,6 +2931,8 @@ class _BookRideScreenState extends State<BookRideScreen> {
                 child: Image.asset(
                   'images/location_pointer.png',
                   fit: BoxFit.contain,
+                  filterQuality: FilterQuality.high,
+                  isAntiAlias: true,
                 ),
               ),
               fm.Marker(
@@ -2892,6 +2942,8 @@ class _BookRideScreenState extends State<BookRideScreen> {
                 child: Image.asset(
                   'images/destination_pointer.png',
                   fit: BoxFit.contain,
+                  filterQuality: FilterQuality.high,
+                  isAntiAlias: true,
                 ),
               ),
             ],

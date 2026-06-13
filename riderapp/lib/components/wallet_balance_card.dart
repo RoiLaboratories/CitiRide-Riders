@@ -32,7 +32,12 @@ class _WalletBalanceCardState extends State<WalletBalanceCard> {
           return Stack(
             children: [
               Positioned.fill(
-                child: Image.asset('images/modal 1.png', fit: BoxFit.fill),
+                child: Image.asset(
+                  'images/modal 1.png',
+                  fit: BoxFit.fill,
+                  filterQuality: FilterQuality.high,
+                  isAntiAlias: true,
+                ),
               ),
               Positioned(
                 top: height * 0.12,
@@ -191,6 +196,8 @@ class WalletNotificationButton extends StatelessWidget {
             width: size * 0.58,
             height: size * 0.58,
             fit: BoxFit.contain,
+            filterQuality: FilterQuality.high,
+            isAntiAlias: true,
           ),
         ),
       ),
