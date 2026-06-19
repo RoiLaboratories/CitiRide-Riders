@@ -91,8 +91,14 @@ class _RideCallCardState extends State<_RideCallCard> {
 
   String get _statusText {
     if (!_connected) return 'Calling...';
-    final minutes = _duration.inMinutes.remainder(60).toString().padLeft(2, '0');
-    final seconds = _duration.inSeconds.remainder(60).toString().padLeft(2, '0');
+    final minutes = _duration.inMinutes
+        .remainder(60)
+        .toString()
+        .padLeft(2, '0');
+    final seconds = _duration.inSeconds
+        .remainder(60)
+        .toString()
+        .padLeft(2, '0');
     return '$minutes:$seconds';
   }
 
@@ -127,14 +133,13 @@ class _RideCallCardState extends State<_RideCallCard> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
+            SizedBox(
               width: 92,
-              height: 92,
-              clipBehavior: Clip.antiAlias,
-              decoration: const BoxDecoration(shape: BoxShape.circle),
+              height: 98,
               child: Image.asset(
                 widget.avatarAsset,
-                fit: BoxFit.cover,
+                fit: BoxFit.contain,
+                alignment: Alignment.center,
                 filterQuality: FilterQuality.high,
                 isAntiAlias: true,
               ),

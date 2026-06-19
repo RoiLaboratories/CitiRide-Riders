@@ -5,7 +5,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../theme/app_theme.dart';
 
 class WalletOnboardingFlow extends StatefulWidget {
-  const WalletOnboardingFlow({super.key});
+  const WalletOnboardingFlow({super.key, this.openWalletOnFinish = false});
+
+  final bool openWalletOnFinish;
 
   @override
   State<WalletOnboardingFlow> createState() => _WalletOnboardingFlowState();
@@ -80,33 +82,6 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
     }
   }
 
-  String get _title {
-    switch (_step) {
-      case 0:
-        return 'Wallet';
-      case 1:
-        return 'Wallet';
-      case 2:
-        return 'Wallet';
-      case 3:
-        return 'CitiRide Wallet';
-      case 4:
-        return 'Verify your phone number';
-      case 5:
-        return 'Wallet';
-      case 6:
-        return _isConfirmingPin ? 'Confirm passcode' : 'Create passcode';
-      case 7:
-        return 'Wallet';
-      case 8:
-        return 'Wallet';
-      case 9:
-        return 'Wallet';
-      default:
-        return '';
-    }
-  }
-
   bool get _canContinue {
     if (_isSaving) return false;
 
@@ -163,7 +138,15 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
       );
 
       if (!mounted) return;
-      Navigator.of(context).pop(true);
+      if (widget.openWalletOnFinish) {
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          '/home',
+          (route) => false,
+          arguments: {'initialTabIndex': 2},
+        );
+      } else {
+        Navigator.of(context).pop(true);
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -290,7 +273,7 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
           child: Column(
             children: [
               _FlowHeader(
-                title: _step <= 2 ? _title : '',
+                title: '',
                 canBack: _step != 10,
                 showNeedHelp: _step >= 3 && _step <= 8,
                 showPhoneChip: _step == 6,

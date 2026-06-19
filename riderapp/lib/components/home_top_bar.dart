@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart' as geocoding;
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/google_maps_places_service.dart';
@@ -79,10 +80,11 @@ class _HomeTopBarState extends State<HomeTopBar> {
   Widget _buildAvatarImage() {
     Widget defaultAvatar() {
       return Transform.scale(
-        scale: 1.72,
+        scale: 1.32,
         child: Image.asset(
           'images/profile.png',
-          fit: BoxFit.cover,
+          fit: BoxFit.contain,
+          alignment: Alignment.center,
           filterQuality: FilterQuality.high,
           isAntiAlias: true,
           errorBuilder: (_, _, _) =>
@@ -92,22 +94,32 @@ class _HomeTopBarState extends State<HomeTopBar> {
     }
 
     if (_profileAvatarBytes != null && _profileAvatarBytes!.isNotEmpty) {
-      return Image.memory(
-        _profileAvatarBytes!,
-        fit: BoxFit.cover,
-        filterQuality: FilterQuality.high,
-        isAntiAlias: true,
-        errorBuilder: (_, _, _) => defaultAvatar(),
+      return Transform.scale(
+        scale: 1.16,
+        child: Image.memory(
+          _profileAvatarBytes!,
+          fit: BoxFit.contain,
+          alignment: Alignment.center,
+          filterQuality: FilterQuality.high,
+          isAntiAlias: true,
+          errorBuilder: (_, _, _) => defaultAvatar(),
+        ),
       );
     }
 
     if (_profileAvatarAsset != null && _profileAvatarAsset!.trim().isNotEmpty) {
-      return Image.asset(
-        _profileAvatarAsset!,
-        fit: BoxFit.cover,
-        filterQuality: FilterQuality.high,
-        isAntiAlias: true,
-        errorBuilder: (_, _, _) => defaultAvatar(),
+      final scale = _profileAvatarAsset == 'images/profile.png' ? 1.32 : 1.16;
+
+      return Transform.scale(
+        scale: scale,
+        child: Image.asset(
+          _profileAvatarAsset!,
+          fit: BoxFit.contain,
+          alignment: Alignment.center,
+          filterQuality: FilterQuality.high,
+          isAntiAlias: true,
+          errorBuilder: (_, _, _) => defaultAvatar(),
+        ),
       );
     }
 
@@ -350,13 +362,11 @@ class _HomeTopBarState extends State<HomeTopBar> {
               radius: 22,
               backgroundColor: isDark ? const Color(0xFF171717) : Colors.white,
               child: Center(
-                child: Image.asset(
-                  isDark ? 'images/bell1.png' : 'images/bell.png',
+                child: SvgPicture.asset(
+                  isDark ? 'images/bell1.svg' : 'images/bell2.svg',
                   width: 24,
                   height: 24,
                   fit: BoxFit.contain,
-                  filterQuality: FilterQuality.high,
-                  isAntiAlias: true,
                 ),
               ),
             ),

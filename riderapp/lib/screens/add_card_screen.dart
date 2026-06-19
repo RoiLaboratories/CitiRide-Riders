@@ -95,6 +95,11 @@ class _AddCardScreenState extends State<AddCardScreen> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final colors = context.citiRideColors;
+    final inputTextStyle = TextStyle(
+      color: colors.text,
+      fontSize: 15,
+      fontWeight: FontWeight.w600,
+    );
 
     return Scaffold(
       backgroundColor: colors.background,
@@ -124,10 +129,7 @@ class _AddCardScreenState extends State<AddCardScreen> {
               child: Text(
                 'To ensure the security of your funds, you can\nonly add a bank card linked to your BVN',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14, 
-                  color: Colors.grey
-                ),
+                style: TextStyle(fontSize: 14, color: Colors.grey),
               ),
             ),
             const SizedBox(height: 60),
@@ -136,12 +138,15 @@ class _AddCardScreenState extends State<AddCardScreen> {
             TextField(
               controller: _cardNumberController,
               keyboardType: TextInputType.number,
+              cursorColor: CitiRideTheme.primaryYellow,
+              style: inputTextStyle,
               inputFormatters: [
                 FilteringTextInputFormatter.digitsOnly,
                 LengthLimitingTextInputFormatter(16),
                 _CardNumberFormatter(),
               ],
               decoration: _inputDecoration(
+                context,
                 hint: '16 digits card number',
                 prefix: _cardLogo(),
               ),
@@ -158,12 +163,14 @@ class _AddCardScreenState extends State<AddCardScreen> {
                       TextField(
                         controller: _expiryController,
                         keyboardType: TextInputType.number,
+                        cursorColor: CitiRideTheme.primaryYellow,
+                        style: inputTextStyle,
                         inputFormatters: [
                           FilteringTextInputFormatter.digitsOnly,
                           LengthLimitingTextInputFormatter(5),
                           _ExpiryDateFormatter(),
                         ],
-                        decoration: _inputDecoration(hint: 'MM/YY'),
+                        decoration: _inputDecoration(context, hint: 'MM/YY'),
                       ),
                     ],
                   ),
@@ -177,11 +184,13 @@ class _AddCardScreenState extends State<AddCardScreen> {
                       TextField(
                         controller: _cvvController,
                         keyboardType: TextInputType.number,
+                        cursorColor: CitiRideTheme.primaryYellow,
+                        style: inputTextStyle,
                         inputFormatters: [
                           FilteringTextInputFormatter.digitsOnly,
                           LengthLimitingTextInputFormatter(3),
                         ],
-                        decoration: _inputDecoration(hint: '123'),
+                        decoration: _inputDecoration(context, hint: '123'),
                       ),
                     ],
                   ),
@@ -195,11 +204,13 @@ class _AddCardScreenState extends State<AddCardScreen> {
               controller: _pinController,
               obscureText: true,
               keyboardType: TextInputType.number,
+              cursorColor: CitiRideTheme.primaryYellow,
+              style: inputTextStyle,
               inputFormatters: [
                 FilteringTextInputFormatter.digitsOnly,
                 LengthLimitingTextInputFormatter(4),
               ],
-              decoration: _inputDecoration(hint: '****'),
+              decoration: _inputDecoration(context, hint: '****'),
             ),
 
             const Spacer(),
@@ -222,9 +233,7 @@ class _AddCardScreenState extends State<AddCardScreen> {
                     ),
                   ),
                   child: _loading
-                      ? CircularProgressIndicator(
-                          color: colorScheme.onPrimary,
-                        )
+                      ? CircularProgressIndicator(color: colorScheme.onPrimary)
                       : Text(
                           'Continue',
                           style: TextStyle(
@@ -262,36 +271,53 @@ class _AddCardScreenState extends State<AddCardScreen> {
         logo = const SizedBox();
     }
 
-    return SizedBox(
-      width: 48,
-      child: Center(child: logo),
-    );
+    return SizedBox(width: 48, child: Center(child: logo));
   }
 
-  InputDecoration _inputDecoration({required String hint, Widget? prefix}) {
+  InputDecoration _inputDecoration(
+    BuildContext context, {
+    required String hint,
+    Widget? prefix,
+  }) {
+    final colors = context.citiRideColors;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final fillColor = isDark ? Colors.black : colors.inputFill;
+    final enabledBorderColor = isDark
+        ? CitiRideTheme.primaryYellow
+        : colors.border;
+
     return InputDecoration(
       hintText: hint,
-      hintStyle: const TextStyle(color: Colors.grey),
+      hintStyle: const TextStyle(color: Color(0xFF8F8F8F)),
       filled: true,
-      fillColor: const Color(0xFFF0F0F0),
+      fillColor: fillColor,
       prefixIcon: prefix,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(30),
-        borderSide: BorderSide.none,
+        borderSide: BorderSide(color: enabledBorderColor, width: 1.2),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(30),
+        borderSide: BorderSide(color: enabledBorderColor, width: 1.2),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(30),
+        borderSide: const BorderSide(
+          color: CitiRideTheme.primaryYellow,
+          width: 1.8,
+        ),
       ),
     );
   }
 
   Widget _label(String text) => Padding(
-        padding: const EdgeInsets.only(bottom: 6),
-        child: Text(
-          text,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      );
+    padding: const EdgeInsets.only(bottom: 6),
+    child: Text(
+      text,
+      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+    ),
+  );
 }
 
 // ---------------- FORMATTERS ----------------
@@ -299,7 +325,9 @@ class _AddCardScreenState extends State<AddCardScreen> {
 class _CardNumberFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(
-      TextEditingValue oldValue, TextEditingValue newValue) {
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
     final digits = newValue.text.replaceAll(' ', '');
     final buffer = StringBuffer();
 
@@ -318,7 +346,9 @@ class _CardNumberFormatter extends TextInputFormatter {
 class _ExpiryDateFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(
-      TextEditingValue oldValue, TextEditingValue newValue) {
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
     var text = newValue.text;
     if (text.length >= 3 && !text.contains('/')) {
       text = '${text.substring(0, 2)}/${text.substring(2)}';

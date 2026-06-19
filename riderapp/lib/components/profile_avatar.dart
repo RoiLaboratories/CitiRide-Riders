@@ -86,28 +86,32 @@ class _ProfileAvatarState extends State<ProfileAvatar> {
 
   Widget _image() {
     if (_bytes != null && _bytes!.isNotEmpty) {
-      return Image.memory(
-        _bytes!,
-        fit: BoxFit.cover,
-        filterQuality: FilterQuality.high,
-        isAntiAlias: true,
+      return Transform.scale(
+        scale: 1.16,
+        child: Image.memory(
+          _bytes!,
+          fit: BoxFit.contain,
+          alignment: Alignment.center,
+          filterQuality: FilterQuality.high,
+          isAntiAlias: true,
+        ),
       );
     }
 
     final asset = _asset ?? 'images/profile.png';
-    final image = Image.asset(
-      asset,
-      fit: BoxFit.cover,
-      filterQuality: FilterQuality.high,
-      isAntiAlias: true,
-      errorBuilder: (_, _, _) =>
-          const Icon(Icons.person_rounded, color: Colors.white),
+    final scale = asset == 'images/profile.png' ? 1.32 : 1.16;
+
+    return Transform.scale(
+      scale: scale,
+      child: Image.asset(
+        asset,
+        fit: BoxFit.contain,
+        alignment: Alignment.center,
+        filterQuality: FilterQuality.high,
+        isAntiAlias: true,
+        errorBuilder: (_, _, _) =>
+            const Icon(Icons.person_rounded, color: Colors.white),
+      ),
     );
-
-    if (asset == 'images/profile.png') {
-      return Transform.scale(scale: 1.72, child: image);
-    }
-
-    return image;
   }
 }

@@ -32,8 +32,8 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   static const String _defaultNigerianPhone = '+2349070107455';
+  static const Duration _drawerAnimationDuration = Duration(milliseconds: 280);
 
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late final PageController _pageController;
 
   late int _currentIndex;
@@ -144,12 +144,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _openProfileDrawer() {
     _loadDrawerProfile();
-    _scaffoldKey.currentState?.openDrawer();
+    if (_isDrawerOpen) return;
+    setState(() => _isDrawerOpen = true);
+  }
+
+  void _closeProfileDrawer() {
+    if (!_isDrawerOpen) return;
+    setState(() => _isDrawerOpen = false);
   }
 
   Future<void> _navigateFromDrawer(String route) async {
-    Navigator.of(context).pop();
-    await Future<void>.delayed(const Duration(milliseconds: 220));
+    _closeProfileDrawer();
+    await Future<void>.delayed(_drawerAnimationDuration);
     if (!mounted) return;
 
     await Navigator.pushNamed(context, route);
@@ -162,8 +168,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _signOutFromDrawer() async {
-    Navigator.of(context).pop();
-    await Future<void>.delayed(const Duration(milliseconds: 220));
+    _closeProfileDrawer();
+    await Future<void>.delayed(_drawerAnimationDuration);
     if (!mounted) return;
 
     await FirebaseAuth.instance.signOut();
@@ -213,10 +219,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: colors.mutedText,
-                    ),
+                    style: TextStyle(fontSize: 12, color: colors.mutedText),
                   ),
                 ],
               ),
@@ -227,19 +230,14 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildProfileDrawer() {
+  Widget _buildProfileDrawer({required double width}) {
     final colors = context.citiRideColors;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return SizedBox(
-      width: MediaQuery.of(context).size.width * 0.64,
-      child: Drawer(
-        elevation: 0,
-        backgroundColor: colors.surface,
-        surfaceTintColor: Colors.transparent,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.horizontal(right: Radius.circular(28)),
-        ),
+      width: width,
+      child: Material(
+        color: colors.surface,
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(18, 24, 18, 20),
@@ -570,95 +568,129 @@ class _HomeScreenState extends State<HomeScreen> {
         .clamp(0.16, 0.32)
         .toDouble();
     final expandedSnapSize = collapsedSheetSize < 0.60 ? 0.60 : 0.72;
+    final colors = context.citiRideColors;
+    final drawerWidth = (size.width * 0.72).clamp(270.0, 330.0).toDouble();
+    final homeRadius = _isDrawerOpen ? 30.0 : 0.0;
 
     return Scaffold(
-      key: _scaffoldKey,
-      drawerEnableOpenDragGesture: false,
-      drawerScrimColor: Colors.transparent,
-      onDrawerChanged: (isOpen) {
-        if (_isDrawerOpen == isOpen) return;
-        setState(() => _isDrawerOpen = isOpen);
-      },
-      drawer: _buildProfileDrawer(),
+      backgroundColor: colors.surface,
       body: Stack(
         children: [
-          /// MAIN CONTENT (MAP + OTHER TABS)
-          PageView(
-            controller: _pageController,
-            onPageChanged: _onPageChanged,
-            physics: const NeverScrollableScrollPhysics(),
-            children: [_buildHomeMap(), RideScreen(), WalletScreen()],
-          ),
-
-          /// TOP BAR
-          if (_currentIndex != 2 && _currentIndex != 1) // hide in Wallet
-            Positioned(
-              top: topBarOffset,
-              left: horizontalInset,
-              right: horizontalInset,
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(28),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withAlpha(36),
-                      blurRadius: 18,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: HomeTopBar(
-                  onAvatarTap: _openProfileDrawer,
-                  profileRefreshSeed: _profileRefreshSeed,
-                  locationRefreshSeed: _locationRefreshSeed,
-                ),
-              ),
-            ),
-
-          /// HOME DRAGGABLE SHEET (ONLY HOME TAB)
-          if (_currentIndex == 0)
-            Positioned(
-              left: horizontalInset,
-              right: horizontalInset,
-              bottom: sheetBottom,
-              top: sheetTop,
-              child: DraggableScrollableSheet(
-                initialChildSize: collapsedSheetSize,
-                minChildSize: collapsedSheetSize,
-                maxChildSize: 0.82,
-                snap: true,
-                snapSizes: [collapsedSheetSize, expandedSnapSize],
-                builder: (context, scrollController) {
-                  return HomeModalSheet(scrollController: scrollController);
-                },
-              ),
-            ),
-
-          /// BOTTOM NAV BAR
+          Positioned.fill(child: ColoredBox(color: colors.surface)),
           Positioned(
             left: 0,
-            right: 0,
-            bottom: navBottom,
-            child: BottomNavBar(
-              currentIndex: _currentIndex,
-              onTabChanged: _onTabChanged,
-            ),
+            top: 0,
+            bottom: 0,
+            width: drawerWidth,
+            child: _buildProfileDrawer(width: drawerWidth),
           ),
+          Positioned.fill(
+            child: AnimatedContainer(
+              duration: _drawerAnimationDuration,
+              curve: Curves.easeOutCubic,
+              transform: Matrix4.translationValues(
+                _isDrawerOpen ? drawerWidth : 0,
+                0,
+                0,
+              ),
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                color: colors.background,
+                borderRadius: BorderRadius.circular(homeRadius),
+                boxShadow: _isDrawerOpen
+                    ? [
+                        BoxShadow(
+                          color: Colors.black.withAlpha(92),
+                          blurRadius: 28,
+                          offset: const Offset(-12, 0),
+                        ),
+                      ]
+                    : const [],
+              ),
+              child: Stack(
+                children: [
+                  /// MAIN CONTENT (MAP + OTHER TABS)
+                  PageView(
+                    controller: _pageController,
+                    onPageChanged: _onPageChanged,
+                    physics: const NeverScrollableScrollPhysics(),
+                    children: [_buildHomeMap(), RideScreen(), WalletScreen()],
+                  ),
 
-          if (_isDrawerOpen)
-            Positioned.fill(
-              child: IgnorePointer(
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                  child: Container(color: Colors.black.withAlpha(82)),
-                ),
+                  /// TOP BAR
+                  if (_currentIndex != 2 &&
+                      _currentIndex != 1) // hide in Wallet
+                    Positioned(
+                      top: topBarOffset,
+                      left: horizontalInset,
+                      right: horizontalInset,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(28),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withAlpha(36),
+                              blurRadius: 18,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
+                        ),
+                        child: HomeTopBar(
+                          onAvatarTap: _openProfileDrawer,
+                          profileRefreshSeed: _profileRefreshSeed,
+                          locationRefreshSeed: _locationRefreshSeed,
+                        ),
+                      ),
+                    ),
+
+                  /// HOME DRAGGABLE SHEET (ONLY HOME TAB)
+                  if (_currentIndex == 0)
+                    Positioned(
+                      left: horizontalInset,
+                      right: horizontalInset,
+                      bottom: sheetBottom,
+                      top: sheetTop,
+                      child: DraggableScrollableSheet(
+                        initialChildSize: collapsedSheetSize,
+                        minChildSize: collapsedSheetSize,
+                        maxChildSize: 0.82,
+                        snap: true,
+                        snapSizes: [collapsedSheetSize, expandedSnapSize],
+                        builder: (context, scrollController) {
+                          return HomeModalSheet(
+                            scrollController: scrollController,
+                          );
+                        },
+                      ),
+                    ),
+
+                  /// BOTTOM NAV BAR
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: navBottom,
+                    child: BottomNavBar(
+                      currentIndex: _currentIndex,
+                      onTabChanged: _onTabChanged,
+                    ),
+                  ),
+
+                  if (_isDrawerOpen)
+                    Positioned.fill(
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: _closeProfileDrawer,
+                        child: Container(color: Colors.black.withAlpha(28)),
+                      ),
+                    ),
+                ],
               ),
             ),
+          ),
         ],
       ),
     );
   }
-
   // ---------------- MAP ----------------
 
   Widget _buildHomeMap() {

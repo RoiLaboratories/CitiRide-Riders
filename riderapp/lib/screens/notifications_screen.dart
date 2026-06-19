@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../theme/app_theme.dart';
 
 class NotificationsScreen extends StatelessWidget {
@@ -29,92 +30,129 @@ class NotificationsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.citiRideColors;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: Theme.of(context).extension<CitiRideThemeColors>()?.surface ?? const Color(0xFFF2F2F4),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
-        toolbarHeight: 72,
-        leadingWidth: 56,
-        leading: IconButton(
-          padding: const EdgeInsets.only(left: 12),
-          icon: const Icon(
-            Icons.arrow_back_ios_new_rounded,
-            size: 28,
-            color: Color(0xFF2D2F3A),
-          ),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
-          'Notifications',
-          style: TextStyle(
-            color: Color(0xFF2D2F3A),
-            fontWeight: FontWeight.w600,
-            fontSize: 22,
-          ),
-        ),
-      ),
-      body: ListView.separated(
-        padding: const EdgeInsets.fromLTRB(20, 14, 20, 26),
-        itemCount: _notifications.length,
-        separatorBuilder: (_, _) => const SizedBox(height: 18),
-        itemBuilder: (context, index) {
-          final item = _notifications[index];
-          return Container(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(18),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withAlpha(15),
-                  blurRadius: 12,
-                  offset: const Offset(0, 5),
-                ),
-              ],
+      backgroundColor: colors.background,
+      body: Stack(
+        children: [
+          if (isDark) ...[
+            Positioned.fill(
+              child: Image.asset(
+                'images/map.png',
+                fit: BoxFit.cover,
+                filterQuality: FilterQuality.high,
+                isAntiAlias: true,
+              ),
             ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            Positioned.fill(
+              child: Container(color: Colors.black.withAlpha(210)),
+            ),
+          ],
+          SafeArea(
+            child: Column(
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                SizedBox(
+                  height: 58,
+                  child: Row(
                     children: [
-                      Text(
-                        item.title,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF2F323D),
+                      SizedBox(
+                        width: 58,
+                        child: IconButton(
+                          onPressed: () => Navigator.pop(context),
+                          icon: Icon(
+                            Icons.arrow_back_ios_new_rounded,
+                            size: 22,
+                            color: colors.text,
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        item.subtitle,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFF8A8E95),
+                      Expanded(
+                        child: Text(
+                          'Notifications',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: colors.text,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
                       ),
+                      const SizedBox(width: 58),
                     ],
                   ),
                 ),
-                const SizedBox(width: 10),
-                Padding(
-                  padding: const EdgeInsets.only(top: 2),
-                  child: Text(
-                    item.timeAgo,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Color(0xFF94989F),
+                Expanded(
+                  child: ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(22, 12, 22, 28),
+                    itemCount: _notifications.length,
+                    separatorBuilder: (_, _) => Divider(
+                      height: 18,
+                      color: isDark ? const Color(0xFF2A2A2A) : colors.border,
                     ),
+                    itemBuilder: (context, index) {
+                      final item = _notifications[index];
+                      return _NotificationTile(item: item, dark: isDark);
+                    },
                   ),
                 ),
               ],
             ),
-          );
-        },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _NotificationTile extends StatelessWidget {
+  const _NotificationTile({required this.item, required this.dark});
+
+  final _NotificationItem item;
+  final bool dark;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.citiRideColors;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 9),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.title,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: colors.text,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  item.subtitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 12, color: colors.mutedText),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            item.timeAgo,
+            style: TextStyle(
+              fontSize: 11,
+              color: dark ? const Color(0xFFB8B8B8) : colors.mutedText,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
       ),
     );
   }
