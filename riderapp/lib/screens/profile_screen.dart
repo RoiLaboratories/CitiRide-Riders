@@ -310,18 +310,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Widget _avatarPreview() {
-    final image = Image(
+    return Image(
       image: _avatarImageProvider(),
-      fit: BoxFit.cover,
+      fit: BoxFit.contain,
       width: 88,
       height: 88,
-    );
-
-    return ClipOval(
-      child: _selectedAvatarBytes == null &&
-              _selectedAvatarAsset == 'images/profile.png'
-          ? Transform.scale(scale: 1.72, child: image)
-          : image,
+      alignment: Alignment.center,
+      filterQuality: FilterQuality.high,
+      isAntiAlias: true,
     );
   }
 
@@ -524,10 +520,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               },
               decoration: InputDecoration(
                 hintText: 'Phone number',
-                hintStyle: TextStyle(
-                  color: colors.mutedText,
-                  fontSize: 15,
-                ),
+                hintStyle: TextStyle(color: colors.mutedText, fontSize: 15),
                 border: InputBorder.none,
                 isDense: true,
               ),
@@ -597,13 +590,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         padding: const EdgeInsets.symmetric(vertical: 28),
                         child: Column(
                           children: [
-                            Container(
+                            SizedBox(
                               width: 88,
                               height: 88,
-                              clipBehavior: Clip.antiAlias,
-                              decoration: const BoxDecoration(
-                                shape: BoxShape.circle,
-                              ),
                               child: _avatarPreview(),
                             ),
                             const SizedBox(height: 14),

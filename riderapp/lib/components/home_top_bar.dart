@@ -79,47 +79,42 @@ class _HomeTopBarState extends State<HomeTopBar> {
 
   Widget _buildAvatarImage() {
     Widget defaultAvatar() {
-      return Transform.scale(
-        scale: 1.32,
-        child: Image.asset(
-          'images/profile.png',
-          fit: BoxFit.contain,
-          alignment: Alignment.center,
-          filterQuality: FilterQuality.high,
-          isAntiAlias: true,
-          errorBuilder: (_, _, _) =>
-              const Icon(Icons.person, color: Colors.white, size: 24),
-        ),
+      return Image.asset(
+        'images/profile.png',
+        width: 48,
+        height: 48,
+        fit: BoxFit.contain,
+        alignment: Alignment.center,
+        filterQuality: FilterQuality.high,
+        isAntiAlias: true,
+        errorBuilder: (_, _, _) =>
+            const Icon(Icons.person, color: Colors.white, size: 24),
       );
     }
 
     if (_profileAvatarBytes != null && _profileAvatarBytes!.isNotEmpty) {
-      return Transform.scale(
-        scale: 1.16,
-        child: Image.memory(
-          _profileAvatarBytes!,
-          fit: BoxFit.contain,
-          alignment: Alignment.center,
-          filterQuality: FilterQuality.high,
-          isAntiAlias: true,
-          errorBuilder: (_, _, _) => defaultAvatar(),
-        ),
+      return Image.memory(
+        _profileAvatarBytes!,
+        width: 48,
+        height: 48,
+        fit: BoxFit.contain,
+        alignment: Alignment.center,
+        filterQuality: FilterQuality.high,
+        isAntiAlias: true,
+        errorBuilder: (_, _, _) => defaultAvatar(),
       );
     }
 
     if (_profileAvatarAsset != null && _profileAvatarAsset!.trim().isNotEmpty) {
-      final scale = _profileAvatarAsset == 'images/profile.png' ? 1.32 : 1.16;
-
-      return Transform.scale(
-        scale: scale,
-        child: Image.asset(
-          _profileAvatarAsset!,
-          fit: BoxFit.contain,
-          alignment: Alignment.center,
-          filterQuality: FilterQuality.high,
-          isAntiAlias: true,
-          errorBuilder: (_, _, _) => defaultAvatar(),
-        ),
+      return Image.asset(
+        _profileAvatarAsset!,
+        width: 48,
+        height: 48,
+        fit: BoxFit.contain,
+        alignment: Alignment.center,
+        filterQuality: FilterQuality.high,
+        isAntiAlias: true,
+        errorBuilder: (_, _, _) => defaultAvatar(),
       );
     }
 
@@ -247,19 +242,7 @@ class _HomeTopBarState extends State<HomeTopBar> {
                 _loadProfileImage();
               });
             },
-            child: Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Theme.of(context).colorScheme.primary,
-                border: Border.all(
-                  color: Theme.of(context).colorScheme.primary,
-                  width: 2,
-                ),
-              ),
-              child: ClipOval(child: _buildAvatarImage()),
-            ),
+            child: SizedBox(width: 48, height: 48, child: _buildAvatarImage()),
           ),
         ),
         const SizedBox(width: 8),

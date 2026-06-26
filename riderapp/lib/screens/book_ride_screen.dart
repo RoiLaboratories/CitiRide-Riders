@@ -1403,15 +1403,14 @@ class _BookRideScreenState extends State<BookRideScreen> {
                     size: 20,
                   ),
                 ),
-                ClipOval(
-                  child: Image.asset(
-                    _driverAvatarAsset,
-                    width: 36,
-                    height: 36,
-                    fit: BoxFit.cover,
-                    filterQuality: FilterQuality.high,
-                    isAntiAlias: true,
-                  ),
+                Image.asset(
+                  _driverAvatarAsset,
+                  width: 40,
+                  height: 44,
+                  fit: BoxFit.contain,
+                  alignment: Alignment.center,
+                  filterQuality: FilterQuality.high,
+                  isAntiAlias: true,
                 ),
                 const SizedBox(width: 10),
                 Expanded(

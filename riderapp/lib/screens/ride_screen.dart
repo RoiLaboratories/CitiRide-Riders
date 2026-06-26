@@ -244,16 +244,19 @@ class _RideScreenState extends State<RideScreen> {
           ),
           child: Row(
             children: [
-              CircleAvatar(
-                radius: 20,
-                backgroundColor: const Color(0xFFF6DCE8),
-                child: ClipOval(
-                  child: Image.asset(
-                    'images/profile.png',
-                    width: 36,
-                    height: 36,
-                    fit: BoxFit.contain,
-                    alignment: Alignment.center,
+              SizedBox(
+                width: 40,
+                height: 40,
+                child: Image.asset(
+                  'images/profile.png',
+                  fit: BoxFit.contain,
+                  alignment: Alignment.center,
+                  filterQuality: FilterQuality.high,
+                  isAntiAlias: true,
+                  errorBuilder: (_, _, _) => const Icon(
+                    Icons.person_rounded,
+                    color: Color(0xFF2D2F3A),
+                    size: 24,
                   ),
                 ),
               ),
@@ -430,16 +433,19 @@ class _RideCompletedDetailsScreen extends StatelessWidget {
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        CircleAvatar(
-                          radius: 24,
-                          backgroundColor: const Color(0xFFF6DCE8),
-                          child: ClipOval(
-                            child: Image.asset(
-                              'images/profile.png',
-                              width: 42,
-                              height: 42,
-                              fit: BoxFit.contain,
-                              alignment: Alignment.center,
+                        SizedBox(
+                          width: 48,
+                          height: 48,
+                          child: Image.asset(
+                            'images/profile.png',
+                            fit: BoxFit.contain,
+                            alignment: Alignment.center,
+                            filterQuality: FilterQuality.high,
+                            isAntiAlias: true,
+                            errorBuilder: (_, _, _) => const Icon(
+                              Icons.person_rounded,
+                              color: Color(0xFF2D2F3A),
+                              size: 28,
                             ),
                           ),
                         ),

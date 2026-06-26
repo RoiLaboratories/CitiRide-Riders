@@ -6,6 +6,8 @@ import 'package:latlong2/latlong.dart' as osm;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/saved_place_type.dart';
+import '../theme/app_theme.dart';
+import '../utils/google_map_style.dart';
 import 'saved_place_success_screen.dart';
 
 class SavedPlaceMapConfirmScreen extends StatefulWidget {
@@ -25,7 +27,12 @@ class SavedPlaceMapConfirmScreen extends StatefulWidget {
       _SavedPlaceMapConfirmScreenState();
 }
 
-class _SavedPlaceMapConfirmScreenState extends State<SavedPlaceMapConfirmScreen> {
+class _SavedPlaceMapConfirmScreenState
+    extends State<SavedPlaceMapConfirmScreen> {
+  static const Color _sheet = Color(0xFF151515);
+  static const Color _field = Color(0xFF242424);
+  static const Color _muted = Color(0xFF9B9B9B);
+
   late gmaps.LatLng _selectedLatLng;
   bool _alwaysUseThisLocation = false;
   bool _saving = false;
@@ -60,125 +67,207 @@ class _SavedPlaceMapConfirmScreenState extends State<SavedPlaceMapConfirmScreen>
     );
   }
 
+  String get _shortAddress {
+    final trimmed = widget.selectedAddress.trim();
+    if (trimmed.isEmpty) return widget.placeType.title;
+    return trimmed.split(',').first.trim();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF101010),
       body: Stack(
         children: [
           Positioned.fill(child: _buildMap()),
-          Positioned(
-            top: MediaQuery.of(context).padding.top + 12,
-            left: 14,
-            child: CircleAvatar(
-              radius: 18,
-              backgroundColor: Colors.white,
-              child: IconButton(
-                icon: const Icon(
-                  Icons.close_rounded,
-                  color: Color(0xFF2D2F3A),
-                  size: 20,
+          Positioned.fill(child: Container(color: Colors.black.withAlpha(34))),
+          IgnorePointer(
+            child: Center(
+              child: Transform.translate(
+                offset: const Offset(0, -24),
+                child: Image.asset(
+                  'images/location_pin.png',
+                  width: 52,
+                  height: 52,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, _, _) => const Icon(
+                    Icons.location_on_rounded,
+                    color: CitiRideTheme.primaryYellow,
+                    size: 52,
+                  ),
                 ),
-                onPressed: () => Navigator.pop(context),
               ),
             ),
           ),
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Container(
-              margin: const EdgeInsets.fromLTRB(14, 0, 14, 14),
-              padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(22),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withAlpha(18),
-                    blurRadius: 14,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 12,
+            left: 14,
+            child: InkWell(
+              onTap: () => Navigator.pop(context),
+              customBorder: const CircleBorder(),
+              child: Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFF151515).withAlpha(184),
+                  border: Border.all(color: const Color(0xFFE8E8E8)),
+                ),
+                child: const Icon(
+                  Icons.close_rounded,
+                  color: Colors.white,
+                  size: 22,
+                ),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    children: [
-                      const Expanded(
-                        child: Text(
-                          "Always pick me up when I'm at this location",
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Color(0xFF7D8088),
-                          ),
-                        ),
-                      ),
-                      Switch(
-                        value: _alwaysUseThisLocation,
-                        activeThumbColor: Theme.of(context).colorScheme.primary,
-                        onChanged: (value) {
-                          setState(() => _alwaysUseThisLocation = value);
-                        },
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          widget.selectedAddress,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            color: Color(0xFF2D2F3A),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () => Navigator.pop(context),
-                        icon: const Icon(
-                          Icons.search_rounded,
-                          color: Color(0xFF7D8088),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: _saving ? null : _savePlace,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).colorScheme.primary,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(26),
-                        ),
-                      ),
-                      child: _saving
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : const Text(
-                              'Confirm Location',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
+            ),
+          ),
+          Align(alignment: Alignment.bottomCenter, child: _bottomSheet()),
+        ],
+      ),
+    );
+  }
+
+  Widget _bottomSheet() {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.fromLTRB(
+        18,
+        12,
+        18,
+        18 + MediaQuery.paddingOf(context).bottom,
+      ),
+      decoration: const BoxDecoration(
+        color: _sheet,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 42,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.white.withAlpha(220),
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            height: 38,
+            padding: const EdgeInsets.fromLTRB(14, 0, 6, 0),
+            decoration: BoxDecoration(
+              color: _field,
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: const Color(0xFF474747)),
+            ),
+            child: Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    "Always pick me up when I'm at this location",
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: _muted,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
-                ],
+                ),
+                Transform.scale(
+                  scale: 0.72,
+                  child: Switch(
+                    value: _alwaysUseThisLocation,
+                    activeThumbColor: Colors.white,
+                    activeTrackColor: const Color(0xFF20DC5A),
+                    inactiveThumbColor: Colors.white,
+                    inactiveTrackColor: const Color(0xFF555555),
+                    onChanged: (value) {
+                      setState(() => _alwaysUseThisLocation = value);
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 18),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _shortAddress,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Drag map to set the default pick-up/drop-off location for\nthis saved place',
+                      style: TextStyle(
+                        color: Colors.white.withAlpha(152),
+                        fontSize: 10,
+                        height: 1.35,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
               ),
+              IconButton(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(
+                  Icons.search_rounded,
+                  color: Color(0xFFBDBDBD),
+                  size: 23,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton(
+              onPressed: _saving ? null : _savePlace,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: CitiRideTheme.primaryYellow,
+                disabledBackgroundColor: CitiRideTheme.primaryYellow.withAlpha(
+                  118,
+                ),
+                foregroundColor: Colors.black,
+                disabledForegroundColor: Colors.black.withAlpha(140),
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(26),
+                ),
+              ),
+              child: _saving
+                  ? const SizedBox(
+                      width: 19,
+                      height: 19,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.black,
+                      ),
+                    )
+                  : const Text(
+                      'Confirm Location',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
             ),
           ),
         ],
@@ -207,23 +296,9 @@ class _SavedPlaceMapConfirmScreenState extends State<SavedPlaceMapConfirmScreen>
         children: [
           fm.TileLayer(
             urlTemplate:
-                'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+                'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
             subdomains: const ['a', 'b', 'c', 'd'],
             userAgentPackageName: 'com.example.citiride',
-          ),
-          fm.MarkerLayer(
-            markers: [
-              fm.Marker(
-                point: center,
-                width: 46,
-                height: 46,
-                child: const Icon(
-                  Icons.location_on_rounded,
-                  color: Color(0xFF2F323D),
-                  size: 42,
-                ),
-              ),
-            ],
           ),
         ],
       );
@@ -237,19 +312,12 @@ class _SavedPlaceMapConfirmScreenState extends State<SavedPlaceMapConfirmScreen>
       zoomControlsEnabled: false,
       mapToolbarEnabled: false,
       myLocationButtonEnabled: false,
+      compassEnabled: false,
+      style: kGoogleMapGrayscaleStyle,
       onCameraMove: (position) {
         _selectedLatLng = position.target;
       },
       onCameraIdle: () => setState(() {}),
-      markers: {
-        gmaps.Marker(
-          markerId: const gmaps.MarkerId('saved_place_pin'),
-          position: _selectedLatLng,
-          icon: gmaps.BitmapDescriptor.defaultMarkerWithHue(
-            gmaps.BitmapDescriptor.hueAzure,
-          ),
-        ),
-      },
     );
   }
 }

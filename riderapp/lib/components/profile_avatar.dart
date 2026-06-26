@@ -65,18 +65,10 @@ class _ProfileAvatarState extends State<ProfileAvatar> {
 
   @override
   Widget build(BuildContext context) {
-    final avatar = Container(
+    final avatar = SizedBox(
       width: widget.size,
       height: widget.size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: Theme.of(context).colorScheme.primary,
-        border: widget.borderWidth > 0 && widget.borderColor != null
-            ? Border.all(color: widget.borderColor!, width: widget.borderWidth)
-            : null,
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: _image(),
+      child: Center(child: _image()),
     );
 
     if (widget.onTap == null) return avatar;
@@ -86,32 +78,29 @@ class _ProfileAvatarState extends State<ProfileAvatar> {
 
   Widget _image() {
     if (_bytes != null && _bytes!.isNotEmpty) {
-      return Transform.scale(
-        scale: 1.16,
-        child: Image.memory(
-          _bytes!,
-          fit: BoxFit.contain,
-          alignment: Alignment.center,
-          filterQuality: FilterQuality.high,
-          isAntiAlias: true,
-        ),
-      );
-    }
-
-    final asset = _asset ?? 'images/profile.png';
-    final scale = asset == 'images/profile.png' ? 1.32 : 1.16;
-
-    return Transform.scale(
-      scale: scale,
-      child: Image.asset(
-        asset,
+      return Image.memory(
+        _bytes!,
+        width: widget.size,
+        height: widget.size,
         fit: BoxFit.contain,
         alignment: Alignment.center,
         filterQuality: FilterQuality.high,
         isAntiAlias: true,
-        errorBuilder: (_, _, _) =>
-            const Icon(Icons.person_rounded, color: Colors.white),
-      ),
+      );
+    }
+
+    final asset = _asset ?? 'images/profile.png';
+
+    return Image.asset(
+      asset,
+      width: widget.size,
+      height: widget.size,
+      fit: BoxFit.contain,
+      alignment: Alignment.center,
+      filterQuality: FilterQuality.high,
+      isAntiAlias: true,
+      errorBuilder: (_, _, _) =>
+          const Icon(Icons.person_rounded, color: Colors.white),
     );
   }
 }
