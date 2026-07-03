@@ -88,8 +88,8 @@ class BottomNavBar extends StatelessWidget {
         curve: Curves.easeOutCubic,
         height: 38,
         padding: EdgeInsets.symmetric(
-          horizontal: isSelected ? 10 : 8,
-          vertical: 5,
+          horizontal: isSelected ? 9 : 7,
+          vertical: 4,
         ),
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFF101010) : Colors.transparent,
@@ -100,13 +100,15 @@ class BottomNavBar extends StatelessWidget {
           children: [
             Image.asset(
               iconAsset,
-              height: 26,
-              width: 26,
+              height: 29,
+              width: 29,
               color: isSelected ? Colors.white : null,
               colorBlendMode: isSelected ? BlendMode.srcIn : null,
+              filterQuality: FilterQuality.high,
+              isAntiAlias: true,
               errorBuilder: (_, _, _) => Icon(
                 _fallbackIcon(index),
-                size: 24,
+                size: 26,
                 color: isSelected ? Colors.white : Colors.black,
               ),
             ),

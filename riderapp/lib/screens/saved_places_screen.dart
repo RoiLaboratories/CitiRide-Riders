@@ -13,6 +13,10 @@ class SavedPlacesScreen extends StatefulWidget {
 }
 
 class _SavedPlacesScreenState extends State<SavedPlacesScreen> {
+  static const Color _bg = Color(0xFF101010);
+  static const Color _row = Color(0xFF2B2B2B);
+  static const Color _muted = Color(0xFF9B9B9B);
+
   String? _homeAddress;
   String? _officeAddress;
   bool _loading = true;
@@ -28,8 +32,8 @@ class _SavedPlacesScreenState extends State<SavedPlacesScreen> {
     if (!mounted) return;
     setState(() {
       _homeAddress = (prefs.getString('saved_place_home_address') ?? '').trim();
-      _officeAddress =
-          (prefs.getString('saved_place_office_address') ?? '').trim();
+      _officeAddress = (prefs.getString('saved_place_office_address') ?? '')
+          .trim();
       _loading = false;
     });
   }
@@ -49,46 +53,39 @@ class _SavedPlacesScreenState extends State<SavedPlacesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).extension<CitiRideThemeColors>()?.surface ?? const Color(0xFFF2F2F4),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new_rounded,
-            size: 24,
-            color: Color(0xFF2D2F3A),
-          ),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
-          'Saved places',
-          style: TextStyle(
-            color: Color(0xFF2D2F3A),
-            fontSize: 22,
-            fontWeight: FontWeight.w600,
-          ),
+      backgroundColor: _bg,
+      body: SafeArea(
+        child: Column(
+          children: [
+            _Header(
+              onBack: () => Navigator.pop(context),
+              title: 'Saved places',
+            ),
+            Expanded(
+              child: _loading
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                        color: CitiRideTheme.primaryYellow,
+                      ),
+                    )
+                  : ListView(
+                      padding: const EdgeInsets.fromLTRB(12, 18, 12, 24),
+                      children: [
+                        _savedPlaceRow(
+                          type: SavedPlaceType.home,
+                          subtitle: _homeAddress,
+                        ),
+                        const SizedBox(height: 12),
+                        _savedPlaceRow(
+                          type: SavedPlaceType.office,
+                          subtitle: _officeAddress,
+                        ),
+                      ],
+                    ),
+            ),
+          ],
         ),
       ),
-      body: _loading
-          ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFF2F323D)),
-            )
-          : ListView(
-              padding: const EdgeInsets.fromLTRB(18, 10, 18, 24),
-              children: [
-                _savedPlaceRow(
-                  type: SavedPlaceType.home,
-                  subtitle: _homeAddress,
-                ),
-                const SizedBox(height: 4),
-                _savedPlaceRow(
-                  type: SavedPlaceType.office,
-                  subtitle: _officeAddress,
-                ),
-              ],
-            ),
     );
   }
 
@@ -98,36 +95,32 @@ class _SavedPlacesScreenState extends State<SavedPlacesScreen> {
   }) {
     final subtitleText = (subtitle ?? '').trim();
     final hasSubtitle = subtitleText.isNotEmpty;
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(26),
         onTap: () => _openSearchFlow(type),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          height: 56,
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withAlpha(10),
-                blurRadius: 8,
-                offset: const Offset(0, 3),
-              ),
-            ],
+            color: _row,
+            borderRadius: BorderRadius.circular(26),
           ),
           child: Row(
             children: [
               Expanded(
                 child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       type.actionLabel,
                       style: const TextStyle(
-                        fontSize: 16,
+                        fontSize: 13,
                         fontWeight: FontWeight.w500,
-                        color: Color(0xFF2D2F3A),
+                        color: Colors.white,
                       ),
                     ),
                     if (hasSubtitle) ...[
@@ -136,10 +129,7 @@ class _SavedPlacesScreenState extends State<SavedPlacesScreen> {
                         subtitleText,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: Color(0xFF7D8088),
-                        ),
+                        style: const TextStyle(fontSize: 11, color: _muted),
                       ),
                     ],
                   ],
@@ -147,12 +137,50 @@ class _SavedPlacesScreenState extends State<SavedPlacesScreen> {
               ),
               const Icon(
                 Icons.arrow_forward_ios_rounded,
-                size: 18,
-                color: Color(0xFF7D8088),
+                size: 15,
+                color: _muted,
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _Header extends StatelessWidget {
+  const _Header({required this.onBack, required this.title});
+
+  final VoidCallback onBack;
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 54,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Positioned(
+            left: 2,
+            child: IconButton(
+              onPressed: onBack,
+              icon: const Icon(
+                Icons.arrow_back_ios_new_rounded,
+                color: Colors.white,
+                size: 18,
+              ),
+            ),
+          ),
+          Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
       ),
     );
   }

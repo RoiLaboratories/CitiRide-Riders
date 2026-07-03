@@ -263,9 +263,7 @@ class AuthCodeFields extends StatelessWidget {
                   border: Border.all(
                     color:
                         feedbackBorderColor ??
-                        (isFocused || isFilled
-                            ? primary
-                            : const Color(0xFFEFEFF4)),
+                        (isFocused ? primary : const Color(0xFFEFEFF4)),
                     width: 1.6,
                   ),
                 ),

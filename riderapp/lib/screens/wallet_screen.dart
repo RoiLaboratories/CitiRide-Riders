@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../components/profile_avatar.dart';
 import '../components/wallet_balance_card.dart';
@@ -166,7 +167,7 @@ class _WalletScreenState extends State<WalletScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         _WalletAction(
-                          imageAsset: 'images/add_money.png',
+                          imageAsset: 'images/add_money.svg',
                           label: 'Add money',
                           onTap: _showAddMoneySheet,
                         ),
@@ -287,7 +288,12 @@ class _UnusedWalletBalanceCardStateShim {
             return Stack(
               children: [
                 Positioned.fill(
-                  child: Image.asset('images/modal 1.png', fit: BoxFit.fill),
+                  child: Image.asset(
+                    'images/modal 1.png',
+                    fit: BoxFit.fill,
+                    filterQuality: FilterQuality.high,
+                    isAntiAlias: true,
+                  ),
                 ),
                 Positioned(
                   top: height * 0.12,
@@ -451,7 +457,21 @@ class _WalletAction extends StatelessWidget {
                 border: Border.all(color: colors.border),
               ),
               clipBehavior: Clip.antiAlias,
-              child: Image.asset(imageAsset, fit: BoxFit.cover),
+              child: imageAsset.endsWith('.svg')
+                  ? Center(
+                      child: SvgPicture.asset(
+                        imageAsset,
+                        width: 46,
+                        height: 46,
+                        fit: BoxFit.cover,
+                      ),
+                    )
+                  : Image.asset(
+                      imageAsset,
+                      fit: BoxFit.cover,
+                      filterQuality: FilterQuality.high,
+                      isAntiAlias: true,
+                    ),
             ),
             const SizedBox(height: 7),
             Text(

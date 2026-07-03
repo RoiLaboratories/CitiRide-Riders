@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart' as geocoding;
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/google_maps_places_service.dart';
@@ -78,21 +79,28 @@ class _HomeTopBarState extends State<HomeTopBar> {
 
   Widget _buildAvatarImage() {
     Widget defaultAvatar() {
-      return Transform.scale(
-        scale: 1.72,
-        child: Image.asset(
-          'images/profile.png',
-          fit: BoxFit.cover,
-          errorBuilder: (_, _, _) =>
-              const Icon(Icons.person, color: Colors.white, size: 24),
-        ),
+      return Image.asset(
+        'images/profile.png',
+        width: 48,
+        height: 48,
+        fit: BoxFit.contain,
+        alignment: Alignment.center,
+        filterQuality: FilterQuality.high,
+        isAntiAlias: true,
+        errorBuilder: (_, _, _) =>
+            const Icon(Icons.person, color: Colors.white, size: 24),
       );
     }
 
     if (_profileAvatarBytes != null && _profileAvatarBytes!.isNotEmpty) {
       return Image.memory(
         _profileAvatarBytes!,
-        fit: BoxFit.cover,
+        width: 48,
+        height: 48,
+        fit: BoxFit.contain,
+        alignment: Alignment.center,
+        filterQuality: FilterQuality.high,
+        isAntiAlias: true,
         errorBuilder: (_, _, _) => defaultAvatar(),
       );
     }
@@ -100,7 +108,12 @@ class _HomeTopBarState extends State<HomeTopBar> {
     if (_profileAvatarAsset != null && _profileAvatarAsset!.trim().isNotEmpty) {
       return Image.asset(
         _profileAvatarAsset!,
-        fit: BoxFit.cover,
+        width: 48,
+        height: 48,
+        fit: BoxFit.contain,
+        alignment: Alignment.center,
+        filterQuality: FilterQuality.high,
+        isAntiAlias: true,
         errorBuilder: (_, _, _) => defaultAvatar(),
       );
     }
@@ -229,19 +242,7 @@ class _HomeTopBarState extends State<HomeTopBar> {
                 _loadProfileImage();
               });
             },
-            child: Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Theme.of(context).colorScheme.primary,
-                border: Border.all(
-                  color: Theme.of(context).colorScheme.primary,
-                  width: 2,
-                ),
-              ),
-              child: ClipOval(child: _buildAvatarImage()),
-            ),
+            child: SizedBox(width: 48, height: 48, child: _buildAvatarImage()),
           ),
         ),
         const SizedBox(width: 8),
@@ -272,6 +273,8 @@ class _HomeTopBarState extends State<HomeTopBar> {
                       width: 22,
                       height: 22,
                       fit: BoxFit.contain,
+                      filterQuality: FilterQuality.high,
+                      isAntiAlias: true,
                     ),
                     const SizedBox(width: 7),
                     Expanded(
@@ -342,8 +345,8 @@ class _HomeTopBarState extends State<HomeTopBar> {
               radius: 22,
               backgroundColor: isDark ? const Color(0xFF171717) : Colors.white,
               child: Center(
-                child: Image.asset(
-                  isDark ? 'images/bell1.png' : 'images/bell.png',
+                child: SvgPicture.asset(
+                  isDark ? 'images/bell1.svg' : 'images/bell2.svg',
                   width: 24,
                   height: 24,
                   fit: BoxFit.contain,

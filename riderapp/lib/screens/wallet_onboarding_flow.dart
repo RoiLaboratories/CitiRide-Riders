@@ -5,7 +5,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../theme/app_theme.dart';
 
 class WalletOnboardingFlow extends StatefulWidget {
-  const WalletOnboardingFlow({super.key});
+  const WalletOnboardingFlow({super.key, this.openWalletOnFinish = false});
+
+  final bool openWalletOnFinish;
 
   @override
   State<WalletOnboardingFlow> createState() => _WalletOnboardingFlowState();
@@ -80,33 +82,6 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
     }
   }
 
-  String get _title {
-    switch (_step) {
-      case 0:
-        return 'Wallet';
-      case 1:
-        return 'Wallet';
-      case 2:
-        return 'Wallet';
-      case 3:
-        return 'CitiRide Wallet';
-      case 4:
-        return 'Verify your phone number';
-      case 5:
-        return 'Wallet';
-      case 6:
-        return _isConfirmingPin ? 'Confirm passcode' : 'Create passcode';
-      case 7:
-        return 'Wallet';
-      case 8:
-        return 'Wallet';
-      case 9:
-        return 'Wallet';
-      default:
-        return '';
-    }
-  }
-
   bool get _canContinue {
     if (_isSaving) return false;
 
@@ -163,7 +138,15 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
       );
 
       if (!mounted) return;
-      Navigator.of(context).pop(true);
+      if (widget.openWalletOnFinish) {
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          '/home',
+          (route) => false,
+          arguments: {'initialTabIndex': 2},
+        );
+      } else {
+        Navigator.of(context).pop(true);
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -290,7 +273,7 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
           child: Column(
             children: [
               _FlowHeader(
-                title: _step <= 2 ? _title : '',
+                title: '',
                 canBack: _step != 10,
                 showNeedHelp: _step >= 3 && _step <= 8,
                 showPhoneChip: _step == 6,
@@ -352,12 +335,12 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
         return SingleChildScrollView(
           padding: EdgeInsets.fromLTRB(
             24,
+            20,
             24,
-            24,
-            24 + MediaQuery.viewInsetsOf(context).bottom,
+            20 + MediaQuery.viewInsetsOf(context).bottom,
           ),
           child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: constraints.maxHeight - 48),
+            constraints: BoxConstraints(minHeight: constraints.maxHeight - 40),
             child: IntrinsicHeight(child: child),
           ),
         );
@@ -553,7 +536,7 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 54),
+          const SizedBox(height: 28),
           const Text(
             'CitiRide needs your consent to continue',
             style: TextStyle(
@@ -563,7 +546,7 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
               height: 1.25,
             ),
           ),
-          const SizedBox(height: 76),
+          const SizedBox(height: 48),
           _ConsentCheckboxLine(
             selected: _termsConsent,
             onTap: () => setState(() => _termsConsent = !_termsConsent),
@@ -623,7 +606,7 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 54),
+          const SizedBox(height: 28),
           const Text(
             'Verify Your Phone Number',
             style: TextStyle(
@@ -638,7 +621,7 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
             'and enter it here.',
             style: TextStyle(color: _muted, fontSize: 14, height: 1.45),
           ),
-          const SizedBox(height: 82),
+          const SizedBox(height: 52),
           _EditableCodeBoxes(
             controller: _phoneOtpController,
             value: _phoneOtpController.text,
@@ -686,7 +669,7 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 54),
+          const SizedBox(height: 28),
           const Text(
             "What's Your Email Address",
             style: TextStyle(
@@ -700,7 +683,7 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
             'Enter the email you want associated with this account',
             style: TextStyle(color: _muted, fontSize: 14, height: 1.45),
           ),
-          const SizedBox(height: 108),
+          const SizedBox(height: 62),
           Container(
             height: 58,
             decoration: BoxDecoration(
@@ -743,7 +726,7 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
               ],
             ),
           ),
-          const SizedBox(height: 56),
+          const SizedBox(height: 36),
           const Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -784,10 +767,10 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
         ? 'Confirm passcode'
         : 'Set up your passcode';
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 34, 24, 24),
+    return _screenPadding(
       child: Column(
         children: [
+          const SizedBox(height: 6),
           Text(
             title,
             textAlign: TextAlign.center,
@@ -803,7 +786,7 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
             textAlign: TextAlign.center,
             style: const TextStyle(color: _muted, fontSize: 13, height: 1.5),
           ),
-          const SizedBox(height: 72),
+          const SizedBox(height: 48),
           _PasscodeBoxes(value: value, error: _pinError != null),
           if (_pinError != null) ...[
             const SizedBox(height: 10),
@@ -830,8 +813,7 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
   }
 
   Widget _buildIdentityOptionStep() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+    return _screenPadding(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1010,8 +992,7 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
   Widget _buildTransactionPinStep() {
     final hasError = _transactionPinError != null;
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+    return _screenPadding(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1029,7 +1010,7 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
             'Choose your transaction pin',
             style: TextStyle(color: _muted, fontSize: 13),
           ),
-          const SizedBox(height: 52),
+          const SizedBox(height: 34),
           const Text(
             'Enter transaction pin',
             style: TextStyle(color: _muted, fontSize: 13),
@@ -1046,7 +1027,7 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
               });
             },
           ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 22),
           const Text(
             'Confirm transaction pin',
             style: TextStyle(color: _muted, fontSize: 13),
@@ -1075,6 +1056,7 @@ class _WalletOnboardingFlowState extends State<WalletOnboardingFlow> {
             ),
           ],
           const Spacer(),
+          const SizedBox(height: 16),
           _PrimaryWalletButton(label: 'Create Pin', onPressed: _next),
         ],
       ),
@@ -1627,10 +1609,19 @@ class _EditableCodeBoxes extends StatelessWidget {
 }
 
 class _PasscodeBoxes extends StatelessWidget {
-  const _PasscodeBoxes({required this.value, required this.error});
+  const _PasscodeBoxes({
+    required this.value,
+    required this.error,
+    this.active = true,
+    this.completeLast = false,
+    this.errorLastOnly = false,
+  });
 
   final String value;
   final bool error;
+  final bool active;
+  final bool completeLast;
+  final bool errorLastOnly;
 
   @override
   Widget build(BuildContext context) {
@@ -1638,7 +1629,23 @@ class _PasscodeBoxes extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: List.generate(6, (index) {
         final isFilled = index < value.length;
-        final isFocused = index == value.length && value.length < 6;
+        final isFocused = active && index == value.length && value.length < 6;
+        final isLast = index == 5;
+        final showError = error && (!errorLastOnly || isLast);
+        final showSuccess =
+            completeLast && !error && isLast && value.length == 6;
+        final fillColor = showError && errorLastOnly
+            ? const Color(0x33FF4343)
+            : showSuccess
+            ? const Color(0x3320DC5A)
+            : const Color(0xFF232323);
+        final borderColor = showError
+            ? const Color(0xFFFF4343)
+            : showSuccess
+            ? const Color(0xFF20DC5A)
+            : isFocused
+            ? CitiRideTheme.primaryYellow
+            : const Color(0xFF303030);
 
         return AnimatedContainer(
           duration: const Duration(milliseconds: 160),
@@ -1646,15 +1653,9 @@ class _PasscodeBoxes extends StatelessWidget {
           height: 48,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: const Color(0xFF232323),
+            color: fillColor,
             borderRadius: BorderRadius.circular(4),
-            border: Border.all(
-              color: error
-                  ? const Color(0xFFFF4343)
-                  : isFocused
-                  ? CitiRideTheme.primaryYellow
-                  : const Color(0xFF303030),
-            ),
+            border: Border.all(color: borderColor),
           ),
           child: isFilled
               ? Container(
@@ -1672,7 +1673,7 @@ class _PasscodeBoxes extends StatelessWidget {
   }
 }
 
-class _EditablePasscodeBoxes extends StatelessWidget {
+class _EditablePasscodeBoxes extends StatefulWidget {
   const _EditablePasscodeBoxes({
     required this.controller,
     required this.value,
@@ -1686,29 +1687,64 @@ class _EditablePasscodeBoxes extends StatelessWidget {
   final ValueChanged<String> onChanged;
 
   @override
+  State<_EditablePasscodeBoxes> createState() => _EditablePasscodeBoxesState();
+}
+
+class _EditablePasscodeBoxesState extends State<_EditablePasscodeBoxes> {
+  late final FocusNode _focusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode = FocusNode()..addListener(_handleFocusChange);
+  }
+
+  @override
+  void dispose() {
+    _focusNode.removeListener(_handleFocusChange);
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _handleFocusChange() {
+    if (mounted) setState(() {});
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        _PasscodeBoxes(value: value, error: error),
-        Positioned.fill(
-          child: Opacity(
-            opacity: 0.01,
-            child: TextField(
-              controller: controller,
-              keyboardType: TextInputType.number,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-                LengthLimitingTextInputFormatter(6),
-              ],
-              onChanged: onChanged,
-              decoration: const InputDecoration(
-                border: InputBorder.none,
-                counterText: '',
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: _focusNode.requestFocus,
+      child: Stack(
+        children: [
+          _PasscodeBoxes(
+            value: widget.value,
+            error: widget.error,
+            active: _focusNode.hasFocus,
+            completeLast: widget.value.length == 6 && !widget.error,
+            errorLastOnly: widget.error,
+          ),
+          Positioned.fill(
+            child: Opacity(
+              opacity: 0.01,
+              child: TextField(
+                focusNode: _focusNode,
+                controller: widget.controller,
+                keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(6),
+                ],
+                onChanged: widget.onChanged,
+                decoration: const InputDecoration(
+                  border: InputBorder.none,
+                  counterText: '',
+                ),
               ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

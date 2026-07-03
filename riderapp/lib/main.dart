@@ -58,11 +58,20 @@ class MyApp extends ConsumerWidget {
         '/login': (context) => LoginScreen(),
         '/otp': (context) =>
             const OTPScreen(phoneNumber: '', verificationId: ''),
-        '/home': (context) => const HomeScreen(),
+        '/home': (context) {
+          final args =
+              ModalRoute.of(context)?.settings.arguments
+                  as Map<String, dynamic>?;
+          final initialTabIndex = args?['initialTabIndex'] is int
+              ? args!['initialTabIndex'] as int
+              : 0;
+          return HomeScreen(initialTabIndex: initialTabIndex);
+        },
         '/route': (context) => const RouteScreen(),
         '/ride': (context) => RideScreen(),
         '/bookride': (context) => BookRideScreen(),
-        '/wallet-onboarding': (context) => const WalletOnboardingFlow(),
+        '/wallet-onboarding': (context) =>
+            const WalletOnboardingFlow(openWalletOnFinish: true),
         '/wallet': (context) => WalletScreen(),
         '/add-card': (context) => const AddCardScreen(),
         '/top-up': (context) => TopUpScreen(),

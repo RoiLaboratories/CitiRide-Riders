@@ -98,9 +98,14 @@ class _ChatSheetState extends State<ChatSheet> {
                           color: Color(0xFF333741),
                         ),
                       ),
-                      const CircleAvatar(
-                        radius: 18,
-                        backgroundImage: AssetImage('images/driver.png'),
+                      Image.asset(
+                        'images/driver.png',
+                        width: 40,
+                        height: 44,
+                        fit: BoxFit.contain,
+                        alignment: Alignment.center,
+                        filterQuality: FilterQuality.high,
+                        isAntiAlias: true,
                       ),
                       const SizedBox(width: 10),
                       const Expanded(

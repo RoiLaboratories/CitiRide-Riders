@@ -11,7 +11,6 @@ class TopUpScreen extends StatefulWidget {
 }
 
 class _TopUpScreenState extends State<TopUpScreen> {
-  static const Color _panel = Color(0xFF181818);
   static const Color _yellow = CitiRideTheme.primaryYellow;
   static const Color _muted = Color(0xFF9B9B9B);
 
@@ -281,31 +280,39 @@ class _AmountInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.citiRideColors;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final fillColor = isDark ? Colors.black : colors.inputFill;
+    final textColor = isDark ? Colors.white : colors.text;
+    const hintColor = Color(0xFF8F8F8F);
+
     return Container(
       height: 54,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: fillColor,
         borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: CitiRideTheme.primaryYellow, width: 1.2),
       ),
       child: TextField(
         controller: controller,
         keyboardType: TextInputType.number,
         inputFormatters: [FilteringTextInputFormatter.digitsOnly],
         onChanged: onChanged,
-        style: const TextStyle(
-          color: Colors.black,
+        cursorColor: CitiRideTheme.primaryYellow,
+        style: TextStyle(
+          color: textColor,
           fontSize: 17,
           fontWeight: FontWeight.w700,
         ),
         decoration: InputDecoration(
           prefixText: '\u20A6 ',
-          prefixStyle: const TextStyle(
-            color: Colors.black,
+          prefixStyle: TextStyle(
+            color: textColor,
             fontSize: 17,
             fontWeight: FontWeight.w700,
           ),
           hintText: 'Enter amount',
-          hintStyle: const TextStyle(color: Color(0xFF7B7B7B)),
+          hintStyle: const TextStyle(color: hintColor),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 18,
@@ -314,7 +321,7 @@ class _AmountInput extends StatelessWidget {
           suffixIcon: showClear
               ? IconButton(
                   onPressed: onClear,
-                  icon: const Icon(Icons.close_rounded, color: Colors.black),
+                  icon: Icon(Icons.close_rounded, color: textColor),
                 )
               : null,
         ),
@@ -349,12 +356,12 @@ class _QuickAmountChip extends StatelessWidget {
           decoration: BoxDecoration(
             color: selected
                 ? _TopUpScreenState._yellow
-                : (isDark ? _TopUpScreenState._panel : colors.surfaceAlt),
+                : (isDark ? Colors.black : colors.surfaceAlt),
             borderRadius: BorderRadius.circular(999),
             border: Border.all(
               color: selected
                   ? _TopUpScreenState._yellow
-                  : colors.border,
+                  : (isDark ? _TopUpScreenState._yellow : colors.border),
             ),
           ),
           child: Text(

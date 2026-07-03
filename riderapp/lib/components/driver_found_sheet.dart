@@ -40,8 +40,12 @@ class DriverFoundSheet extends StatelessWidget {
               borderRadius: BorderRadius.circular(10),
               child: LinearProgressIndicator(
                 minHeight: 4,
-                backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
-                valueColor: AlwaysStoppedAnimation(Theme.of(context).colorScheme.primary),
+                backgroundColor: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.2),
+                valueColor: AlwaysStoppedAnimation(
+                  Theme.of(context).colorScheme.primary,
+                ),
               ),
             ),
 
@@ -58,10 +62,7 @@ class DriverFoundSheet extends StatelessWidget {
 
             const SizedBox(height: 28),
 
-            primaryButton(
-              text: 'Confirm Order',
-              onTap: onConfirm,
-            ),
+            primaryButton(text: 'Confirm Order', onTap: onConfirm),
           ],
         ),
       ),
@@ -69,25 +70,18 @@ class DriverFoundSheet extends StatelessWidget {
   }
 
   Widget _driverAvatar() {
-    return Column(
-      children: [
-        const CircleAvatar(
-          radius: 26,
-          backgroundImage: AssetImage('images/driver.png'),
+    return SizedBox(
+      width: 58,
+      height: 64,
+      child: Center(
+        child: Image.asset(
+          'images/driver.png',
+          fit: BoxFit.contain,
+          alignment: Alignment.center,
+          filterQuality: FilterQuality.high,
+          isAntiAlias: true,
         ),
-        const SizedBox(height: 6),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-          decoration: BoxDecoration(
-            color: kPrimaryBlue,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: const Text(
-            '4.9',
-            style: TextStyle(color: Colors.white, fontSize: 12),
-          ),
-        ),
-      ],
+      ),
     );
   }
 

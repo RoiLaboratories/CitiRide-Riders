@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class WalletBalanceCard extends StatefulWidget {
   const WalletBalanceCard({
@@ -32,7 +33,12 @@ class _WalletBalanceCardState extends State<WalletBalanceCard> {
           return Stack(
             children: [
               Positioned.fill(
-                child: Image.asset('images/modal 1.png', fit: BoxFit.fill),
+                child: Image.asset(
+                  'images/modal 1.png',
+                  fit: BoxFit.fill,
+                  filterQuality: FilterQuality.high,
+                  isAntiAlias: true,
+                ),
               ),
               Positioned(
                 top: height * 0.12,
@@ -162,7 +168,11 @@ class _WalletBalanceCardState extends State<WalletBalanceCard> {
     );
 
     if (widget.height != null) {
-      return SizedBox(width: double.infinity, height: widget.height, child: card);
+      return SizedBox(
+        width: double.infinity,
+        height: widget.height,
+        child: card,
+      );
     }
 
     return AspectRatio(aspectRatio: 333 / 169, child: card);
@@ -170,7 +180,11 @@ class _WalletBalanceCardState extends State<WalletBalanceCard> {
 }
 
 class WalletNotificationButton extends StatelessWidget {
-  const WalletNotificationButton({super.key, required this.onTap, this.size = 42});
+  const WalletNotificationButton({
+    super.key,
+    required this.onTap,
+    this.size = 42,
+  });
 
   final VoidCallback onTap;
   final double size;
@@ -186,8 +200,8 @@ class WalletNotificationButton extends StatelessWidget {
         width: size,
         height: size,
         child: Center(
-          child: Image.asset(
-            isDark ? 'images/bell1.png' : 'images/bell.png',
+          child: SvgPicture.asset(
+            isDark ? 'images/bell1.svg' : 'images/bell2.svg',
             width: size * 0.58,
             height: size * 0.58,
             fit: BoxFit.contain,

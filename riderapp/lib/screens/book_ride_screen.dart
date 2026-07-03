@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_map/flutter_map.dart' as fm;
 import 'package:geocoding/geocoding.dart' as geocoding;
 import 'package:geolocator/geolocator.dart';
@@ -10,10 +12,12 @@ import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
 import 'package:latlong2/latlong.dart' as osm;
 
 import '../components/floating_action_sheet.dart';
+import '../components/in_app_call_sheet.dart';
 import '../models/chat_message.dart';
 import '../models/ride_choice.dart';
 import '../models/wallet_balance.dart';
 import '../ride_flow/ride_history_store.dart';
+import '../services/ride_share_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/google_map_style.dart';
 import 'home_screen.dart';
@@ -52,9 +56,19 @@ class _BookRideScreenState extends State<BookRideScreen> {
   static const Color _yellow = CitiRideTheme.primaryYellow;
   static const Color _green = Color(0xFF1FD85B);
   static const Color _danger = Color(0xFFFF3B3B);
+  static const String _driverName = 'Andrew Johnson';
+  static const String _driverVehicle = 'Green Toyota Corolla Sedan - BEN931AP';
+  static const String _driverAvatarAsset = 'images/driver.png';
+  static const String _locationIconAsset = 'images/location_icon.png';
+  static const String _destinationIconAsset = 'images/location_pin.png';
+  static const String _addStopIconAsset = 'images/add_stop.png';
+  static const String _shareRideIconAsset = 'images/share_ride.png';
+  static const String _contactIconAsset = 'images/contact.png';
+  static const String _editDestinationIconAsset = 'images/map_point.png';
 
   final TextEditingController _messageController = TextEditingController();
   final TextEditingController _reviewController = TextEditingController();
+  final GlobalKey _sharePreviewKey = GlobalKey();
 
   _BookRideStage _stage = _BookRideStage.selectRide;
   int _selectedRide = 0;
@@ -235,13 +249,13 @@ class _BookRideScreenState extends State<BookRideScreen> {
     try {
       final pickupMarker = await gmaps.BitmapDescriptor.asset(
         const ImageConfiguration(size: Size(52, 52)),
-        'images/location_pointer.png',
+        _locationIconAsset,
         width: 52,
         height: 52,
       );
       final destinationMarker = await gmaps.BitmapDescriptor.asset(
         const ImageConfiguration(size: Size(46, 46)),
-        'images/destination_pointer.png',
+        _destinationIconAsset,
         width: 46,
         height: 46,
       );
@@ -672,50 +686,116 @@ class _BookRideScreenState extends State<BookRideScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) {
-        return FloatingActionSheet(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Align(
-                alignment: Alignment.centerRight,
-                child: _circleIconButton(
-                  icon: Icons.close_rounded,
-                  onTap: () => Navigator.pop(context),
-                  size: 36,
-                  dark: true,
-                ),
-              ),
-              const SizedBox(height: 4),
-              const Text(
-                'Share ride details',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 12),
-              const Text(
-                'Follow this ride in real-time by sharing your ride details with the screenshot',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: _muted, fontSize: 13, height: 1.35),
-              ),
-              const SizedBox(height: 22),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+        var isSharing = false;
+
+        return StatefulBuilder(
+          builder: (sheetContext, setModalState) {
+            return FloatingActionSheet(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  _ridePreviewCard(scale: 0.86),
-                  const SizedBox(width: 12),
-                  _ridePreviewCard(scale: 0.72),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: _circleIconButton(
+                      icon: Icons.close_rounded,
+                      onTap: isSharing ? () {} : () => Navigator.pop(context),
+                      size: 44,
+                      dark: true,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  const Text(
+                    'Share ride details',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Follow this ride in real-time by sharing your ride details with the screenshot',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: _muted, fontSize: 14, height: 1.35),
+                  ),
+                  const SizedBox(height: 22),
+                  _rideSharePreview(),
+                  const SizedBox(height: 26),
+                  _primaryButton(
+                    isSharing ? 'Preparing...' : 'Share ride',
+                    isSharing
+                        ? () {}
+                        : () => _shareRideScreenshotFromSheet(
+                            sheetContext,
+                            (value) => setModalState(() => isSharing = value),
+                          ),
+                  ),
                 ],
               ),
-              const SizedBox(height: 26),
-              _primaryButton('Share ride', () => Navigator.pop(context)),
-            ],
-          ),
+            );
+          },
         );
       },
     );
+  }
+
+  Future<void> _shareRideScreenshotFromSheet(
+    BuildContext sheetContext,
+    ValueChanged<bool> setSharing,
+  ) async {
+    setSharing(true);
+
+    try {
+      await Future<void>.delayed(const Duration(milliseconds: 80));
+      final boundary =
+          _sharePreviewKey.currentContext?.findRenderObject()
+              as RenderRepaintBoundary?;
+
+      if (boundary == null) {
+        throw StateError('Ride preview is not ready yet.');
+      }
+
+      final image = await boundary.toImage(pixelRatio: 3);
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      final pngBytes = byteData?.buffer.asUint8List();
+
+      if (pngBytes == null || pngBytes.isEmpty) {
+        throw StateError('Could not capture ride screenshot.');
+      }
+
+      final shared = await shareRideScreenshot(
+        pngBytes,
+        'Follow my CitiRide from $_fromLabel to $_toLabel.',
+      );
+
+      if (!mounted) return;
+
+      if (!shared) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Sharing is not available on this platform.'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        setSharing(false);
+        return;
+      }
+
+      if (sheetContext.mounted) {
+        Navigator.of(sheetContext).pop();
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Could not share ride details: $e'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      if (sheetContext.mounted) {
+        setSharing(false);
+      }
+    }
   }
 
   Future<void> _showCancelRideConfirmation() async {
@@ -1250,54 +1330,43 @@ class _BookRideScreenState extends State<BookRideScreen> {
               child: ListView(
                 padding: EdgeInsets.zero,
                 children: [
-                  const Text(
-                    'My route',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
+                  _sectionTitle('My route'),
                   const SizedBox(height: 16),
-                  _routePointRow(_fromLabel, _yellow, editable: true),
+                  _routePointRow(
+                    _fromLabel,
+                    _locationIconAsset,
+                    editable: true,
+                  ),
                   _routeConnector(),
-                  _routePointRow('Add stop', const Color(0xFFFF981F)),
+                  _routePointRow('Add stop', _addStopIconAsset),
                   _routeConnector(),
-                  _routePointRow(_toLabel, _yellow, editable: true),
-                  const SizedBox(height: 20),
+                  _routePointRow(
+                    _toLabel,
+                    _destinationIconAsset,
+                    editable: true,
+                  ),
+                  const SizedBox(height: 18),
+                  const Divider(height: 1, thickness: 1, color: Colors.white),
+                  const SizedBox(height: 18),
                   _optionTile(
-                    icon: Icons.edit_location_alt_rounded,
+                    imageAsset: _editDestinationIconAsset,
                     title: 'Edit Destinations',
                     onTap: _editRoute,
                   ),
                   const SizedBox(height: 16),
-                  const Text(
-                    'Payment Method',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
+                  _sectionTitle('Payment Method'),
                   const SizedBox(height: 12),
                   _paymentSummaryRow(),
                   const SizedBox(height: 18),
-                  const Text(
-                    'More',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
+                  _sectionTitle('More'),
                   const SizedBox(height: 8),
                   _optionTile(
-                    icon: Icons.share_rounded,
+                    imageAsset: _shareRideIconAsset,
                     title: 'Share ride details',
                     onTap: _showShareRideSheet,
                   ),
                   _optionTile(
-                    imageAsset: 'images/chat.png',
+                    imageAsset: _contactIconAsset,
                     title: 'Contact driver',
                     onTap: () => _setStage(_BookRideStage.chat),
                   ),
@@ -1334,26 +1403,31 @@ class _BookRideScreenState extends State<BookRideScreen> {
                     size: 20,
                   ),
                 ),
-                const CircleAvatar(
-                  radius: 18,
-                  backgroundImage: AssetImage('images/driver.png'),
+                Image.asset(
+                  _driverAvatarAsset,
+                  width: 40,
+                  height: 44,
+                  fit: BoxFit.contain,
+                  alignment: Alignment.center,
+                  filterQuality: FilterQuality.high,
+                  isAntiAlias: true,
                 ),
                 const SizedBox(width: 10),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Andrew Johnson',
+                      const Text(
+                        _driverName,
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                      SizedBox(height: 2),
-                      Text(
-                        'Toyota Corolla Sedan - BEN931AP',
+                      const SizedBox(height: 2),
+                      const Text(
+                        _driverVehicle,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(color: _muted, fontSize: 11),
@@ -1786,6 +1860,8 @@ class _BookRideScreenState extends State<BookRideScreen> {
               width: 76,
               height: 46,
               fit: BoxFit.contain,
+              filterQuality: FilterQuality.high,
+              isAntiAlias: true,
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -1918,7 +1994,13 @@ class _BookRideScreenState extends State<BookRideScreen> {
         padding: const EdgeInsets.symmetric(vertical: 9),
         child: Row(
           children: [
-            Image.asset(image, width: 26, height: 26),
+            Image.asset(
+              image,
+              width: 26,
+              height: 26,
+              filterQuality: FilterQuality.high,
+              isAntiAlias: true,
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -2197,6 +2279,8 @@ class _BookRideScreenState extends State<BookRideScreen> {
         width: 30,
         height: 42,
         fit: BoxFit.contain,
+        filterQuality: FilterQuality.high,
+        isAntiAlias: true,
       ),
     );
   }
@@ -2330,40 +2414,40 @@ class _BookRideScreenState extends State<BookRideScreen> {
       fit: BoxFit.contain,
       color: color,
       colorBlendMode: color == null ? null : BlendMode.srcIn,
+      filterQuality: FilterQuality.high,
+      isAntiAlias: true,
+    );
+  }
+
+  Widget _sheetAssetIcon(String asset, {double size = 20, Color? color}) {
+    return Image.asset(
+      asset,
+      width: size,
+      height: size,
+      fit: BoxFit.contain,
+      alignment: Alignment.center,
+      color: color,
+      colorBlendMode: color == null ? null : BlendMode.srcIn,
+      filterQuality: FilterQuality.high,
+      isAntiAlias: true,
     );
   }
 
   Widget _driverAvatar() {
-    return Column(
-      children: [
-        const CircleAvatar(
-          radius: 27,
-          backgroundImage: AssetImage('images/driver.png'),
+    return SizedBox(
+      width: 66,
+      height: 70,
+      child: Center(
+        child: Image.asset(
+          _driverAvatarAsset,
+          width: 66,
+          height: 70,
+          fit: BoxFit.contain,
+          alignment: Alignment.center,
+          filterQuality: FilterQuality.high,
+          isAntiAlias: true,
         ),
-        const SizedBox(height: 6),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-          decoration: BoxDecoration(
-            color: _yellow,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: const Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.star_rounded, color: Colors.black, size: 12),
-              SizedBox(width: 2),
-              Text(
-                '4.9',
-                style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
+      ),
     );
   }
 
@@ -2520,7 +2604,7 @@ class _BookRideScreenState extends State<BookRideScreen> {
 
   Widget _phoneButton({double size = 56}) {
     return InkWell(
-      onTap: () {},
+      onTap: _showRideCall,
       customBorder: const CircleBorder(),
       child: Container(
         width: size,
@@ -2529,12 +2613,21 @@ class _BookRideScreenState extends State<BookRideScreen> {
           color: Color(0xFFD6FFD1),
           shape: BoxShape.circle,
         ),
-        child: const Icon(
-          Icons.phone_rounded,
-          color: Color(0xFF0DB63D),
+        child: _sheetAssetIcon(
+          _contactIconAsset,
           size: 25,
+          color: const Color(0xFF0DB63D),
         ),
       ),
+    );
+  }
+
+  void _showRideCall() {
+    showRideInAppCall(
+      context,
+      driverName: _driverName,
+      driverSubtitle: _driverVehicle,
+      avatarAsset: _driverAvatarAsset,
     );
   }
 
@@ -2627,13 +2720,32 @@ class _BookRideScreenState extends State<BookRideScreen> {
     );
   }
 
-  Widget _routePointRow(String label, Color color, {bool editable = false}) {
+  Widget _sectionTitle(String title) {
+    return SizedBox(
+      width: double.infinity,
+      child: Text(
+        title,
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 18,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    );
+  }
+
+  Widget _routePointRow(
+    String label,
+    String iconAsset, {
+    bool editable = false,
+  }) {
     return Row(
       children: [
-        Container(
-          width: 16,
-          height: 16,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        SizedBox(
+          width: 18,
+          height: 18,
+          child: Center(child: _sheetAssetIcon(iconAsset, size: 18)),
         ),
         const SizedBox(width: 14),
         Expanded(
@@ -2649,9 +2761,17 @@ class _BookRideScreenState extends State<BookRideScreen> {
           ),
         ),
         if (editable)
-          IconButton(
-            onPressed: _editRoute,
-            icon: const Icon(Icons.edit_rounded, color: Colors.white, size: 20),
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: _editRoute,
+            child: SizedBox(
+              width: 40,
+              height: 36,
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: _sheetAssetIcon(_editDestinationIconAsset, size: 24),
+              ),
+            ),
           ),
       ],
     );
@@ -2660,7 +2780,7 @@ class _BookRideScreenState extends State<BookRideScreen> {
   Widget _routeConnector() {
     return Container(
       height: 24,
-      margin: const EdgeInsets.only(left: 7),
+      margin: const EdgeInsets.only(left: 8),
       width: 2,
       color: _line,
     );
@@ -2683,7 +2803,11 @@ class _BookRideScreenState extends State<BookRideScreen> {
             if (imageAsset == null)
               Icon(icon, color: danger ? _danger : Colors.white, size: 20)
             else
-              _chatAssetIcon(size: 20, color: danger ? _danger : Colors.white),
+              _sheetAssetIcon(
+                imageAsset,
+                size: 20,
+                color: danger ? _danger : null,
+              ),
             const SizedBox(width: 14),
             Expanded(
               child: Text(
@@ -2705,7 +2829,13 @@ class _BookRideScreenState extends State<BookRideScreen> {
   Widget _paymentSummaryRow({String price = '₦2,900'}) {
     return Row(
       children: [
-        Image.asset('images/cash.png', width: 24, height: 24),
+        Image.asset(
+          'images/cash.png',
+          width: 24,
+          height: 24,
+          filterQuality: FilterQuality.high,
+          isAntiAlias: true,
+        ),
         const SizedBox(width: 12),
         const Expanded(
           child: Text(
@@ -2796,40 +2926,324 @@ class _BookRideScreenState extends State<BookRideScreen> {
     );
   }
 
-  Widget _ridePreviewCard({required double scale}) {
-    return Transform.scale(
-      scale: scale,
+  Widget _rideSharePreview() {
+    return RepaintBoundary(
+      key: _sharePreviewKey,
       child: Container(
-        width: 82,
-        height: 138,
-        padding: const EdgeInsets.all(6),
+        width: 158,
+        height: 284,
+        padding: const EdgeInsets.all(4),
         decoration: BoxDecoration(
-          color: Colors.black,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: _line),
-        ),
-        child: Column(
-          children: [
-            Expanded(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    Image.asset('images/map.png', fit: BoxFit.cover),
-                    Center(child: _mapPill('Tap')),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              'Andrew J.',
-              style: TextStyle(color: Colors.white, fontSize: 9),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withAlpha(90),
+              blurRadius: 22,
+              offset: const Offset(0, 10),
             ),
           ],
         ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Image.asset(
+                'images/map.png',
+                fit: BoxFit.cover,
+                filterQuality: FilterQuality.high,
+                isAntiAlias: true,
+              ),
+              Container(color: Colors.black.withAlpha(74)),
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: Container(
+                  height: 32,
+                  padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
+                  decoration: BoxDecoration(color: Colors.black.withAlpha(178)),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.close_rounded,
+                        color: Colors.white,
+                        size: 12,
+                      ),
+                      const SizedBox(width: 5),
+                      Expanded(
+                        child: Text(
+                          _compactPlace(_fromLabel),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: _yellow,
+                            fontSize: 6.5,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                      const Icon(
+                        Icons.arrow_forward_rounded,
+                        color: Colors.white,
+                        size: 8,
+                      ),
+                      const SizedBox(width: 3),
+                      Expanded(
+                        child: Text(
+                          _compactPlace(_toLabel, destination: true),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.right,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 6.5,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Positioned(
+                left: 50,
+                top: 54,
+                child: Transform.rotate(
+                  angle: -0.42,
+                  child: Container(
+                    width: 5,
+                    height: 108,
+                    decoration: BoxDecoration(
+                      color: _yellow,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                left: 46,
+                top: 114,
+                child: _shareLocationLabel('Tap to edit'),
+              ),
+              Positioned(
+                left: 38,
+                top: 83,
+                child: _shareMapPin(_locationIconAsset),
+              ),
+              Positioned(
+                right: 48,
+                top: 58,
+                child: _shareMapPin(_destinationIconAsset),
+              ),
+              Positioned(left: 26, bottom: 72, child: _shareCar()),
+              Positioned(
+                right: 9,
+                bottom: 72,
+                child: Container(
+                  width: 22,
+                  height: 22,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.my_location_rounded,
+                    color: Colors.black,
+                    size: 13,
+                  ),
+                ),
+              ),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+                  decoration: BoxDecoration(
+                    color: _surface,
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(14),
+                    ),
+                    border: Border(top: BorderSide(color: _line)),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'Arriving in 2 mins',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 8,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Image.asset(
+                            _driverAvatarAsset,
+                            width: 24,
+                            height: 26,
+                            fit: BoxFit.contain,
+                            filterQuality: FilterQuality.high,
+                            isAntiAlias: true,
+                          ),
+                          const SizedBox(width: 5),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Andrew Johnson',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 7,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                                SizedBox(height: 1),
+                                Text(
+                                  'Green - Toyota Corolla Sedan',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: _muted,
+                                    fontSize: 5.5,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Container(
+                              height: 18,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: _surfaceAlt,
+                                borderRadius: BorderRadius.circular(999),
+                                border: Border.all(color: Colors.white),
+                              ),
+                              child: Row(
+                                children: [
+                                  _chatAssetIcon(size: 8, color: _muted),
+                                  const SizedBox(width: 4),
+                                  const Expanded(
+                                    child: Text(
+                                      'Any pickup notes?',
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        color: _muted,
+                                        fontSize: 6,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Container(
+                            width: 20,
+                            height: 20,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFFD6FFD1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: _sheetAssetIcon(
+                              _contactIconAsset,
+                              size: 10,
+                              color: const Color(0xFF0DB63D),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 7),
+                      const Text(
+                        'My route',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 8,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Row(
+                        children: [
+                          _sheetAssetIcon(_locationIconAsset, size: 8),
+                          const SizedBox(width: 5),
+                          Expanded(
+                            child: Text(
+                              _compactPlace(_fromLabel),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: _muted,
+                                fontSize: 6.5,
+                              ),
+                            ),
+                          ),
+                          _sheetAssetIcon(_editDestinationIconAsset, size: 10),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
+    );
+  }
+
+  Widget _shareMapPin(String asset) {
+    return Container(
+      width: 18,
+      height: 18,
+      alignment: Alignment.center,
+      child: _sheetAssetIcon(asset, size: 15),
+    );
+  }
+
+  Widget _shareLocationLabel(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      decoration: BoxDecoration(
+        color: _yellow,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(
+          color: Colors.black,
+          fontSize: 6.5,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+    );
+  }
+
+  Widget _shareCar() {
+    return Image.asset(
+      'images/car.png',
+      width: 20,
+      height: 30,
+      fit: BoxFit.contain,
+      filterQuality: FilterQuality.high,
+      isAntiAlias: true,
     );
   }
 
@@ -2881,8 +3295,10 @@ class _BookRideScreenState extends State<BookRideScreen> {
                 width: 52,
                 height: 52,
                 child: Image.asset(
-                  'images/location_pointer.png',
+                  _locationIconAsset,
                   fit: BoxFit.contain,
+                  filterQuality: FilterQuality.high,
+                  isAntiAlias: true,
                 ),
               ),
               fm.Marker(
@@ -2890,8 +3306,10 @@ class _BookRideScreenState extends State<BookRideScreen> {
                 width: 44,
                 height: 44,
                 child: Image.asset(
-                  'images/destination_pointer.png',
+                  _destinationIconAsset,
                   fit: BoxFit.contain,
+                  filterQuality: FilterQuality.high,
+                  isAntiAlias: true,
                 ),
               ),
             ],

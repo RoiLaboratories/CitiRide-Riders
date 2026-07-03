@@ -28,9 +28,14 @@ class ArrivingSheet extends StatelessWidget {
 
             Row(
               children: [
-                const CircleAvatar(
-                  radius: 24,
-                  backgroundImage: AssetImage('assets/driver.png'),
+                Image.asset(
+                  'images/driver.png',
+                  width: 56,
+                  height: 60,
+                  fit: BoxFit.contain,
+                  alignment: Alignment.center,
+                  filterQuality: FilterQuality.high,
+                  isAntiAlias: true,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -54,7 +59,15 @@ class ArrivingSheet extends StatelessWidget {
                 CircleAvatar(
                   radius: 24,
                   backgroundColor: Colors.green.shade100,
-                  child: const Icon(Icons.phone, color: Colors.green),
+                  child: Image.asset(
+                    'images/contact.png',
+                    width: 20,
+                    height: 20,
+                    color: Colors.green,
+                    colorBlendMode: BlendMode.srcIn,
+                    filterQuality: FilterQuality.high,
+                    isAntiAlias: true,
+                  ),
                 ),
               ],
             ),
