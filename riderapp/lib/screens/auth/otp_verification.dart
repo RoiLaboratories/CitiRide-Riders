@@ -29,8 +29,11 @@ class _OTPScreenState extends ConsumerState<OTPScreen> {
   Timer? _timer;
   bool _isOtpVerified = false;
   bool _isVerifying = false;
+  bool _isResendingOtp = false;
   String _errorMessage = '';
   Color? _otpFeedbackBorderColor;
+  late String _activeVerificationId;
+  ConfirmationResult? _activeWebConfirmationResult;
 
   final List<String> _enteredDigits = [];
   int _currentFocusIndex = 0; // Track which field should be "focused"
@@ -38,6 +41,8 @@ class _OTPScreenState extends ConsumerState<OTPScreen> {
   @override
   void initState() {
     super.initState();
+    _activeVerificationId = widget.verificationId;
+    _activeWebConfirmationResult = widget.webConfirmationResult;
     _startResendTimer();
     _currentFocusIndex = 0;
   }
@@ -102,8 +107,11 @@ class _OTPScreenState extends ConsumerState<OTPScreen> {
   }
 
   // ---------------- ACTIONS ----------------
-  void _resendOTP() {
+  Future<void> _resendOTP() async {
+    if (_isResendingOtp) return;
+
     setState(() {
+      _isResendingOtp = true;
       _enteredDigits.clear();
       _errorMessage = '';
       _otpFeedbackBorderColor = null;
@@ -111,9 +119,40 @@ class _OTPScreenState extends ConsumerState<OTPScreen> {
       _isOtpVerified = false;
     });
 
-    _startResendTimer();
+    try {
+      final auth = ref.read(authProvider);
+      await auth.sendVerificationCode(
+        phoneNumber: widget.phoneNumber,
+        onCodeSent: (verificationId, confirmationResult) {
+          if (!mounted) return;
+          setState(() {
+            _activeVerificationId = verificationId;
+            _activeWebConfirmationResult = confirmationResult;
+            _isResendingOtp = false;
+          });
+          _startResendTimer();
+          _showTopMessage('OTP resent to ${widget.phoneNumber}');
+        },
+        onFailed: (e) {
+          if (!mounted) return;
+          setState(() {
+            _isResendingOtp = false;
+            _errorMessage = e.message ?? 'Could not resend code';
+            _otpFeedbackBorderColor = Colors.red;
+          });
+        },
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isResendingOtp = false;
+        _errorMessage = 'Could not resend code';
+        _otpFeedbackBorderColor = Colors.red;
+      });
+    }
+  }
 
-    // Show custom snackbar from top
+  void _showTopMessage(String message) {
     final overlay = Overlay.of(context);
     final overlayEntry = OverlayEntry(
       builder: (context) => Positioned(
@@ -137,7 +176,7 @@ class _OTPScreenState extends ConsumerState<OTPScreen> {
             ),
             child: Center(
               child: Text(
-                'OTP resent to ${widget.phoneNumber}',
+                message,
                 style: GoogleFonts.poppins(color: Colors.white, fontSize: 16),
                 textAlign: TextAlign.center,
               ),
@@ -164,37 +203,60 @@ class _OTPScreenState extends ConsumerState<OTPScreen> {
     });
 
     try {
-      ref.read(authProvider);
+      final auth = ref.read(authProvider);
+      await auth.verifyOTP(
+        _otp,
+        verificationId: _activeVerificationId.isNotEmpty
+            ? _activeVerificationId
+            : null,
+        webConfirmationResult: _activeWebConfirmationResult,
+      );
 
       setState(() {
         _currentFocusIndex = -1;
-        _isOtpVerified = true;
         _otpFeedbackBorderColor = Colors.green;
       });
 
-      // Navigate to home screen
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (!mounted) return;
-        Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
-      });
-    } on FirebaseAuthException {
-      // Handle Firebase-specific errors
-      _showOtpError();
+      if (!mounted) return;
+      Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+    } on FirebaseAuthException catch (e) {
+      _showFirebaseAuthError(e);
     } catch (e) {
-      // Handle generic errors
-      _showOtpError();
+      debugPrint('OTP verification failed after auth request: $e');
+      _showError('Could not complete sign in. Please try again.');
     } finally {
-      setState(() {
-        _isVerifying = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isVerifying = false;
+        });
+      }
     }
   }
 
   void _showOtpError() {
+    _showError('Incorrect code');
+  }
+
+  void _showFirebaseAuthError(FirebaseAuthException error) {
+    switch (error.code) {
+      case 'invalid-verification-code':
+      case 'invalid-credential':
+        _showOtpError();
+        return;
+      case 'session-expired':
+      case 'code-expired':
+        _showError('Code expired. Please resend code.');
+        return;
+      default:
+        _showError(error.message ?? 'Could not verify code.');
+    }
+  }
+
+  void _showError(String message) {
     setState(() {
       _currentFocusIndex = -1;
       _isOtpVerified = false;
-      _errorMessage = 'Incorrect code';
+      _errorMessage = message;
       _otpFeedbackBorderColor = Colors.red;
     });
   }
@@ -291,7 +353,9 @@ class _OTPScreenState extends ConsumerState<OTPScreen> {
                             ),
                           ),
                           TextButton(
-                            onPressed: _resendTimer == 0 ? _resendOTP : null,
+                            onPressed: _resendTimer == 0 && !_isResendingOtp
+                                ? _resendOTP
+                                : null,
                             child: Text(
                               "Send code",
                               style: GoogleFonts.poppins(

@@ -80,20 +80,24 @@ class _SavedPlaceMapConfirmScreenState
       body: Stack(
         children: [
           Positioned.fill(child: _buildMap()),
-          Positioned.fill(child: Container(color: Colors.black.withAlpha(34))),
+          Positioned.fill(
+            child: IgnorePointer(
+              child: Container(color: Colors.black.withAlpha(34)),
+            ),
+          ),
           IgnorePointer(
             child: Center(
               child: Transform.translate(
-                offset: const Offset(0, -24),
+                offset: const Offset(0, -18),
                 child: Image.asset(
                   'images/location_pin.png',
-                  width: 52,
-                  height: 52,
+                  width: 36,
+                  height: 36,
                   fit: BoxFit.contain,
                   errorBuilder: (_, _, _) => const Icon(
                     Icons.location_on_rounded,
                     color: CitiRideTheme.primaryYellow,
-                    size: 52,
+                    size: 36,
                   ),
                 ),
               ),
@@ -310,6 +314,8 @@ class _SavedPlaceMapConfirmScreenState
         zoom: 16,
       ),
       zoomControlsEnabled: false,
+      scrollGesturesEnabled: true,
+      zoomGesturesEnabled: true,
       mapToolbarEnabled: false,
       myLocationButtonEnabled: false,
       compassEnabled: false,

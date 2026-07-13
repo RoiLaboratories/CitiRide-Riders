@@ -29,6 +29,8 @@ class HomeTopBar extends StatefulWidget {
 }
 
 class _HomeTopBarState extends State<HomeTopBar> {
+  static const double _avatarSize = 44;
+
   String _locationText = 'Lagos';
   String _currentAddress = 'Getting location...';
   bool _isLoading = true;
@@ -81,8 +83,8 @@ class _HomeTopBarState extends State<HomeTopBar> {
     Widget defaultAvatar() {
       return Image.asset(
         'images/profile.png',
-        width: 48,
-        height: 48,
+        width: _avatarSize,
+        height: _avatarSize,
         fit: BoxFit.contain,
         alignment: Alignment.center,
         filterQuality: FilterQuality.high,
@@ -95,8 +97,8 @@ class _HomeTopBarState extends State<HomeTopBar> {
     if (_profileAvatarBytes != null && _profileAvatarBytes!.isNotEmpty) {
       return Image.memory(
         _profileAvatarBytes!,
-        width: 48,
-        height: 48,
+        width: _avatarSize,
+        height: _avatarSize,
         fit: BoxFit.contain,
         alignment: Alignment.center,
         filterQuality: FilterQuality.high,
@@ -108,8 +110,8 @@ class _HomeTopBarState extends State<HomeTopBar> {
     if (_profileAvatarAsset != null && _profileAvatarAsset!.trim().isNotEmpty) {
       return Image.asset(
         _profileAvatarAsset!,
-        width: 48,
-        height: 48,
+        width: _avatarSize,
+        height: _avatarSize,
         fit: BoxFit.contain,
         alignment: Alignment.center,
         filterQuality: FilterQuality.high,
@@ -242,7 +244,11 @@ class _HomeTopBarState extends State<HomeTopBar> {
                 _loadProfileImage();
               });
             },
-            child: SizedBox(width: 48, height: 48, child: _buildAvatarImage()),
+            child: SizedBox(
+              width: _avatarSize,
+              height: _avatarSize,
+              child: _buildAvatarImage(),
+            ),
           ),
         ),
         const SizedBox(width: 8),

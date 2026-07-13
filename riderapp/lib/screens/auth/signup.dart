@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'otp_verification.dart';
 import '../../components/auth_components.dart';
 import '../../providers/auth_provider.dart';
+import '../../utils/phone_number_utils.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class SignUpScreen extends ConsumerStatefulWidget {
@@ -45,28 +46,17 @@ class SignUpScreenState extends ConsumerState<SignUpScreen> {
   }
 
   void _validatePhoneNumber() {
-    final String phoneDigits = _enteredDigits.join('');
-    if (phoneDigits.length == 10) {
-      setState(() {
-        _isPhoneValid = true;
-        _phoneError = '';
-      });
-    } else if (phoneDigits.length > 10) {
-      setState(() {
-        _isPhoneValid = false;
-        _phoneError = 'Phone number should be 10 digits';
-      });
-    } else if (phoneDigits.isNotEmpty && phoneDigits.length < 10) {
-      setState(() {
-        _isPhoneValid = false;
-        _phoneError = 'Phone number should be 10 digits';
-      });
-    } else {
-      setState(() {
-        _isPhoneValid = false;
-        _phoneError = '';
-      });
-    }
+    final error = phoneDigitsValidationMessage(
+      countryCode: _selectedCountryCode,
+      digits: _enteredDigits,
+    );
+    setState(() {
+      _isPhoneValid = isValidPhoneDigits(
+        countryCode: _selectedCountryCode,
+        digits: _enteredDigits,
+      );
+      _phoneError = error;
+    });
   }
 
   // Format phone number as 3 3 4
@@ -80,7 +70,8 @@ class SignUpScreenState extends ConsumerState<SignUpScreen> {
   }
 
   void _onDigitPressed(String digit) {
-    if (_enteredDigits.length < 10) {
+    if (_enteredDigits.length <
+        maxPhoneDigitsForCountry(_selectedCountryCode)) {
       setState(() {
         _isPhoneInputFocused = true;
         _enteredDigits.add(digit);
@@ -114,12 +105,20 @@ class SignUpScreenState extends ConsumerState<SignUpScreen> {
     setState(() {
       _selectedCountryCode = country['code']!;
       _selectedCountryFlag = country['flag']!;
+      final maxDigits = maxPhoneDigitsForCountry(_selectedCountryCode);
+      if (_enteredDigits.length > maxDigits) {
+        _enteredDigits.removeRange(maxDigits, _enteredDigits.length);
+      }
+      _phoneController.text = _formatPhoneNumber(_enteredDigits);
     });
+    _validatePhoneNumber();
   }
 
   void _navigateToOTPScreen() async {
-    final String fullPhoneNumber =
-        '$_selectedCountryCode${_enteredDigits.join()}';
+    final String fullPhoneNumber = normalizedPhoneNumber(
+      countryCode: _selectedCountryCode,
+      digits: _enteredDigits,
+    );
 
     showDialog(
       context: context,
@@ -131,16 +130,19 @@ class SignUpScreenState extends ConsumerState<SignUpScreen> {
       final auth = ref.read(authProvider);
       await auth.sendVerificationCode(
         phoneNumber: fullPhoneNumber,
-        onCodeSent: () {
+        onCodeSent: (verificationId, confirmationResult) {
           if (!mounted) return;
           Navigator.pop(context);
 
-          // Navigate to OTP screen AFTER codeSent
+          // Navigate to OTP screen AFTER codeSent. Pass confirmationResult for web.
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (ctx) =>
-                  OTPScreen(phoneNumber: fullPhoneNumber, verificationId: ''),
+              builder: (ctx) => OTPScreen(
+                phoneNumber: fullPhoneNumber,
+                verificationId: verificationId,
+                webConfirmationResult: confirmationResult,
+              ),
             ),
           );
         },

@@ -135,34 +135,21 @@ class _SavedPlaceSearchScreenState extends State<SavedPlaceSearchScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _bg,
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: Image.asset(
-              'images/map.png',
-              fit: BoxFit.cover,
-              color: Colors.black.withAlpha(92),
-              colorBlendMode: BlendMode.darken,
+      body: SafeArea(
+        child: Column(
+          children: [
+            _Header(
+              title: widget.placeType.title,
+              onBack: () => Navigator.pop(context),
             ),
-          ),
-          Positioned.fill(child: Container(color: Colors.black.withAlpha(96))),
-          SafeArea(
-            child: Column(
-              children: [
-                _Header(
-                  title: widget.placeType.title,
-                  onBack: () => Navigator.pop(context),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
-                  child: _searchField(),
-                ),
-                const SizedBox(height: 12),
-                Expanded(child: _buildSuggestions()),
-              ],
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
+              child: _searchField(),
             ),
-          ),
-        ],
+            const SizedBox(height: 12),
+            Expanded(child: _buildSuggestions()),
+          ],
+        ),
       ),
     );
   }
@@ -262,20 +249,49 @@ class _SavedPlaceSearchScreenState extends State<SavedPlaceSearchScreen> {
       );
     }
 
-    return Container(
-      width: double.infinity,
-      color: _surface,
-      child: ListView.separated(
-        padding: const EdgeInsets.fromLTRB(18, 8, 18, 24),
-        itemCount: _suggestions.length,
-        separatorBuilder: (_, _) => const SizedBox(height: 2),
-        itemBuilder: (context, index) {
-          final suggestion = _suggestions[index];
-          return _SuggestionTile(
-            suggestion: suggestion,
-            onTap: () => _selectSuggestion(suggestion),
-          );
-        },
+    return Align(
+      alignment: Alignment.topCenter,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 0, 14, 18),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxHeight: 330),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x66000000),
+                  blurRadius: 18,
+                  offset: Offset(0, 8),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(18),
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: _surface,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: const Color(0xFF2D2D2D)),
+                ),
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  padding: const EdgeInsets.fromLTRB(18, 8, 18, 16),
+                  itemCount: _suggestions.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 2),
+                  itemBuilder: (context, index) {
+                    final suggestion = _suggestions[index];
+                    return _SuggestionTile(
+                      suggestion: suggestion,
+                      onTap: () => _selectSuggestion(suggestion),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -367,28 +383,36 @@ class _Header extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       height: 54,
-      child: Stack(
-        alignment: Alignment.center,
+      child: Row(
         children: [
-          Positioned(
-            left: 2,
-            child: IconButton(
-              onPressed: onBack,
-              icon: const Icon(
-                Icons.arrow_back_ios_new_rounded,
-                color: Colors.white,
-                size: 18,
+          SizedBox(
+            width: 58,
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: IconButton(
+                onPressed: onBack,
+                icon: const Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: Colors.white,
+                  size: 18,
+                ),
               ),
             ),
           ),
-          Text(
-            title,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
+          Expanded(
+            child: Text(
+              title,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
+          const SizedBox(width: 58),
         ],
       ),
     );

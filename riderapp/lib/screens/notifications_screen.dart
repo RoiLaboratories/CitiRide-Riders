@@ -34,73 +34,56 @@ class NotificationsScreen extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: colors.background,
-      body: Stack(
-        children: [
-          if (isDark) ...[
-            Positioned.fill(
-              child: Image.asset(
-                'images/map.png',
-                fit: BoxFit.cover,
-                filterQuality: FilterQuality.high,
-                isAntiAlias: true,
+      backgroundColor: isDark ? Colors.black : colors.background,
+      body: SafeArea(
+        child: Column(
+          children: [
+            SizedBox(
+              height: 58,
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 58,
+                    child: IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        size: 22,
+                        color: colors.text,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      'Notifications',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: colors.text,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 58),
+                ],
               ),
             ),
-            Positioned.fill(
-              child: Container(color: Colors.black.withAlpha(210)),
+            Expanded(
+              child: ListView.separated(
+                padding: const EdgeInsets.fromLTRB(22, 12, 22, 28),
+                itemCount: _notifications.length,
+                separatorBuilder: (_, _) => Divider(
+                  height: 18,
+                  color: isDark ? const Color(0xFF2A2A2A) : colors.border,
+                ),
+                itemBuilder: (context, index) {
+                  final item = _notifications[index];
+                  return _NotificationTile(item: item, dark: isDark);
+                },
+              ),
             ),
           ],
-          SafeArea(
-            child: Column(
-              children: [
-                SizedBox(
-                  height: 58,
-                  child: Row(
-                    children: [
-                      SizedBox(
-                        width: 58,
-                        child: IconButton(
-                          onPressed: () => Navigator.pop(context),
-                          icon: Icon(
-                            Icons.arrow_back_ios_new_rounded,
-                            size: 22,
-                            color: colors.text,
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: Text(
-                          'Notifications',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: colors.text,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 58),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(22, 12, 22, 28),
-                    itemCount: _notifications.length,
-                    separatorBuilder: (_, _) => Divider(
-                      height: 18,
-                      color: isDark ? const Color(0xFF2A2A2A) : colors.border,
-                    ),
-                    itemBuilder: (context, index) {
-                      final item = _notifications[index];
-                      return _NotificationTile(item: item, dark: isDark);
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

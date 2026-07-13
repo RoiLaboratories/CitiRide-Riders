@@ -103,7 +103,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   Future<void> _loadProfile() async {
     final auth = ref.read(authProvider);
-    final userData = await auth.getUserData();
     final prefs = await SharedPreferences.getInstance();
 
     if (!mounted) return;
@@ -114,38 +113,54 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final localPhone = prefs.getString('profile_phone') ?? '';
     final storedAvatarAsset = prefs.getString('profile_avatar_asset');
     final storedAvatarBase64 = prefs.getString('profile_avatar_base64') ?? '';
-    final userPhoto = _safeText(userData?['photoURL']);
-    final profileAvatarAsset =
-        storedAvatarAsset != null && storedAvatarAsset.isNotEmpty
-        ? storedAvatarAsset
-        : (userPhoto.startsWith('images/') ? userPhoto : _selectedAvatarAsset);
 
-    final userDisplayName = _safeText(userData?['displayName']);
-    final userUsername = _safeText(userData?['username']);
-    final userEmail = _safeText(userData?['email']);
-    final userPhone = _safeText(userData?['phoneNumber']);
-    final authPhone = auth.currentUser?.phoneNumber ?? '';
-    final resolvedPhone = userPhone.isNotEmpty
-        ? userPhone
-        : (authPhone.isNotEmpty
-              ? authPhone
-              : (localPhone.isNotEmpty ? localPhone : _defaultNigerianPhone));
+    void applyProfile(Map<String, dynamic>? userData) {
+      if (!mounted) return;
 
-    _applyPhoneInputState(resolvedPhone);
+      final userPhoto = _safeText(userData?['photoURL']);
+      final profileAvatarAsset =
+          storedAvatarAsset != null && storedAvatarAsset.isNotEmpty
+          ? storedAvatarAsset
+          : (userPhoto.startsWith('images/')
+                ? userPhoto
+                : _selectedAvatarAsset);
 
-    setState(() {
-      _nameController.text = userDisplayName.isNotEmpty
-          ? userDisplayName
-          : localName;
-      _usernameController.text = userUsername.isNotEmpty
-          ? userUsername
-          : localUsername;
-      _emailController.text = userEmail.isNotEmpty ? userEmail : localEmail;
-      _phoneNumber = resolvedPhone;
-      _selectedAvatarAsset = profileAvatarAsset;
-      _selectedAvatarBytes = _decodeAvatarBase64(storedAvatarBase64);
-      _isLoading = false;
-    });
+      final userDisplayName = _safeText(userData?['displayName']);
+      final userUsername = _safeText(userData?['username']);
+      final userEmail = _safeText(userData?['email']);
+      final userPhone = _safeText(userData?['phoneNumber']);
+      final authPhone = auth.currentUser?.phoneNumber ?? '';
+      final resolvedPhone = userPhone.isNotEmpty
+          ? userPhone
+          : (authPhone.isNotEmpty
+                ? authPhone
+                : (localPhone.isNotEmpty ? localPhone : _defaultNigerianPhone));
+
+      _applyPhoneInputState(resolvedPhone);
+
+      setState(() {
+        _nameController.text = userDisplayName.isNotEmpty
+            ? userDisplayName
+            : localName;
+        _usernameController.text = userUsername.isNotEmpty
+            ? userUsername
+            : localUsername;
+        _emailController.text = userEmail.isNotEmpty ? userEmail : localEmail;
+        _phoneNumber = resolvedPhone;
+        _selectedAvatarAsset = profileAvatarAsset;
+        _selectedAvatarBytes = _decodeAvatarBase64(storedAvatarBase64);
+        _isLoading = false;
+      });
+    }
+
+    applyProfile(null);
+
+    try {
+      final userData = await auth.getUserData().timeout(
+        const Duration(seconds: 4),
+      );
+      if (userData != null) applyProfile(userData);
+    } catch (_) {}
   }
 
   Future<void> _chooseAvatar() async {
@@ -313,8 +328,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return Image(
       image: _avatarImageProvider(),
       fit: BoxFit.contain,
-      width: 88,
-      height: 88,
+      width: 104,
+      height: 104,
       alignment: Alignment.center,
       filterQuality: FilterQuality.high,
       isAntiAlias: true,
@@ -591,8 +606,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         child: Column(
                           children: [
                             SizedBox(
-                              width: 88,
-                              height: 88,
+                              width: 104,
+                              height: 104,
                               child: _avatarPreview(),
                             ),
                             const SizedBox(height: 14),

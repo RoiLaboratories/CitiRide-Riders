@@ -1400,7 +1400,12 @@ class _WalletHeroGraphic extends StatelessWidget {
       height: 250,
       child: Transform.scale(
         scale: 1.08,
-        child: Image.asset('images/modal.png', fit: BoxFit.contain),
+        child: Image.asset(
+          'images/modal.png',
+          fit: BoxFit.contain,
+          filterQuality: FilterQuality.high,
+          isAntiAlias: true,
+        ),
       ),
     );
   }

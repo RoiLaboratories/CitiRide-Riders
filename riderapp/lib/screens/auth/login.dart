@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../components/auth_components.dart';
+import '../../utils/phone_number_utils.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -45,28 +46,17 @@ class LoginScreenState extends State<LoginScreen> {
   }
 
   void _validatePhoneNumber() {
-    final String phoneDigits = _enteredDigits.join('');
-    if (phoneDigits.length == 10) {
-      setState(() {
-        _isPhoneValid = true;
-        _phoneError = '';
-      });
-    } else if (phoneDigits.length > 10) {
-      setState(() {
-        _isPhoneValid = false;
-        _phoneError = 'Phone number should be 10 digits';
-      });
-    } else if (phoneDigits.isNotEmpty && phoneDigits.length < 10) {
-      setState(() {
-        _isPhoneValid = false;
-        _phoneError = 'Phone number should be 10 digits';
-      });
-    } else {
-      setState(() {
-        _isPhoneValid = false;
-        _phoneError = '';
-      });
-    }
+    final error = phoneDigitsValidationMessage(
+      countryCode: _selectedCountryCode,
+      digits: _enteredDigits,
+    );
+    setState(() {
+      _isPhoneValid = isValidPhoneDigits(
+        countryCode: _selectedCountryCode,
+        digits: _enteredDigits,
+      );
+      _phoneError = error;
+    });
   }
 
   // Format phone number as 2 4 4
@@ -80,7 +70,8 @@ class LoginScreenState extends State<LoginScreen> {
   }
 
   void _onDigitPressed(String digit) {
-    if (_enteredDigits.length < 10) {
+    if (_enteredDigits.length <
+        maxPhoneDigitsForCountry(_selectedCountryCode)) {
       setState(() {
         _isPhoneInputFocused = true;
         _enteredDigits.add(digit);
@@ -114,7 +105,13 @@ class LoginScreenState extends State<LoginScreen> {
     setState(() {
       _selectedCountryCode = country['code']!;
       _selectedCountryFlag = country['flag']!;
+      final maxDigits = maxPhoneDigitsForCountry(_selectedCountryCode);
+      if (_enteredDigits.length > maxDigits) {
+        _enteredDigits.removeRange(maxDigits, _enteredDigits.length);
+      }
+      _phoneController.text = _formatPhoneNumber(_enteredDigits);
     });
+    _validatePhoneNumber();
   }
 
   // Check if user exists in Firestore
@@ -177,8 +174,10 @@ class LoginScreenState extends State<LoginScreen> {
   }
 
   void _handleLogin() async {
-    final String fullPhoneNumber =
-        '$_selectedCountryCode${_enteredDigits.join()}';
+    final String fullPhoneNumber = normalizedPhoneNumber(
+      countryCode: _selectedCountryCode,
+      digits: _enteredDigits,
+    );
 
     setState(() {
       _isCheckingUser = true;
